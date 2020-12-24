@@ -79,7 +79,7 @@ class RefineDetMultiBoxLoss(nn.Module):
         for idx in range(num):
             truths = targets[idx][:, :-1].data
             labels = targets[idx][:, -1].data
-            if num_classes == 2:
+            if num_classes == 2 and not self.use_ARM:
                 labels = labels >= 0
             defaults = priors.data
             if self.use_ARM:
