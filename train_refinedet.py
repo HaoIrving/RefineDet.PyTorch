@@ -78,7 +78,7 @@ if not os.path.exists(args.save_folder):
 sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
 negpos_ratio = 3
-args.lr = 1e-3
+# args.lr = 1e-3
 args.max_epoch = 300
 initial_lr = args.lr
 
@@ -86,14 +86,17 @@ def train():
     print('Loading the dataset...')
     if args.dataset == 'COCO':
         if args.dataset_root == VOC_ROOT:
-            if not os.path.exists(COCO_ROOT):
+            if not os.path.exists(COCOroot):
                 parser.error('Must specify dataset_root if specifying dataset')
             print("WARNING: Using default COCO dataset_root because " +
                   "--dataset_root was not specified.")
-            args.dataset_root = COCO_ROOT
+            args.dataset_root = COCOroot
         cfg = coco_refinedet[args.input_size]
-        dataset = COCODetection(root=args.dataset_root, image_set='train',
-                                transform=SSDAugmentation(cfg['min_dim'],
+        # dataset = COCODetection(root=args.dataset_root, image_set='train',
+        #                         transform=SSDAugmentation(cfg['min_dim'],
+        #                                                   MEANS))
+        train_sets = [('sarship', 'train')]
+        dataset = COCODetection(COCOroot, train_sets, SSDAugmentation(cfg['min_dim'],
                                                           MEANS))
     elif args.dataset == 'VOC':
         '''if args.dataset_root == COCO_ROOT:
@@ -256,7 +259,7 @@ def adjust_learning_rate(optimizer, gamma, epoch, step_index, iteration, epoch_s
     # Adapted from PyTorch Imagenet example:
     # https://github.com/pytorch/examples/blob/master/imagenet/main.py
     """
-    warmup_epoch = -1
+    warmup_epoch = 5
     if epoch <= warmup_epoch:
         lr = 1e-6 + (initial_lr-1e-6) * iteration / (epoch_size * warmup_epoch)
     else:
