@@ -224,7 +224,8 @@ def train():
 
         # forward
         out = net(images)
-
+        for ann in targets:
+            print(ann[:, -1])
         # backprop
         optimizer.zero_grad()
         arm_loss_l, arm_loss_c = arm_criterion(out, targets)
