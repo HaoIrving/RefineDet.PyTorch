@@ -58,7 +58,8 @@ parser.add_argument('--save_folder', default='weights/',
 parser.add_argument('--resume_epoch', default=0,
                     type=int, help='resume iter for retraining')
 parser.add_argument('-max','--max_epoch', default=300,
-                    type=int, help='max epoch for retraining')
+                    type=int, help='max epoch for retraining')               
+parser.add_argument('--ngpu', default=4, type=int, help='gpus')
 args = parser.parse_args()
 
 
@@ -118,7 +119,7 @@ def train():
     print(net)
 
     if args.cuda:
-        net = torch.nn.DataParallel(refinedet_net)
+        net = torch.nn.DataParallel(refinedet_net, device_ids=list(range(args.ngpu)))
         cudnn.benchmark = True
 
     if args.resume:
