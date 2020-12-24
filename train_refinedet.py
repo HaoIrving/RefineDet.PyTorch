@@ -15,6 +15,8 @@ import torch.utils.data as data
 import numpy as np
 import argparse
 from utils.logging import Logger
+import math
+import datetime
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -23,9 +25,9 @@ def str2bool(v):
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Training With Pytorch')
 train_set = parser.add_mutually_exclusive_group()
-parser.add_argument('--dataset', default='VOC', choices=['VOC', 'COCO'],
+parser.add_argument('--dataset', default='COCO', choices=['VOC', 'COCO'],
                     type=str, help='VOC or COCO')
-parser.add_argument('--input_size', default='320', choices=['320', '512'],
+parser.add_argument('--input_size', default='512', choices=['320', '512'],
                     type=str, help='RefineDet320 or RefineDet512')
 parser.add_argument('--dataset_root', default=VOC_ROOT,
                     help='Dataset root directory path')
@@ -35,8 +37,8 @@ parser.add_argument('--batch_size', default=32, type=int,
                     help='Batch size for training')
 parser.add_argument('--resume', default=None, type=str,
                     help='Checkpoint state_dict file to resume training from')
-parser.add_argument('--start_iter', default=0, type=int,
-                    help='Resume training at this iter')
+# parser.add_argument('--start_iter', default=0, type=int,
+#                     help='Resume training at this iter')
 parser.add_argument('--num_workers', default=8, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool,
@@ -53,6 +55,10 @@ parser.add_argument('--visdom', default=False, type=str2bool,
                     help='Use visdom for loss visualization')
 parser.add_argument('--save_folder', default='weights/',
                     help='Directory for saving checkpoint models')
+parser.add_argument('--resume_epoch', default=0,
+                    type=int, help='resume iter for retraining')
+parser.add_argument('-max','--max_epoch', default=300,
+                    type=int, help='max epoch for retraining')
 args = parser.parse_args()
 
 
@@ -71,18 +77,24 @@ if not os.path.exists(args.save_folder):
 
 sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
+negpos_ratio = 3
+args.lr = 1e-3
+args.max_epoch = 300
+initial_lr = args.lr
+
 def train():
+    print('Loading the dataset...')
     if args.dataset == 'COCO':
-        '''if args.dataset_root == VOC_ROOT:
+        if args.dataset_root == VOC_ROOT:
             if not os.path.exists(COCO_ROOT):
                 parser.error('Must specify dataset_root if specifying dataset')
             print("WARNING: Using default COCO dataset_root because " +
                   "--dataset_root was not specified.")
             args.dataset_root = COCO_ROOT
-        cfg = coco
-        dataset = COCODetection(root=args.dataset_root,
+        cfg = coco_refinedet[args.input_size]
+        dataset = COCODetection(root=args.dataset_root, image_set='train',
                                 transform=SSDAugmentation(cfg['min_dim'],
-                                                          MEANS))'''
+                                                          MEANS))
     elif args.dataset == 'VOC':
         '''if args.dataset_root == COCO_ROOT:
             parser.error('Must specify dataset if specifying dataset_root')'''
@@ -90,15 +102,17 @@ def train():
         dataset = VOCDetection(root=args.dataset_root,
                                transform=SSDAugmentation(cfg['min_dim'],
                                                          MEANS))
+    print('Training RefineDet on:', dataset.name)
+    print('Using the specified args:')
+    print(args)
 
     if args.visdom:
         import visdom
         viz = visdom.Visdom()
-
+        
     refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'])
     net = refinedet_net
     print(net)
-    #input()
 
     if args.cuda:
         net = torch.nn.DataParallel(refinedet_net)
@@ -108,10 +122,18 @@ def train():
         print('Resuming training, loading {}...'.format(args.resume))
         refinedet_net.load_weights(args.resume)
     else:
-        #vgg_weights = torch.load(args.save_folder + args.basenet)
-        vgg_weights = torch.load(args.basenet)
-        print('Loading base network...')
-        refinedet_net.vgg.load_state_dict(vgg_weights)
+        from weights_init import kaiming_init, constant_init, normal_init
+        def weights_init_relu(m):
+            if isinstance(m, nn.Conv2d):
+                kaiming_init(m)
+            elif isinstance(m, nn.BatchNorm2d):
+                constant_init(m, 1)
+            elif isinstance(m, nn.Linear):
+                normal_init(m, std=0.01)
+        refinedet_net.vgg.apply(weights_init_relu)
+        # vgg_weights = torch.load(args.basenet)
+        # print('Loading base network...')
+        # refinedet_net.vgg.load_state_dict(vgg_weights)
 
     if args.cuda:
         net = net.cuda()
@@ -128,12 +150,12 @@ def train():
         refinedet_net.tcb0.apply(weights_init)
         refinedet_net.tcb1.apply(weights_init)
         refinedet_net.tcb2.apply(weights_init)
-
+    
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
-    arm_criterion = RefineDetMultiBoxLoss(2, 0.5, True, 0, True, 3, 0.5,
+    arm_criterion = RefineDetMultiBoxLoss(2, 0.5, True, 0, True, negpos_ratio, 0.5,
                              False, args.cuda)
-    odm_criterion = RefineDetMultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, 3, 0.5,
+    odm_criterion = RefineDetMultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, negpos_ratio, 0.5,
                              False, args.cuda, use_ARM=True)
 
     net.train()
@@ -142,102 +164,106 @@ def train():
     arm_conf_loss = 0
     odm_loc_loss = 0
     odm_conf_loss = 0
-    epoch = 0
-    print('Loading the dataset...')
+    epoch = 0 + args.resume_epoch
 
-    epoch_size = len(dataset) // args.batch_size
-    print('Training RefineDet on:', dataset.name)
-    print('Using the specified args:')
-    print(args)
-
+    epoch_size = math.ceil(len(dataset) / args.batch_size)
+    max_iter = args.max_epoch * epoch_size
+    
+    stepvalues = (args.max_epoch * 2 // 3 * epoch_size, args.max_epoch * 8 // 9 * epoch_size, args.max_epoch * epoch_size)
     step_index = 0
+
+    if args.resume_epoch > 0:
+        start_iter = args.resume_epoch * epoch_size
+    else:
+        start_iter = 0
 
     if args.visdom:
         vis_title = 'RefineDet.PyTorch on ' + dataset.name
         vis_legend = ['Loc Loss', 'Conf Loss', 'Total Loss']
-        iter_plot = create_vis_plot('Iteration', 'Loss', vis_title, vis_legend)
-        epoch_plot = create_vis_plot('Epoch', 'Loss', vis_title, vis_legend)
+        iter_plot = create_vis_plot(viz, 'Iteration', 'Loss', vis_title, vis_legend)
+        epoch_plot = create_vis_plot(viz, 'Epoch', 'Loss', vis_title, vis_legend)
 
     data_loader = data.DataLoader(dataset, args.batch_size,
                                   num_workers=args.num_workers,
                                   shuffle=True, collate_fn=detection_collate,
                                   pin_memory=True)
-    # create batch iterator
-    batch_iterator = iter(data_loader)
-    for iteration in range(args.start_iter, cfg['max_iter']):
-        if args.visdom and iteration != 0 and (iteration % epoch_size == 0):
-            update_vis_plot(epoch, arm_loc_loss, arm_conf_loss, epoch_plot, None,
-                            'append', epoch_size)
-            # reset epoch loss counters
-            arm_loc_loss = 0
-            arm_conf_loss = 0
-            odm_loc_loss = 0
-            odm_conf_loss = 0
+    for iteration in range(start_iter, max_iter):
+        if iteration % epoch_size == 0:
+            if args.visdom and iteration != 0:
+                update_vis_plot(viz, epoch, arm_loc_loss, arm_conf_loss, epoch_plot, None,
+                                'append', epoch_size)
+                # reset epoch loss counters
+                arm_loc_loss = 0
+                arm_conf_loss = 0
+                odm_loc_loss = 0
+                odm_conf_loss = 0
+            # create batch iterator
+            batch_iterator = iter(data_loader)
+            if (epoch % 10 == 0 and epoch > 0) or (epoch % 5 ==0 and epoch > 200):
+                torch.save(net.state_dict(), args.save_folder+'RefineDet'+'_'+args.dataset + '_epoches_'+
+                           repr(epoch) + '.pth')
             epoch += 1
 
-        if iteration in cfg['lr_steps']:
+        t0 = time.time()
+        if iteration in stepvalues:
             step_index += 1
-            adjust_learning_rate(optimizer, args.gamma, step_index)
+        lr = adjust_learning_rate(optimizer, args.gamma, epoch, step_index, iteration, epoch_size)
 
         # load train data
-        try:
-            images, targets = next(batch_iterator)
-        except StopIteration:
-            batch_iterator = iter(data_loader)
-            images, targets = next(batch_iterator)
-
+        images, targets = next(batch_iterator)
         if args.cuda:
             images = images.cuda()
             targets = [ann.cuda() for ann in targets]
         else:
             images = images
             targets = [ann for ann in targets]
+
         # forward
-        t0 = time.time()
         out = net(images)
+
         # backprop
         optimizer.zero_grad()
         arm_loss_l, arm_loss_c = arm_criterion(out, targets)
         odm_loss_l, odm_loss_c = odm_criterion(out, targets)
-        #input()
         arm_loss = arm_loss_l + arm_loss_c
         odm_loss = odm_loss_l + odm_loss_c
         loss = arm_loss + odm_loss
         loss.backward()
         optimizer.step()
-        t1 = time.time()
         arm_loc_loss += arm_loss_l.item()
         arm_conf_loss += arm_loss_c.item()
         odm_loc_loss += odm_loss_l.item()
         odm_conf_loss += odm_loss_c.item()
-
-        if iteration % 10 == 0:
-            print('timer: %.4f sec.' % (t1 - t0))
-            print('iter ' + repr(iteration) + ' || ARM_L Loss: %.4f ARM_C Loss: %.4f ODM_L Loss: %.4f ODM_C Loss: %.4f ||' \
-            % (arm_loss_l.item(), arm_loss_c.item(), odm_loss_l.item(), odm_loss_c.item()), end=' ')
+        t1 = time.time()
+        batch_time = t1 - t0
+        eta = int(batch_time * (max_iter - iteration))
+        print('Epoch:{}/{} || Epochiter: {}/{} || Iter: {}/{} || ARM_L Loss: {:.4f} ARM_C Loss: {:.4f} ODM_L Loss: {:.4f} ODM_C Loss: {:.4f} loss: {:.4f} || LR: {:.8f} || Batchtime: {:.4f} s || ETA: {}'.\
+            format(epoch, args.max_epoch, (iteration % epoch_size) + 1, epoch_size, iteration + 1, max_iter, arm_loss_l.item(), arm_loss_c.item(), odm_loss_l.item(), odm_loss_c.item(), loss.item(), lr, batch_time, str(datetime.timedelta(seconds=eta))))
+        # if iteration % 10 == 0:
+        #     print('Batch time: %.4f sec. ||' % (batch_time) + 'Eta: {}'.format(str(datetime.timedelta(seconds=eta))))
+        #     print('iter ' + repr(iteration) + ' || ARM_L Loss: %.4f ARM_C Loss: %.4f ODM_L Loss: %.4f ODM_C Loss: %.4f loss: %.4f ||' \
+        #     % (arm_loss_l.item(), arm_loss_c.item(), odm_loss_l.item(), odm_loss_c.item(), loss.item()), end=' ')
 
         if args.visdom:
-            update_vis_plot(iteration, arm_loss_l.data[0], arm_loss_c.data[0],
+            update_vis_plot(viz, iteration, arm_loss_l.item(), arm_loss_c.item(),
                             iter_plot, epoch_plot, 'append')
 
-        if iteration != 0 and iteration % 5000 == 0:
-            print('Saving state, iter:', iteration)
-            torch.save(refinedet_net.state_dict(), args.save_folder 
-            + '/RefineDet{}_{}_{}.pth'.format(args.input_size, args.dataset, 
-            repr(iteration)))
-    torch.save(refinedet_net.state_dict(), args.save_folder 
-            + '/RefineDet{}_{}_final.pth'.format(args.input_size, args.dataset))
+    torch.save(refinedet_net.state_dict(), args.save_folder + '/RefineDet{}_{}_final.pth'.format(args.input_size, args.dataset))
 
 
-def adjust_learning_rate(optimizer, gamma, step):
-    """Sets the learning rate to the initial LR decayed by 10 at every
-        specified step
+def adjust_learning_rate(optimizer, gamma, epoch, step_index, iteration, epoch_size):
+    """Sets the learning rate
     # Adapted from PyTorch Imagenet example:
     # https://github.com/pytorch/examples/blob/master/imagenet/main.py
     """
-    lr = args.lr * (gamma ** (step))
+    warmup_epoch = -1
+    if epoch <= warmup_epoch:
+        lr = 1e-6 + (initial_lr-1e-6) * iteration / (epoch_size * warmup_epoch)
+    else:
+        lr = initial_lr * (gamma ** (step_index))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+    return lr
 
 
 def xavier(param):
@@ -253,7 +279,7 @@ def weights_init(m):
         m.bias.data.zero_()
 
 
-def create_vis_plot(_xlabel, _ylabel, _title, _legend):
+def create_vis_plot(viz, _xlabel, _ylabel, _title, _legend):
     return viz.line(
         X=torch.zeros((1,)).cpu(),
         Y=torch.zeros((1, 3)).cpu(),
@@ -266,7 +292,7 @@ def create_vis_plot(_xlabel, _ylabel, _title, _legend):
     )
 
 
-def update_vis_plot(iteration, loc, conf, window1, window2, update_type,
+def update_vis_plot(viz, iteration, loc, conf, window1, window2, update_type,
                     epoch_size=1):
     viz.line(
         X=torch.ones((1, 3)).cpu() * iteration,
