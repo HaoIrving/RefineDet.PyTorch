@@ -3,3 +3,5 @@
 weights
 utils
 *.pyc
+
+*__pycache__*
