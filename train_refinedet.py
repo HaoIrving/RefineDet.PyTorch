@@ -79,8 +79,8 @@ if not os.path.exists(args.save_folder):
 sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
 args.lr = 1e-5
-args.batch_size = 2
-args.ngpu = 1
+# args.batch_size = 2
+# args.ngpu = 1
 args.num_workers = 0
 args.max_epoch = 300
 
