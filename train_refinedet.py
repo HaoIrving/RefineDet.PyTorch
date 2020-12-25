@@ -78,16 +78,20 @@ if not os.path.exists(args.save_folder):
 
 sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
-args.lr = 1e-5
+# args.lr = 1e-5
 # args.batch_size = 2
 # args.ngpu = 1
-args.num_workers = 0
+# args.num_workers = 0
 args.max_epoch = 300
 
 negpos_ratio = 3
 initial_lr = args.lr
 
 def train():
+    if args.visdom:
+        import visdom
+        viz = visdom.Visdom()
+    
     print('Loading the dataset...')
     if args.dataset == 'COCO':
         if args.dataset_root == VOC_ROOT:
@@ -114,10 +118,6 @@ def train():
     print('Using the specified args:')
     print(args)
 
-    if args.visdom:
-        import visdom
-        viz = visdom.Visdom()
-    
     device = torch.device('cuda:0' if args.cuda else 'cpu')
     refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'], device)
     net = refinedet_net
@@ -140,14 +140,12 @@ def train():
                 constant_init(m, 1)
             elif isinstance(m, nn.Linear):
                 normal_init(m, std=0.01)
+        print('Initializing weights...')
         refinedet_net.vgg.apply(weights_init_relu)
         # vgg_weights = torch.load(args.basenet)
         # print('Loading base network...')
         # refinedet_net.vgg.load_state_dict(vgg_weights)
-    
-
-    if not args.resume:
-        print('Initializing weights...')
+        
         # initialize newly added layers' weights with xavier method
         refinedet_net.extras.apply(weights_init)
         refinedet_net.arm_loc.apply(weights_init)
@@ -159,6 +157,7 @@ def train():
         refinedet_net.tcb1.apply(weights_init)
         refinedet_net.tcb2.apply(weights_init)
     
+
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
     arm_criterion = RefineDetMultiBoxLoss(2, 0.5, True, 0, True, negpos_ratio, 0.5,
@@ -219,17 +218,12 @@ def train():
 
         # load train data
         images, targets = next(batch_iterator)
-        if args.cuda:
-            images = images.to(device)
-            targets = [ann.to(device) for ann in targets]
-        else:
-            images = images
-            targets = [ann for ann in targets]
+        images = images.to(device)
+        targets = [ann.to(device) for ann in targets]
 
         # forward
         out = net(images)
-        for ann in targets:
-            print(ann[:, -1])
+
         # backprop
         optimizer.zero_grad()
         arm_loss_l, arm_loss_c = arm_criterion(out, targets)
