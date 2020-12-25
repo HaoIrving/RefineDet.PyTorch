@@ -25,14 +25,16 @@ class RefineDet(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, size, base, extras, ARM, ODM, TCB, num_classes):
+    def __init__(self, phase, size, base, extras, ARM, ODM, TCB, num_classes, device):
         super(RefineDet, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
         self.cfg = (coco_refinedet, voc_refinedet)[num_classes == 21]
         self.priorbox = PriorBox(self.cfg[str(size)])
         with torch.no_grad():
-            self.priors = self.priorbox.forward()
+            priors = self.priorbox.forward()
+            priors = priors.to(device)
+            self.priors = priors
         self.size = size
 
         # SSD network
@@ -275,7 +277,7 @@ tcb = {
 }
 
 
-def build_refinedet(phase, size=320, num_classes=21):
+def build_refinedet(phase, size=320, num_classes=21, device=None):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
@@ -288,4 +290,4 @@ def build_refinedet(phase, size=320, num_classes=21):
     ARM_ = arm_multibox(base_, extras_, mbox[str(size)])
     ODM_ = odm_multibox(base_, extras_, mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
-    return RefineDet(phase, size, base_, extras_, ARM_, ODM_, TCB_, num_classes)
+    return RefineDet(phase, size, base_, extras_, ARM_, ODM_, TCB_, num_classes, device)

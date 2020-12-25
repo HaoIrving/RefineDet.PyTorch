@@ -78,9 +78,13 @@ if not os.path.exists(args.save_folder):
 
 sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
-negpos_ratio = 3
-# args.lr = 1e-3
+args.lr = 1e-5
+args.batch_size = 2
+args.ngpu = 1
+args.num_workers = 0
 args.max_epoch = 300
+
+negpos_ratio = 3
 initial_lr = args.lr
 
 def train():
@@ -113,15 +117,17 @@ def train():
     if args.visdom:
         import visdom
         viz = visdom.Visdom()
-        
-    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'])
+    
+    device = torch.device('cuda:0' if args.cuda else 'cpu')
+    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'], device)
     net = refinedet_net
     print(net)
 
-    if args.cuda:
+    if args.ngpu > 1 and args.cuda:
         net = torch.nn.DataParallel(refinedet_net, device_ids=list(range(args.ngpu)))
-        cudnn.benchmark = True
-
+    cudnn.benchmark = True
+    net = net.to(device)
+    
     if args.resume:
         print('Resuming training, loading {}...'.format(args.resume))
         refinedet_net.load_weights(args.resume)
@@ -138,9 +144,7 @@ def train():
         # vgg_weights = torch.load(args.basenet)
         # print('Loading base network...')
         # refinedet_net.vgg.load_state_dict(vgg_weights)
-
-    if args.cuda:
-        net = net.cuda()
+    
 
     if not args.resume:
         print('Initializing weights...')
@@ -216,8 +220,8 @@ def train():
         # load train data
         images, targets = next(batch_iterator)
         if args.cuda:
-            images = images.cuda()
-            targets = [ann.cuda() for ann in targets]
+            images = images.to(device)
+            targets = [ann.to(device) for ann in targets]
         else:
             images = images
             targets = [ann for ann in targets]
