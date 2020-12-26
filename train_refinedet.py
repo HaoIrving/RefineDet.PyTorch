@@ -164,7 +164,7 @@ def train():
 
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
-    arm_criterion = RefineDetMultiBoxLoss(2, 0.5, True, 0, True, negpos_ratio, 0.5,
+    arm_criterion = RefineDetMultiBoxLoss(                 2, 0.5, True, 0, True, negpos_ratio, 0.5,
                              False, args.cuda)
     odm_criterion = RefineDetMultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, negpos_ratio, 0.5,
                              False, args.cuda, use_ARM=True)
