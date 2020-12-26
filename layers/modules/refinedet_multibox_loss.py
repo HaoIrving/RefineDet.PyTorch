@@ -60,9 +60,6 @@ class RefineDetMultiBoxLoss(nn.Module):
                 shape: [batch_size,num_objs,5] (last idx is the label).
         """
         arm_loc_data, arm_conf_data, odm_loc_data, odm_conf_data, priors = predictions
-        #print(arm_loc_data.size(), arm_conf_data.size(), 
-        #      odm_loc_data.size(), odm_conf_data.size(), priors.size())
-        #input()
         if self.use_ARM:
             loc_data, conf_data = odm_loc_data, odm_conf_data
         else:
@@ -71,7 +68,6 @@ class RefineDetMultiBoxLoss(nn.Module):
         priors = priors[:loc_data.size(1), :]
         num_priors = (priors.size(0))
         num_classes = self.num_classes
-        #print(loc_data.size(), conf_data.size(), priors.size())
 
         # match priors (default boxes) and ground truth boxes
         loc_t = torch.Tensor(num, num_priors, 4)
@@ -96,7 +92,6 @@ class RefineDetMultiBoxLoss(nn.Module):
         #conf_t = Variable(conf_t, requires_grad=False)
         loc_t.requires_grad = False
         conf_t.requires_grad = False
-        #print(loc_t.size(), conf_t.size())
 
         if self.use_ARM:
             P = F.softmax(arm_conf_data, 2)
@@ -106,8 +101,6 @@ class RefineDetMultiBoxLoss(nn.Module):
             pos[object_score_index.data] = 0
         else:
             pos = conf_t > 0
-        #print(pos.size())
-        #num_pos = pos.sum(dim=1, keepdim=True)
 
         # Localization Loss (Smooth L1)
         # Shape: [batch,num_priors,4]
@@ -119,7 +112,6 @@ class RefineDetMultiBoxLoss(nn.Module):
         # Compute max conf across batch for hard negative mining
         batch_conf = conf_data.view(-1, self.num_classes)
         loss_c = log_sum_exp(batch_conf) - batch_conf.gather(1, conf_t.view(-1, 1))
-        #print(loss_c.size())
 
         # Hard Negative Mining
         loss_c[pos.view(-1,1)] = 0  # filter out pos boxes for now
@@ -129,21 +121,17 @@ class RefineDetMultiBoxLoss(nn.Module):
         num_pos = pos.long().sum(1, keepdim=True)
         num_neg = torch.clamp(self.negpos_ratio*num_pos, max=pos.size(1)-1)
         neg = idx_rank < num_neg.expand_as(idx_rank)
-        #print(num_pos.size(), num_neg.size(), neg.size())
 
         # Confidence Loss Including Positive and Negative Examples
         pos_idx = pos.unsqueeze(2).expand_as(conf_data)
         neg_idx = neg.unsqueeze(2).expand_as(conf_data)
         conf_p = conf_data[(pos_idx+neg_idx).gt(0)].view(-1, self.num_classes)
         targets_weighted = conf_t[(pos+neg).gt(0)]
-        #print(pos_idx.size(), neg_idx.size(), conf_p.size(), targets_weighted.size())
         loss_c = F.cross_entropy(conf_p, targets_weighted, reduction='sum')
 
         # Sum of losses: L(x,c,l,g) = (Lconf(x, c) + αLloc(x,l,g)) / N
-
-        N = num_pos.data.sum().float()
-        #N = max(num_pos.data.sum().float(), 1)
+        # N = num_pos.data.sum().float()
+        N = max(num_pos.data.sum().float(), 1)
         loss_l /= N
         loss_c /= N
-        #print(N, loss_l, loss_c)
         return loss_l, loss_c
