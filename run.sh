@@ -1,1 +1,1 @@
-python train_refinedet.py --num_workers 32
+python train_refinedet.py --num_workers 16
