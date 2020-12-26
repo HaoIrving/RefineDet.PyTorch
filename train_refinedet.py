@@ -81,10 +81,10 @@ sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 # os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 # os.system('CUDA_VISIBLE__DEVICES = 2')
 
-args.lr = 1e-5
-args.batch_size = 4
-args.ngpu = 2
-args.num_workers = 0
+# args.lr = 1e-5
+# args.batch_size = 4
+# args.ngpu = 2
+# args.num_workers = 0
 args.input_size = str(512)
 args.max_epoch = 300
 
