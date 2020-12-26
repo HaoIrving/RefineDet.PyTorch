@@ -82,6 +82,7 @@ sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 # args.batch_size = 2
 # args.ngpu = 1
 # args.num_workers = 0
+args.input_size = 320
 args.max_epoch = 300
 
 negpos_ratio = 3
