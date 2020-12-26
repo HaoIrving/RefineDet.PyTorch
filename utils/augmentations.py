@@ -404,14 +404,14 @@ class SSDAugmentation(object):
         self.size = size
         self.augment = Compose([
             ConvertFromInts(),
-            ToAbsoluteCoords(),
+            # ToAbsoluteCoords(),
             PhotometricDistort(),
             Expand(self.mean),
             RandomSampleCrop(),
             RandomMirror(),
             ToPercentCoords(),
             Resize(self.size),
-            SubtractMeans(self.mean)
+            SubtractMeans(self.mean),
         ])
 
     def __call__(self, img, boxes, labels):

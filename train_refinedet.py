@@ -78,11 +78,14 @@ if not os.path.exists(args.save_folder):
 
 sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
-# args.lr = 1e-5
-# args.batch_size = 2
-# args.ngpu = 1
-# args.num_workers = 0
-args.input_size = str(320)
+# os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+# os.system('CUDA_VISIBLE__DEVICES = 2')
+
+args.lr = 1e-5
+args.batch_size = 4
+args.ngpu = 2
+args.num_workers = 0
+args.input_size = str(512)
 args.max_epoch = 300
 
 negpos_ratio = 3
@@ -221,6 +224,11 @@ def train():
         images, targets = next(batch_iterator)
         images = images.to(device)
         targets = [ann.to(device) for ann in targets]
+        for an in targets:
+            for instance in an:
+                for cor in instance[:-1]:
+                    if cor < 0 or cor > 1:
+                        raise StopIteration
 
         # forward
         out = net(images)
