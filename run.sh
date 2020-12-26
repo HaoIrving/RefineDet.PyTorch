@@ -1,1 +1,1 @@
-CUDA_LAUNCH_BLOCKING=1 python train_refinedet.py
+python train_refinedet.py --num_workers 32
