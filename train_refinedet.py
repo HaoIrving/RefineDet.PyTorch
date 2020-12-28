@@ -123,7 +123,7 @@ def train():
     print(args)
 
     device = torch.device('cuda:0' if args.cuda else 'cpu')
-    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'], device)
+    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'])
     net = refinedet_net
     print(net)
 

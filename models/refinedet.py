@@ -25,16 +25,14 @@ class RefineDet(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, size, base, extras, ARM, ODM, TCB, num_classes, device):
+    def __init__(self, phase, size, base, extras, ARM, ODM, TCB, num_classes, detector=None):
         super(RefineDet, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
         self.cfg = (coco_refinedet, voc_refinedet)[num_classes == 21]
         self.priorbox = PriorBox(self.cfg[str(size)])
         with torch.no_grad():
-            priors = self.priorbox.forward()
-            priors = priors.to(device)
-            self.priors = priors
+            self.priors = self.priorbox.forward()
         self.size = size
 
         # SSD network
@@ -55,7 +53,7 @@ class RefineDet(nn.Module):
 
         if phase == 'test':
             self.softmax = nn.Softmax(dim=-1)
-            self.detect = Detect_RefineDet(num_classes, self.size, 0, 1000, 0.01, 0.45, 0.01, 500)
+            self.detect = detector
 
     def forward(self, x):
         """Applies network layers and ops on input image(s) x.
@@ -140,7 +138,7 @@ class RefineDet(nn.Module):
 
         if self.phase == "test":
             #print(loc, conf)
-            output = self.detect(
+            output = self.detect.forward(
                 arm_loc.view(arm_loc.size(0), -1, 4),           # arm loc preds
                 self.softmax(arm_conf.view(arm_conf.size(0), -1,
                              2)),                               # arm conf preds
@@ -277,7 +275,7 @@ tcb = {
 }
 
 
-def build_refinedet(phase, size=320, num_classes=21, device=None):
+def build_refinedet(phase, size=320, num_classes=21, detector=None):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
@@ -290,4 +288,4 @@ def build_refinedet(phase, size=320, num_classes=21, device=None):
     ARM_ = arm_multibox(base_, extras_, mbox[str(size)])
     ODM_ = odm_multibox(base_, extras_, mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
-    return RefineDet(phase, size, base_, extras_, ARM_, ODM_, TCB_, num_classes, device)
+    return RefineDet(phase, size, base_, extras_, ARM_, ODM_, TCB_, num_classes, detector)

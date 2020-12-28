@@ -1,0 +1,256 @@
+"""Adapted from:
+    @longcw faster_rcnn_pytorch: https://github.com/longcw/faster_rcnn_pytorch
+    @rbgirshick py-faster-rcnn https://github.com/rbgirshick/py-faster-rcnn
+    Licensed under The MIT License [see LICENSE for details]
+"""
+
+from __future__ import print_function
+import torch
+import torch.nn as nn
+import torch.backends.cudnn as cudnn
+from torch.autograd import Variable
+from data import COCOroot, COCODetection
+import torch.utils.data as data
+
+from models.refinedet import build_refinedet
+from layers import Detect_RefineDet
+
+import sys
+import os
+import time
+import argparse
+import numpy as np
+import pickle
+import cv2
+
+
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1")
+
+
+parser = argparse.ArgumentParser(
+    description='Single Shot MultiBox Detector Evaluation')
+parser.add_argument('--trained_model',
+                    default='weights/ssd300_mAP_77.43_v2.pth', type=str,
+                    help='Trained state_dict file path to open')
+parser.add_argument('--save_folder', default='eval/', type=str,
+                    help='File path to save results')
+parser.add_argument('--confidence_threshold', default=0.01, type=float,
+                    help='Detection confidence threshold')
+parser.add_argument('--top_k', default=5, type=int,
+                    help='Further restrict the number of predictions to parse')
+parser.add_argument('--cuda', default=True, type=str2bool,
+                    help='Use cuda to train model')
+# parser.add_argument('--voc_root', default=VOC_ROOT,
+#                     help='Location of VOC root directory')
+parser.add_argument('--cleanup', default=True, type=str2bool,
+                    help='Cleanup and remove results files following eval')
+parser.add_argument('--input_size', default='512', choices=['320', '512'],
+                    type=str, help='RefineDet320 or RefineDet512')
+parser.add_argument('--retest', default=False, type=bool,
+                    help='test cache results')
+parser.add_argument('--show_image', action="store_true", default=False, help='show detection results')
+parser.add_argument('--vis_thres', default=0.5, type=float, help='visualization_threshold')
+
+args = parser.parse_args()
+
+def check_keys(model, pretrained_state_dict):
+    ckpt_keys = set(pretrained_state_dict.keys())
+    model_keys = set(model.state_dict().keys())
+    used_pretrained_keys = model_keys & ckpt_keys
+    unused_pretrained_keys = ckpt_keys - model_keys
+    missing_keys = model_keys - ckpt_keys
+    print('Missing keys:{}'.format(len(missing_keys)))
+    print('Unused checkpoint keys:{}'.format(len(unused_pretrained_keys)))
+    print('Used keys:{}'.format(len(used_pretrained_keys)))
+    assert len(used_pretrained_keys) > 0, 'load NONE from pretrained checkpoint'
+    return True
+
+
+def remove_prefix(state_dict, prefix):
+    ''' Old style model is stored with all names of parameters sharing common prefix 'module.' '''
+    print('remove prefix \'{}\''.format(prefix))
+    f = lambda x: x.split(prefix, 1)[-1] if x.startswith(prefix) else x
+    return {f(key): value for key, value in state_dict.items()}
+
+
+def load_model(model, pretrained_path, load_to_cpu):
+    print('Loading pretrained model from {}'.format(pretrained_path))
+    if load_to_cpu:
+        pretrained_dict = torch.load(pretrained_path, map_location=lambda storage, loc: storage)
+    else:
+        device = torch.cuda.current_device()
+        pretrained_dict = torch.load(pretrained_path, map_location=lambda storage, loc: storage.cuda(device))
+    if "state_dict" in pretrained_dict.keys():
+        pretrained_dict = remove_prefix(pretrained_dict['state_dict'], 'module.')
+    else:
+        pretrained_dict = remove_prefix(pretrained_dict, 'module.')
+    check_keys(model, pretrained_dict)
+    model.load_state_dict(pretrained_dict, strict=False)
+    return model
+
+
+class Timer(object):
+    """A simple timer."""
+    def __init__(self):
+        self.total_time = 0.
+        self.calls = 0
+        self.start_time = 0.
+        self.diff = 0.
+        self.average_time = 0.
+
+    def tic(self):
+        # using time.time instead of time.clock because time time.clock
+        # does not normalize for multithreading
+        self.start_time = time.time()
+
+    def toc(self, average=True):
+        self.diff = time.time() - self.start_time
+        self.total_time += self.diff
+        self.calls += 1
+        self.average_time = self.total_time / self.calls
+        if average:
+            return self.average_time
+        else:
+            return self.diff
+
+class BaseTransform(object):
+    """Defines the transformations that should be applied to test PIL image
+        for input into the network
+
+    dimension -> tensorize -> color adj
+
+    Arguments:
+        resize (int): input dimension to SSD
+        rgb_means ((int,int,int)): average RGB of the dataset
+            (104,117,123)
+        swap ((int,int,int)): final order of channels
+    Returns:
+        transform (transform) : callable transform to be applied to test/val
+        data
+    """
+    def __init__(self, resize, rgb_means, swap=(2, 0, 1)):
+        self.means = rgb_means
+        self.resize = resize
+        self.swap = swap
+
+    # assume input is cv2 img for now
+    def __call__(self, img):
+
+        interp_methods = [cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_NEAREST, cv2.INTER_LANCZOS4]
+        interp_method = interp_methods[0]
+        img = cv2.resize(np.float32(img), (self.resize, self.resize),interpolation = interp_method).astype(np.float32)
+        img -= self.means
+        img = img.transpose(self.swap)
+        return torch.from_numpy(img)
+
+
+def test_net(save_folder, net, device, num_classes, dataset, transform):
+    num_images = len(dataset)
+    all_boxes = [[[] for _ in range(num_images)]
+                 for _ in range(num_classes)]
+
+    # timers
+    _t = {'im_detect': Timer(), 'misc': Timer()}
+    if not os.path.exists(save_folder):
+        os.mkdir(save_folder)
+    det_file = os.path.join(save_folder, 'detections.pkl')
+    
+    if args.retest:
+        f = open(det_file,'rb')
+        all_boxes = pickle.load(f)
+        print('Evaluating detections')
+        dataset.evaluate_detections(all_boxes, save_folder)
+        return
+
+    for i in range(num_images):
+        img = dataset.pull_image(i)
+        h, w, _ = img.shape
+
+        x = transform(img).unsqueeze(0)
+        x = x.to(device)
+        _t['im_detect'].tic()
+        detections = net(x).data
+        _t['im_detect'].toc()
+
+        # skip j = 0, because it's the background class
+        for j in range(1, detections.size(1)):
+            dets = detections[0, j, :]
+            mask = dets[:, 0].gt(0.).expand(5, dets.size(0)).t()
+            dets = torch.masked_select(dets, mask).view(-1, 5)
+            if dets.size(0) == 0:
+                continue
+            boxes = dets[:, 1:]
+            boxes[:, 0] *= w
+            boxes[:, 2] *= w
+            boxes[:, 1] *= h
+            boxes[:, 3] *= h
+            scores = dets[:, 0].cpu().numpy()
+            cls_dets = np.hstack((boxes.cpu().numpy(),
+                                  scores[:, np.newaxis])).astype(np.float32, copy=False)
+            all_boxes[j][i] = cls_dets
+
+        print('im_detect: {:d}/{:d} forward_nms_time{:.4f}s'.format(i + 1, num_images, _t['im_detect'].average_time))
+        if args.show_image:
+            img_gt = img.astype(np.uint8)
+            for b in all_boxes[1][i]:
+                if b[4] < args.vis_thres:
+                    continue
+                text = "{:.4f}".format(b[4])
+                b = list(map(int, b))
+                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
+                cx = b[0]
+                cy = b[1] + 12
+                cv2.putText(img_gt, text, (cx, cy),
+                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
+            cv2.imshow('res', img_gt)
+            cv2.waitKey(0)
+
+    with open(det_file, 'wb') as f:
+        pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
+
+    print('Evaluating detections')
+    dataset.evaluate_detections(all_boxes, save_folder)
+
+
+if __name__ == '__main__':
+    if torch.cuda.is_available():
+        if args.cuda:
+            torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        if not args.cuda:
+            print("WARNING: It looks like you have a CUDA device, but aren't " +
+                "using CUDA.\nRun with --cuda for optimal training speed.")
+            torch.set_default_tensor_type('torch.FloatTensor')
+    else:
+        torch.set_default_tensor_type('torch.FloatTensor')
+    
+    # args.trained_model = 'weights/RefineDet512_COCO_epoches_275.pth'
+    args.trained_model = 'weights/lr_1e3/RefineDet512_COCO_final.pth'
+    # args.cuda = False
+    # args.retest = True
+    # args.show_image = True
+
+    nms_thresh = 0.5
+
+    num_classes = 2 
+    top_k = 1000
+    keep_top_k = 500
+    torch.set_grad_enabled(False)
+    # load net
+    detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, 0.01, nms_thresh, 0.01, keep_top_k)
+    net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
+    load_to_cpu = not args.cuda
+    net = load_model(net, args.trained_model, load_to_cpu)
+    net.eval()
+    print('Finished loading model!')
+    print(net)
+    cudnn.benchmark = True
+    device = torch.device('cuda' if args.cuda else 'cpu')
+    net = net.to(device)
+
+    # load data
+    rgb_means = (98.13131, 98.13131, 98.13131)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+
+    # evaluation
+    test_net(args.save_folder, net, device, num_classes, dataset, BaseTransform(net.size, rgb_means, (2, 0, 1)))

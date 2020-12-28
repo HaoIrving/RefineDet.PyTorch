@@ -4,4 +4,4 @@ weights
 utils
 *.pyc
 
-*__pycache__*
+eval

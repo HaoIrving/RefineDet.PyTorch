@@ -54,17 +54,14 @@ class Detect_RefineDet(Function):
             decoded_boxes = decode(loc_data[i], default, self.variance)
             # For each class, perform nms
             conf_scores = conf_preds[i].clone()
-            #print(decoded_boxes, conf_scores)
             for cl in range(1, self.num_classes):
                 c_mask = conf_scores[cl].gt(self.conf_thresh)
                 scores = conf_scores[cl][c_mask]
-                #print(scores.dim())
                 if scores.size(0) == 0:
                     continue
                 l_mask = c_mask.unsqueeze(1).expand_as(decoded_boxes)
                 boxes = decoded_boxes[l_mask].view(-1, 4)
                 # idx of highest scoring and non-overlapping boxes per class
-                #print(boxes, scores)
                 ids, count = nms(boxes, scores, self.nms_thresh, self.top_k)
                 output[i, cl, :count] = \
                     torch.cat((scores[ids[:count]].unsqueeze(1),
