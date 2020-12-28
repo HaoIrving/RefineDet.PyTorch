@@ -1,7 +1,10 @@
 .vscode
 
 weights
-utils
+utils/build
+utils/nms/*.so
+utils/nms/*.c
+utils/nms/*.cpp
 *.pyc
 
 eval

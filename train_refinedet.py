@@ -14,7 +14,7 @@ import torch.nn.init as init
 import torch.utils.data as data
 import numpy as np
 import argparse
-from utils.logging import Logger
+from utils.logger import Logger
 import math
 import datetime
 
