@@ -54,6 +54,9 @@ parser.add_argument('--vis_thres', default=0.5, type=float, help='visualization_
 
 args = parser.parse_args()
 
+if not os.path.exists(args.save_folder):
+    os.mkdir(args.save_folder)
+
 def check_keys(model, pretrained_state_dict):
     ckpt_keys = set(pretrained_state_dict.keys())
     model_keys = set(model.state_dict().keys())
@@ -190,7 +193,7 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, AP_stats
                                   scores[:, np.newaxis])).astype(np.float32, copy=False)
             all_boxes[j][i] = cls_dets
 
-        print('im_detect: {:d}/{:d} forward_nms_time{:.4f}s'.format(i + 1, num_images, _t['im_detect'].average_time))
+        # print('im_detect: {:d}/{:d} forward_nms_time{:.4f}s'.format(i + 1, num_images, _t['im_detect'].average_time))
         if args.show_image:
             img_gt = img.astype(np.uint8)
             for b in all_boxes[1][i]:
@@ -206,8 +209,8 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, AP_stats
             cv2.imshow('res', img_gt)
             cv2.waitKey(0)
 
-    with open(det_file, 'wb') as f:
-        pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
+    # with open(det_file, 'wb') as f:
+    #     pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
 
     print('Evaluating detections')
     stats = dataset.evaluate_detections(all_boxes, save_folder)
