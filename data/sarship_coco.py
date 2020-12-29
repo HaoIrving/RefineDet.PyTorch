@@ -278,10 +278,11 @@ class COCODetection(data.Dataset):
         coco_eval.evaluate()
         coco_eval.accumulate()
         self._print_detection_eval_metrics(coco_eval)
-        eval_file = os.path.join(output_dir, 'detection_results.pkl')
-        with open(eval_file, 'wb') as fid:
-            pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
-        print('Wrote COCO eval results to: {}'.format(eval_file))
+        return coco_eval.stats
+        # eval_file = os.path.join(output_dir, 'detection_results.pkl')
+        # with open(eval_file, 'wb') as fid:
+        #     pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
+        # print('Wrote COCO eval results to: {}'.format(eval_file))
 
     def _coco_results_one_category(self, boxes, cat_id):
         results = []
@@ -336,6 +337,7 @@ class COCODetection(data.Dataset):
         self._write_coco_results_file(all_boxes, res_file)
         # Only do evaluation on non-test sets
         # if self.coco_name.find('test') == -1:
-        self._do_detection_eval(res_file, output_dir)
+        stats = self._do_detection_eval(res_file, output_dir)
+        return stats
         # Optionally cleanup results json file
 
