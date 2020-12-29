@@ -237,18 +237,25 @@ if __name__ == '__main__':
     # args.retest = True
     # args.show_image = True
     prefix = 'weights/lr_5e4'
+    save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_thresh = 0.5
 
     num_classes = 2 
     top_k = 1000
     keep_top_k = 500
-    save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
     torch.set_grad_enabled(False)
+
+    # load data
+    rgb_means = (98.13131, 98.13131, 98.13131)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, 0.01, nms_thresh, 0.01, keep_top_k)
     net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
     load_to_cpu = not args.cuda
+    cudnn.benchmark = True
+    device = torch.device('cuda' if args.cuda else 'cpu')
 
     ap_stats = {"ap50": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
 
@@ -260,16 +267,12 @@ if __name__ == '__main__':
         net = load_model(net, args.trained_model, load_to_cpu)
         net.eval()
         print('Finished loading model!')
-        print(net)
-        cudnn.benchmark = True
-        device = torch.device('cuda' if args.cuda else 'cpu')
+        # print(net)
         net = net.to(device)
 
-        # load data
-        rgb_means = (98.13131, 98.13131, 98.13131)
-        dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-
         # evaluation
+        ap_stats['epoch'].append(start_epoch + index * step)
+        print("evaluating epoch: {}".format(ap_stats['epoch'][-1]))
         test_net(save_folder, net, device, num_classes, dataset, BaseTransform(net.size, rgb_means, (2, 0, 1)), AP_stats=ap_stats)
 
     print(ap_stats)
