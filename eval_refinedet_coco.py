@@ -51,6 +51,7 @@ parser.add_argument('--retest', default=False, type=bool,
                     help='test cache results')
 parser.add_argument('--show_image', action="store_true", default=False, help='show detection results')
 parser.add_argument('--vis_thres', default=0.5, type=float, help='visualization_threshold')
+parser.add_argument('--prefix', default='weights/lr_5e4', type=str, help='File path to save results')
 
 args = parser.parse_args()
 
@@ -236,7 +237,9 @@ if __name__ == '__main__':
     # args.cuda = False
     # args.retest = True
     # args.show_image = True
-    prefix = 'weights/lr_5e4'
+    prefix = args.prefix
+    # prefix = 'weights/lr_5e4'
+    prefix = 'weights/lr_1e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_thresh = 0.5
