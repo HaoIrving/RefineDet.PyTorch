@@ -171,14 +171,14 @@ class COCODetection(data.Dataset):
         target = self.annotations[index]
         img = cv2.imread(img_id, -1)
 
-        pixel_max = img.max()
-        # # pixel_min = img.min()
-        k = pixel_max ** (1 / 255)
-        img = np.clip(img, 1, None)
-        img = np.log(img) / np.log(k)
+        # pixel_max = img.max()
+        # # # pixel_min = img.min()
+        # k = pixel_max ** (1 / 255)
+        # img = np.clip(img, 1, None)
+        # img = np.log(img) / np.log(k)
 
-        img = img[:, :, np.newaxis]
-        img = np.concatenate((img, img, img), axis=2)
+        # img = img[:, :, np.newaxis]
+        # img = np.concatenate((img, img, img), axis=2)
 
         height, width, _ = img.shape
 
@@ -212,14 +212,14 @@ class COCODetection(data.Dataset):
         img_id = self.ids[index]
         img = cv2.imread(img_id, -1)
 
-        pixel_max = img.max()
-        # # pixel_min = img.min()
-        k = pixel_max ** (1 / 255)
-        img = np.clip(img, 1, None)
-        img = np.log(img) / np.log(k)
+        # pixel_max = img.max()
+        # # # pixel_min = img.min()
+        # k = pixel_max ** (1 / 255)
+        # img = np.clip(img, 1, None)
+        # img = np.log(img) / np.log(k)
 
-        img = img[:, :, np.newaxis]
-        img = np.concatenate((img, img, img), axis=2)
+        # img = img[:, :, np.newaxis]
+        # img = np.concatenate((img, img, img), axis=2)
 
         return img
 

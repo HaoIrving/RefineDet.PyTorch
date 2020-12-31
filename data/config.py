@@ -5,7 +5,7 @@ import os.path
 # HOME = os.path.expanduser("~")
 # HOME = os.path.expanduser("~/projects/ssd.pytorch")
 HOME = os.getcwd()
-COCOroot = os.path.join(HOME,"data/SAR_SHIP_coco")
+COCOroot = os.path.join(HOME,"data/SSDD/SSDD_coco")
 # for making bounding boxes pretty
 COLORS = ((255, 0, 0, 128), (0, 255, 0, 128), (0, 0, 255, 128),
           (0, 255, 255, 128), (255, 0, 255, 128), (255, 255, 0, 128))
