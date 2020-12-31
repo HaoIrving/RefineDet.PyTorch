@@ -238,8 +238,8 @@ if __name__ == '__main__':
     # args.retest = True
     # args.show_image = True
     prefix = args.prefix
-    # prefix = 'weights/lr_5e4'
-    prefix = 'weights/lr_1e3'
+    prefix = 'weights/lr_5e4'
+    # prefix = 'weights/lr_1e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_thresh = 0.5
