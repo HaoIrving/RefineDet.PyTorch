@@ -44,7 +44,7 @@ def plot_loss(save_folder, txt_log):
 def plot_map(save_folder, ap_stats, metrics, legend, fig_name):
     style = 'dark'
     sns.set_style(style)
-    out = os.path.join(save_folder, 'ap.png')
+    out = os.path.join(save_folder, fig_name)
     title = None
 
     i = 0
