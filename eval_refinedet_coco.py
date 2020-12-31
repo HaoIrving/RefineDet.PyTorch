@@ -215,6 +215,8 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, AP_stats
 
     print('Evaluating detections')
     stats = dataset.evaluate_detections(all_boxes, save_folder)
+    
+    AP_stats['ap'].append(stats[0])
     AP_stats['ap50'].append(stats[1])
     AP_stats['ap_small'].append(stats[3])
     AP_stats['ap_medium'].append(stats[4])
@@ -260,7 +262,7 @@ if __name__ == '__main__':
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
 
-    ap_stats = {"ap50": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
+    ap_stats = {"ap": [], "ap50": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
 
     start_epoch = 20; step = 20
     ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
@@ -288,8 +290,8 @@ if __name__ == '__main__':
         ap_stats = json.load(f)
     
     from plot_curve import plot_map, plot_loss
-    metrics = ['ap50', 'ap_small', 'ap_medium', 'ap_large']
-    legend  = ['ap50', 'ap_small', 'ap_medium', 'ap_large']
+    metrics = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
+    legend  = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     plot_map(save_folder, ap_stats, metrics, legend)
 
     txt_log = prefix + '/log.txt'
