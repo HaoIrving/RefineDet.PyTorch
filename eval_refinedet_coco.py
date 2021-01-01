@@ -264,8 +264,8 @@ if __name__ == '__main__':
 
     ap_stats = {"ap": [], "ap50": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
 
-    start_epoch = 20; step = 20
-    # start_epoch = 200; step = 5
+    # start_epoch = 20; step = 20
+    start_epoch = 200; step = 5
     ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
     for index, model_path in enumerate(ToBeTested):
@@ -297,8 +297,8 @@ if __name__ == '__main__':
         ap_stats = json.load(f)
     
     from plot_curve import plot_map, plot_loss
-    fig_name = 'ap.png'
-    # fig_name = 'ap_last10.png'
+    # fig_name = 'ap.png'
+    fig_name = 'ap_last10.png'
     metrics = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     legend  = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     plot_map(save_folder, ap_stats, metrics, legend, fig_name)
