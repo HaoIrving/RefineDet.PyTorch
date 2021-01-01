@@ -240,8 +240,8 @@ if __name__ == '__main__':
     # args.retest = True
     # args.show_image = True
     prefix = args.prefix
-    prefix = 'weights/lr_5e4'
-    # prefix = 'weights/lr_1e3'
+    # prefix = 'weights/lr_5e4'
+    prefix = 'weights/lr_1e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_thresh = 0.5
@@ -264,7 +264,8 @@ if __name__ == '__main__':
 
     ap_stats = {"ap": [], "ap50": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
 
-    start_epoch = 200; step = 5
+    start_epoch = 20; step = 20
+    # start_epoch = 200; step = 5
     ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
     for index, model_path in enumerate(ToBeTested):
@@ -286,7 +287,7 @@ if __name__ == '__main__':
     max_idx = np.argmax(np.asarray(ap_stats['ap50']))
     print('Best ap50 is {:.4f} at epoch {}'.format(ap_stats['ap50'][max_idx], ap_stats['epoch'][max_idx]))
     max_idx = np.argmax(np.asarray(ap_stats['ap']))
-    print('Best ap is {:.4f} at epoch {}'.format(ap_stats['ap'][max_idx], ap_stats['epoch'][max_idx]))
+    print('Best ap   is {:.4f} at epoch {}'.format(ap_stats['ap'][max_idx], ap_stats['epoch'][max_idx]))
 
     import json
     print('Writing ap stats json to {}'.format(res_file))
@@ -296,11 +297,16 @@ if __name__ == '__main__':
         ap_stats = json.load(f)
     
     from plot_curve import plot_map, plot_loss
-    # fig_name = 'ap.png'
-    fig_name = 'ap_last10.png'
+    fig_name = 'ap.png'
+    # fig_name = 'ap_last10.png'
     metrics = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     legend  = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     plot_map(save_folder, ap_stats, metrics, legend, fig_name)
 
     txt_log = prefix + '/log.txt'
     plot_loss(save_folder, txt_log)
+"""
+lr_5e4
+Best ap50 is 0.9714 at epoch 280
+Best ap   is 0.5679 at epoch 230
+"""
