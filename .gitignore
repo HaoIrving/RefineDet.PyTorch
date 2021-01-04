@@ -8,3 +8,4 @@ utils/nms/*.cpp
 *.pyc
 
 eval
+data/SSDD

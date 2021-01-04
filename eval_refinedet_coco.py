@@ -13,7 +13,10 @@ from data import COCOroot, COCODetection
 import torch.utils.data as data
 
 from models.refinedet import build_refinedet
+from models.s2rn import build_s2rn
+
 from layers import Detect_RefineDet
+from utils.nms_wrapper import nms
 
 import sys
 import os
@@ -149,7 +152,7 @@ class BaseTransform(object):
         return torch.from_numpy(img)
 
 
-def test_net(save_folder, net, device, num_classes, dataset, transform, AP_stats=None):
+def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, max_per_image=300, confidence_threshold=0.005, nms_threshold=0.4, AP_stats=None):
     num_images = len(dataset)
     all_boxes = [[[] for _ in range(num_images)]
                  for _ in range(num_classes)]
@@ -169,30 +172,42 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, AP_stats
 
     for i in range(num_images):
         img = dataset.pull_image(i)
-        h, w, _ = img.shape
-
+        scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
         x = transform(img).unsqueeze(0)
         x = x.to(device)
-        _t['im_detect'].tic()
-        detections = net(x).data
-        _t['im_detect'].toc()
+        scale = scale.to(device)
 
-        # skip j = 0, because it's the background class
-        for j in range(1, detections.size(1)):
-            dets = detections[0, j, :]
-            mask = dets[:, 0].gt(0.).expand(5, dets.size(0)).t()
-            dets = torch.masked_select(dets, mask).view(-1, 5)
-            if dets.size(0) == 0:
+        _t['im_detect'].tic()
+        boxes, scores = net(x)
+        boxes = boxes[0]
+        scores=scores[0]
+
+        # scale each detection back up to the image
+        boxes *= scale
+        boxes = boxes.cpu().numpy()
+        scores = scores.cpu().numpy()
+
+        for j in range(1, num_classes):
+            inds = np.where(scores[:, j] > confidence_threshold)[0]
+            if len(inds) == 0:
+                all_boxes[j][i] = np.empty([0, 5], dtype=np.float32)
                 continue
-            boxes = dets[:, 1:]
-            boxes[:, 0] *= w
-            boxes[:, 2] *= w
-            boxes[:, 1] *= h
-            boxes[:, 3] *= h
-            scores = dets[:, 0].cpu().numpy()
-            cls_dets = np.hstack((boxes.cpu().numpy(),
-                                  scores[:, np.newaxis])).astype(np.float32, copy=False)
-            all_boxes[j][i] = cls_dets
+            c_bboxes = boxes[inds]
+            c_scores = scores[inds, j]
+
+            # keep top-K before NMS
+            order = c_scores.argsort()[::-1][:top_k]
+            c_bboxes = c_bboxes[order]
+            c_scores = c_scores[order]
+
+            c_dets = np.hstack((c_bboxes, c_scores[:, np.newaxis])).astype(
+                np.float32, copy=False)
+
+            keep = nms(c_dets, nms_threshold, force_cpu=(not args.cuda))
+            c_dets = c_dets[keep, :]
+            c_dets = c_dets[:max_per_image, :]
+            all_boxes[j][i] = c_dets
+        _t['im_detect'].toc()
 
         # print('im_detect: {:d}/{:d} forward_nms_time{:.4f}s'.format(i + 1, num_images, _t['im_detect'].average_time))
         if args.show_image:
@@ -213,9 +228,9 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, AP_stats
     # with open(det_file, 'wb') as f:
     #     pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
 
+    print('\nFPS: {} {} \n'.format(1 / (_t['im_detect'].average_time), 1 / _t['im_detect'].average_time))
     print('Evaluating detections')
     stats = dataset.evaluate_detections(all_boxes, save_folder)
-    
     AP_stats['ap'].append(stats[0])
     AP_stats['ap50'].append(stats[1])
     AP_stats['ap_small'].append(stats[3])
@@ -241,10 +256,14 @@ if __name__ == '__main__':
     # args.show_image = True
     prefix = args.prefix
     # prefix = 'weights/lr_5e4'
-    prefix = 'weights/lr_1e3'
+    # prefix = 'weights/lr_1e3'
+    prefix = 'weights/srn_1e3'
+    prefix = 'weights/srn_2e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
-    nms_thresh = 0.5
+    nms_threshold = 0.49
+    confidence_threshold = 0.01
+    objectness_thre = 0.01
 
     num_classes = 2 
     top_k = 1000
@@ -256,15 +275,16 @@ if __name__ == '__main__':
     dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
 
     # load net
-    detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, 0.01, nms_thresh, 0.01, keep_top_k)
-    net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
+    detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
+    # net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
+    net = build_s2rn('test', int(args.input_size), num_classes, detector=detect) 
     load_to_cpu = not args.cuda
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
 
     ap_stats = {"ap": [], "ap50": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
 
-    # start_epoch = 20; step = 20
+    start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
@@ -279,7 +299,9 @@ if __name__ == '__main__':
         # evaluation
         ap_stats['epoch'].append(start_epoch + index * step)
         print("evaluating epoch: {}".format(ap_stats['epoch'][-1]))
-        test_net(save_folder, net, device, num_classes, dataset, BaseTransform(net.size, rgb_means, (2, 0, 1)), AP_stats=ap_stats)
+        test_net(save_folder, net, device, num_classes, dataset, 
+                BaseTransform(net.size, rgb_means, (2, 0, 1)), top_k, 
+                keep_top_k, confidence_threshold=confidence_threshold, nms_threshold=nms_threshold, AP_stats=ap_stats)
 
     print(ap_stats)
     res_file = os.path.join(save_folder, 'ap_stats.json')
@@ -297,7 +319,7 @@ if __name__ == '__main__':
         ap_stats = json.load(f)
     
     from plot_curve import plot_map, plot_loss
-    # fig_name = 'ap.png'
+    fig_name = 'ap.png'
     fig_name = 'ap_last10.png'
     metrics = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     legend  = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
@@ -306,7 +328,18 @@ if __name__ == '__main__':
     txt_log = prefix + '/log.txt'
     plot_loss(save_folder, txt_log)
 """
+refinedet
 lr_5e4
-Best ap50 is 0.9714 at epoch 280
+Best ap50 is 0.9714 at epoch 280    0.9719
 Best ap   is 0.5679 at epoch 230
+lr_1e3
+Best ap50 is 0.9761 at epoch 280    0.9755 with c nms
+Best ap   is 0.5945 at epoch 300
+
+s2rn
+lr_1e3
+Best ap50 is 0.9791 at epoch 210
+Best ap   is 0.5881 at epoch 220
+
+
 """
