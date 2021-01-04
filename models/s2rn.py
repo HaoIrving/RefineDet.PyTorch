@@ -365,7 +365,7 @@ def add_tcb(cfg):
                                 nn.ReLU(inplace=True)
         ]
         if k != len(cfg) - 1:
-            feature_upsample_layers += [nn.ConvTranspose2d(256, 256, 4, 2)]
+            feature_upsample_layers += [nn.ConvTranspose2d(256, 256, 2, 2)]
             # feature_upsample_layers += [nn.Upsample(scale_factor=2, mode='nearest')]
     return (feature_scale_layers, feature_upsample_layers, feature_pred_layers)
 
