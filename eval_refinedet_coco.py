@@ -258,7 +258,8 @@ if __name__ == '__main__':
     # prefix = 'weights/lr_5e4'
     # prefix = 'weights/lr_1e3'
     prefix = 'weights/srn_1e3'
-    prefix = 'weights/srn_2e3'
+    prefix = 'weights/srn_rtcb_1e3'
+    prefix = 'weights/srn_anchor3_1e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_threshold = 0.49
@@ -340,6 +341,7 @@ s2rn
 lr_1e3
 Best ap50 is 0.9791 at epoch 210
 Best ap   is 0.5881 at epoch 220
-
-
+lr_2e3
+Best ap50 is 0.9538 at epoch 270
+Best ap   is 0.5090 at epoch 300
 """
