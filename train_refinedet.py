@@ -218,71 +218,67 @@ def train():
                                   num_workers=args.num_workers,
                                   shuffle=True, collate_fn=detection_collate,
                                   pin_memory=True)
-    # for iteration in range(start_iter, max_iter):
-    for epoch_num in range(args.max_epoch):
-        for iter_num, (images, targets) in enumerate(data_loader):
-            iteration = epoch_num * epoch_size + iter_num
+    for iteration in range(start_iter, max_iter):
+        if iteration % epoch_size == 0:
+            if args.visdom and iteration != 0:
+                update_vis_plot(viz, epoch, arm_loc_loss, arm_conf_loss, epoch_plot, None,
+                                'append', epoch_size)
+                # reset epoch loss counters
+                arm_loc_loss = 0
+                arm_conf_loss = 0
+                odm_loc_loss = 0
+                odm_conf_loss = 0
+            # create batch iterator
+            batch_iterator = iter(data_loader)
+            if (epoch % 10 == 0 and epoch > 0) or (epoch % 5 ==0 and epoch > 200):
+                torch.save(net.state_dict(), args.save_folder+'RefineDet'+ args.input_size +'_'+args.dataset + '_epoches_'+
+                           repr(epoch) + '.pth')
+            epoch += 1
 
-            if iteration % epoch_size == 0:
-                if args.visdom and iteration != 0:
-                    update_vis_plot(viz, epoch, arm_loc_loss, arm_conf_loss, epoch_plot, None,
-                                    'append', epoch_size)
-                    # reset epoch loss counters
-                    arm_loc_loss = 0
-                    arm_conf_loss = 0
-                    odm_loc_loss = 0
-                    odm_conf_loss = 0
-                # create batch iterator
-                # batch_iterator = iter(data_loader)
-                if (epoch % 10 == 0 and epoch > 0) or (epoch % 5 ==0 and epoch > 200):
-                    torch.save(net.state_dict(), args.save_folder+'RefineDet'+ args.input_size +'_'+args.dataset + '_epoches_'+
-                            repr(epoch) + '.pth')
-                epoch += 1
+        t0 = time.time()
+        if iteration in stepvalues:
+            step_index += 1
+        lr = adjust_learning_rate(optimizer, args.gamma, epoch, step_index, iteration, epoch_size)
 
-            t0 = time.time()
-            if iteration in stepvalues:
-                step_index += 1
-            lr = adjust_learning_rate(optimizer, args.gamma, epoch, step_index, iteration, epoch_size)
+        # load train data
+        images, targets = next(batch_iterator)
+        images = images.to(device)
+        targets = [ann.to(device) for ann in targets]
+        for an in targets:
+            for instance in an:
+                for cor in instance[:-1]:
+                    if cor < 0 or cor > 1:
+                        raise StopIteration
 
-            # load train data
-            # images, targets = next(batch_iterator)
-            images = images.to(device)
-            targets = [ann.to(device) for ann in targets]
-            for an in targets:
-                for instance in an:
-                    for cor in instance[:-1]:
-                        if cor < 0 or cor > 1:
-                            raise StopIteration
+        # forward
+        out = net(images)
 
-            # forward
-            out = net(images)
+        # backprop
+        optimizer.zero_grad()
+        arm_loss_l, arm_loss_c = arm_criterion(out, targets)
+        odm_loss_l, odm_loss_c = odm_criterion(out, targets)
+        arm_loss = arm_loss_l + arm_loss_c
+        odm_loss = odm_loss_l + odm_loss_c
+        loss = arm_loss + odm_loss
+        loss.backward()
+        optimizer.step()
+        arm_loc_loss += arm_loss_l.item()
+        arm_conf_loss += arm_loss_c.item()
+        odm_loc_loss += odm_loss_l.item()
+        odm_conf_loss += odm_loss_c.item()
+        t1 = time.time()
+        batch_time = t1 - t0
+        eta = int(batch_time * (max_iter - iteration))
+        print('Epoch:{}/{} || Epochiter: {}/{} || Iter: {}/{} || ARM_L Loss: {:.4f} ARM_C Loss: {:.4f} ODM_L Loss: {:.4f} ODM_C Loss: {:.4f} loss: {:.4f} || LR: {:.8f} || Batchtime: {:.4f} s || ETA: {}'.\
+            format(epoch, args.max_epoch, (iteration % epoch_size) + 1, epoch_size, iteration + 1, max_iter, arm_loss_l.item(), arm_loss_c.item(), odm_loss_l.item(), odm_loss_c.item(), loss.item(), lr, batch_time, str(datetime.timedelta(seconds=eta))))
+        # if iteration % 10 == 0:
+        #     print('Batch time: %.4f sec. ||' % (batch_time) + 'Eta: {}'.format(str(datetime.timedelta(seconds=eta))))
+        #     print('iter ' + repr(iteration) + ' || ARM_L Loss: %.4f ARM_C Loss: %.4f ODM_L Loss: %.4f ODM_C Loss: %.4f loss: %.4f ||' \
+        #     % (arm_loss_l.item(), arm_loss_c.item(), odm_loss_l.item(), odm_loss_c.item(), loss.item()), end=' ')
 
-            # backprop
-            optimizer.zero_grad()
-            arm_loss_l, arm_loss_c = arm_criterion(out, targets)
-            odm_loss_l, odm_loss_c = odm_criterion(out, targets)
-            arm_loss = arm_loss_l + arm_loss_c
-            odm_loss = odm_loss_l + odm_loss_c
-            loss = arm_loss + odm_loss
-            loss.backward()
-            optimizer.step()
-            arm_loc_loss += arm_loss_l.item()
-            arm_conf_loss += arm_loss_c.item()
-            odm_loc_loss += odm_loss_l.item()
-            odm_conf_loss += odm_loss_c.item()
-            t1 = time.time()
-            batch_time = t1 - t0
-            eta = int(batch_time * (max_iter - iteration))
-            print('Epoch:{}/{} || Epochiter: {}/{} || Iter: {}/{} || ARM_L Loss: {:.4f} ARM_C Loss: {:.4f} ODM_L Loss: {:.4f} ODM_C Loss: {:.4f} loss: {:.4f} || LR: {:.8f} || Batchtime: {:.4f} s || ETA: {}'.\
-                format(epoch, args.max_epoch, (iteration % epoch_size) + 1, epoch_size, iteration + 1, max_iter, arm_loss_l.item(), arm_loss_c.item(), odm_loss_l.item(), odm_loss_c.item(), loss.item(), lr, batch_time, str(datetime.timedelta(seconds=eta))))
-            # if iteration % 10 == 0:
-            #     print('Batch time: %.4f sec. ||' % (batch_time) + 'Eta: {}'.format(str(datetime.timedelta(seconds=eta))))
-            #     print('iter ' + repr(iteration) + ' || ARM_L Loss: %.4f ARM_C Loss: %.4f ODM_L Loss: %.4f ODM_C Loss: %.4f loss: %.4f ||' \
-            #     % (arm_loss_l.item(), arm_loss_c.item(), odm_loss_l.item(), odm_loss_c.item(), loss.item()), end=' ')
-
-            if args.visdom:
-                update_vis_plot(viz, iteration, arm_loss_l.item(), arm_loss_c.item(),
-                                iter_plot, epoch_plot, 'append')
+        if args.visdom:
+            update_vis_plot(viz, iteration, arm_loss_l.item(), arm_loss_c.item(),
+                            iter_plot, epoch_plot, 'append')
 
     torch.save(refinedet_net.state_dict(), args.save_folder + '/RefineDet{}_{}_final.pth'.format(args.input_size, args.dataset))
 
