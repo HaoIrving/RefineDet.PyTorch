@@ -149,6 +149,7 @@ class S2RN(nn.Module):
         # Layer between conv4_3 and prediction layer
         self.conv4_3_Norm = BasicRFB_a(512,512,stride = 1,scale=1.0)
         self.conv5_3_Norm = BasicRFB_a(512,512,stride = 1,scale=1.0)
+        # self.conv7_Norm   = BasicRFB_a(512,512,stride = 1,scale=1.0)
         self.conv4_3_L2Norm = L2Norm(512, 10)
         self.conv5_3_L2Norm = L2Norm(512, 8)
 
@@ -364,7 +365,8 @@ def add_tcb(cfg):
                                 nn.ReLU(inplace=True)
         ]
         if k != len(cfg) - 1:
-            feature_upsample_layers += [nn.ConvTranspose2d(256, 256, 2, 2)]
+            # feature_upsample_layers += [nn.ConvTranspose2d(256, 256, 4, 2)]
+            feature_upsample_layers += [nn.Upsample(scale_factor=2, mode='nearest')]
     return (feature_scale_layers, feature_upsample_layers, feature_pred_layers)
 
 base = {
