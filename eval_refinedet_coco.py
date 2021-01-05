@@ -233,6 +233,7 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
     stats = dataset.evaluate_detections(all_boxes, save_folder)
     AP_stats['ap'].append(stats[0])
     AP_stats['ap50'].append(stats[1])
+    AP_stats['ap75'].append(stats[2])
     AP_stats['ap_small'].append(stats[3])
     AP_stats['ap_medium'].append(stats[4])
     AP_stats['ap_large'].append(stats[5])
@@ -284,7 +285,7 @@ if __name__ == '__main__':
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
 
-    ap_stats = {"ap": [], "ap50": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
+    ap_stats = {"ap": [], "ap75": [], "ap50": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
 
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
@@ -309,11 +310,13 @@ if __name__ == '__main__':
     res_file = os.path.join(save_folder, 'ap_stats.json')
 
     max_idx = np.argmax(np.asarray(ap_stats['ap50']))
-    print('Best ap50 is {:.4f} at epoch {}'.format(ap_stats['ap50'][max_idx], ap_stats['epoch'][max_idx]))
-    print('crsp ap_s is {:.4f}, ap_m is {:.4f}, ap_l is {:.4f}'.format(ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
+    print('Best ap50: {:.4f} at epoch {}'.format(ap_stats['ap50'][max_idx], ap_stats['epoch'][max_idx]))
+    print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
+        format(ap_stats['ap'][max_idx], ap_stats['ap_50'][max_idx], ap_stats['ap_75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
     max_idx = np.argmax(np.asarray(ap_stats['ap']))
-    print('Best ap   is {:.4f} at epoch {}'.format(ap_stats['ap'][max_idx], ap_stats['epoch'][max_idx]))
-    print('crsp ap_s is {:.4f}, ap_m is {:.4f}, ap_l is {:.4f}'.format(ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
+    print('Best ap  : {:.4f} at epoch {}'.format(ap_stats['ap'][max_idx], ap_stats['epoch'][max_idx]))
+    print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
+        format(ap_stats['ap'][max_idx], ap_stats['ap_50'][max_idx], ap_stats['ap_75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
 
     import json
     print('Writing ap stats json to {}'.format(res_file))
@@ -325,23 +328,19 @@ if __name__ == '__main__':
     from plot_curve import plot_map, plot_loss
     fig_name = 'ap.png'
     fig_name = 'ap_last10.png'
-    metrics = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    legend  = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
+    metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
+    legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     plot_map(save_folder, ap_stats, metrics, legend, fig_name)
 
     txt_log = prefix + '/log.txt'
     plot_loss(save_folder, txt_log)
 """
 refinedet
-lr_5e4
-Best ap50 is 0.9714 at epoch 280    0.9719
-Best ap   is 0.5679 at epoch 230
-lr_1e3
-Best ap50 is 0.9755 at epoch 280
-crsp ap_s is 0.5465, ap_m is 0.6601, ap_l is 0.5671
-Best ap   is 0.5927 at epoch 300
-crsp ap_s is 0.5506, ap_m is 0.6624, ap_l is 0.5629
-
+lr_2e3
+Best ap50 is 0.9802 at epoch 240
+crsp ap_s is 0.5550, ap_m is 0.6715, ap_l is 0.6515
+Best ap   is 0.6090 at epoch 290
+crsp ap_s is 0.5645, ap_m is 0.6710, ap_l is 0.6569
 
 s2rn
 srn_1e3
