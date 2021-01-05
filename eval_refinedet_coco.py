@@ -286,7 +286,7 @@ if __name__ == '__main__':
     ap_stats = {"ap": [], "ap50": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
 
     start_epoch = 10; step = 10
-    # start_epoch = 200; step = 5
+    start_epoch = 200; step = 5
     ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
     for index, model_path in enumerate(ToBeTested):
@@ -321,7 +321,7 @@ if __name__ == '__main__':
     
     from plot_curve import plot_map, plot_loss
     fig_name = 'ap.png'
-    # fig_name = 'ap_last10.png'
+    fig_name = 'ap_last10.png'
     metrics = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     legend  = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     plot_map(save_folder, ap_stats, metrics, legend, fig_name)
@@ -344,4 +344,7 @@ Best ap   is 0.5881 at epoch 220
 lr_2e3
 Best ap50 is 0.9538 at epoch 270
 Best ap   is 0.5090 at epoch 300
+srn_anchor3_1e3
+Best ap50 is 0.9669 at epoch 250
+Best ap   is 0.5942 at epoch 230
 """
