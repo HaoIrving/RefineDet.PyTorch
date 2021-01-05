@@ -147,15 +147,6 @@ def train():
                 constant_init(m, 1)
             elif isinstance(m, nn.Linear):
                 normal_init(m, std=0.01)
-        def weights_init_rfb(m):
-            for key in m.state_dict():
-                if key.split('.')[-1] == 'weight':
-                    if 'conv' in key:
-                        init.kaiming_normal_(m.state_dict()[key], mode='fan_out')
-                    if 'bn' in key:
-                        m.state_dict()[key][...] = 1
-                elif key.split('.')[-1] == 'bias':
-                    m.state_dict()[key][...] = 0
 
         print('Initializing weights...')
         refinedet_net.vgg.apply(weights_init_relu)
@@ -164,14 +155,11 @@ def train():
         # refinedet_net.vgg.load_state_dict(vgg_weights)
         
         # initialize newly added layers' weights with xavier method
-        refinedet_net.conv4_3_Norm.apply(weights_init_relu)
-        refinedet_net.conv5_3_Norm.apply(weights_init_relu)
-        refinedet_net.extras.apply(weights_init_relu)
-        # refinedet_net.conv4_3_Norm.apply(weights_init_rfb)
-        # refinedet_net.conv5_3_Norm.apply(weights_init_rfb)
-        # refinedet_net.extras.apply(weights_init_rfb)
+        # refinedet_net.conv4_3_Norm.apply(weights_init_relu)
+        # refinedet_net.conv5_3_Norm.apply(weights_init_relu)
+        # refinedet_net.extras.apply(weights_init_relu)
         
-        # refinedet_net.extras.apply(weights_init)
+        refinedet_net.extras.apply(weights_init)
         
         refinedet_net.arm_loc.apply(weights_init)
         refinedet_net.arm_conf.apply(weights_init)
