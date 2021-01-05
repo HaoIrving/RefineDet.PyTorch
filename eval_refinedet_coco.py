@@ -256,8 +256,8 @@ if __name__ == '__main__':
     # args.show_image = True
     prefix = args.prefix
     # prefix = 'weights/lr_5e4'
-    # prefix = 'weights/lr_1e3'
-    prefix = 'weights/srn_1e3'
+    prefix = 'weights/lr_1e3'
+    # prefix = 'weights/srn_1e3'
     # prefix = 'weights/srn_2e3'
     # prefix = 'weights/srn_rtcb_2e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
@@ -277,8 +277,8 @@ if __name__ == '__main__':
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
-    # net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
-    net = build_s2rn('test', int(args.input_size), num_classes, detector=detect) 
+    net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
+    # net = build_s2rn('test', int(args.input_size), num_classes, detector=detect) 
     load_to_cpu = not args.cuda
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
@@ -341,8 +341,10 @@ Best ap   is 0.5945 at epoch 300
 
 s2rn
 lr_1e3
-Best ap50 is 0.9791 at epoch 210  ap_samll 0.5499442954926821 
+Best ap50 is 0.9791 at epoch 210
+crsp ap_s is 0.5499, ap_m is 0.6479, ap_l is 0.5426
 Best ap   is 0.5881 at epoch 220
+crsp ap_s is 0.5498, ap_m is 0.6535, ap_l is 0.5569
 lr_2e3
 Best ap50 is 0.9762 at epoch 245
 crsp ap_s is 0.5509, ap_m is 0.6693, ap_l is 0.6126
@@ -350,7 +352,9 @@ Best ap   is 0.5978 at epoch 245
 crsp ap_s is 0.5509, ap_m is 0.6693, ap_l is 0.6126
 
 srn_rtcb_2e3
-Best ap50 is 0.9773 at epoch 250  ap_samll 0.5603268559725083, 47 fps
+Best ap50 is 0.9773 at epoch 250
+crsp ap_s is 0.5603, ap_m is 0.6702, ap_l is 0.5998
 Best ap   is 0.6048 at epoch 250
+crsp ap_s is 0.5603, ap_m is 0.6702, ap_l is 0.5998
 
 """
