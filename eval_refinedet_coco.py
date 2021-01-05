@@ -255,8 +255,9 @@ if __name__ == '__main__':
     # args.retest = True
     # args.show_image = True
     prefix = args.prefix
-    prefix = 'weights/lr_5e4'
+    # prefix = 'weights/lr_5e4'
     # prefix = 'weights/lr_1e3'
+    prefix = 'weights/lr_2e3'
     # prefix = 'weights/srn_1e3'
     # prefix = 'weights/srn_2e3'
     # prefix = 'weights/srn_rtcb_2e3'
