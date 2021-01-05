@@ -257,8 +257,8 @@ if __name__ == '__main__':
     # args.show_image = True
     prefix = args.prefix
     # prefix = 'weights/lr_5e4'
-    # prefix = 'weights/lr_1e3'
-    prefix = 'weights/lr_2e3'
+    prefix = 'weights/lr_1e3'
+    # prefix = 'weights/lr_2e3'
     # prefix = 'weights/srn_1e3'
     # prefix = 'weights/srn_2e3'
     # prefix = 'weights/srn_rtcb_2e3'
@@ -337,10 +337,10 @@ if __name__ == '__main__':
 """
 refinedet
 lr_2e3
-Best ap50 is 0.9802 at epoch 240
-crsp ap_s is 0.5550, ap_m is 0.6715, ap_l is 0.6515
-Best ap   is 0.6090 at epoch 290
-crsp ap_s is 0.5645, ap_m is 0.6710, ap_l is 0.6569
+Best ap50: 0.9802 at epoch 240
+ap: 0.6022, ap50: 0.9802, ap75: 0.6750, ap_s: 0.5550, ap_m: 0.6715, ap_l: 0.6515
+Best ap  : 0.6090 at epoch 290
+ap: 0.6090, ap50: 0.9783, ap75: 0.6921, ap_s: 0.5645, ap_m: 0.6710, ap_l: 0.6569
 
 s2rn
 srn_1e3
