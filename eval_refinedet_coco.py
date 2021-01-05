@@ -285,7 +285,7 @@ if __name__ == '__main__':
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
 
-    ap_stats = {"ap": [], "ap75": [], "ap50": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
+    ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
 
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
@@ -312,11 +312,11 @@ if __name__ == '__main__':
     max_idx = np.argmax(np.asarray(ap_stats['ap50']))
     print('Best ap50: {:.4f} at epoch {}'.format(ap_stats['ap50'][max_idx], ap_stats['epoch'][max_idx]))
     print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
-        format(ap_stats['ap'][max_idx], ap_stats['ap_50'][max_idx], ap_stats['ap_75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
+        format(ap_stats['ap'][max_idx], ap_stats['ap50'][max_idx], ap_stats['ap75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
     max_idx = np.argmax(np.asarray(ap_stats['ap']))
     print('Best ap  : {:.4f} at epoch {}'.format(ap_stats['ap'][max_idx], ap_stats['epoch'][max_idx]))
     print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
-        format(ap_stats['ap'][max_idx], ap_stats['ap_50'][max_idx], ap_stats['ap_75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
+        format(ap_stats['ap'][max_idx], ap_stats['ap50'][max_idx], ap_stats['ap75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
 
     import json
     print('Writing ap stats json to {}'.format(res_file))
