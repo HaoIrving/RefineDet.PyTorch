@@ -343,21 +343,11 @@ Best ap  : 0.6090 at epoch 290
 ap: 0.6090, ap50: 0.9783, ap75: 0.6921, ap_s: 0.5645, ap_m: 0.6710, ap_l: 0.6569
 
 s2rn
-srn_1e3
-Best ap50 is 0.9791 at epoch 210
-crsp ap_s is 0.5499, ap_m is 0.6479, ap_l is 0.5426
-Best ap   is 0.5881 at epoch 220
-crsp ap_s is 0.5498, ap_m is 0.6535, ap_l is 0.5569
 srn_2e3
 Best ap50 is 0.9762 at epoch 245
 crsp ap_s is 0.5509, ap_m is 0.6693, ap_l is 0.6126
 Best ap   is 0.5978 at epoch 245
 crsp ap_s is 0.5509, ap_m is 0.6693, ap_l is 0.6126
 
-srn_rtcb_2e3
-Best ap50 is 0.9773 at epoch 250
-crsp ap_s is 0.5603, ap_m is 0.6702, ap_l is 0.5998
-Best ap   is 0.6048 at epoch 250
-crsp ap_s is 0.5603, ap_m is 0.6702, ap_l is 0.5998
 
 """
