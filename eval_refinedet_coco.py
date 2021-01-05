@@ -255,8 +255,8 @@ if __name__ == '__main__':
     # args.retest = True
     # args.show_image = True
     prefix = args.prefix
-    # prefix = 'weights/lr_5e4'
-    prefix = 'weights/lr_1e3'
+    prefix = 'weights/lr_5e4'
+    # prefix = 'weights/lr_1e3'
     # prefix = 'weights/srn_1e3'
     # prefix = 'weights/srn_2e3'
     # prefix = 'weights/srn_rtcb_2e3'
@@ -336,16 +336,19 @@ lr_5e4
 Best ap50 is 0.9714 at epoch 280    0.9719
 Best ap   is 0.5679 at epoch 230
 lr_1e3
-Best ap50 is 0.9761 at epoch 280    0.9755 with c nms
-Best ap   is 0.5945 at epoch 300
+Best ap50 is 0.9755 at epoch 280
+crsp ap_s is 0.5465, ap_m is 0.6601, ap_l is 0.5671
+Best ap   is 0.5927 at epoch 300
+crsp ap_s is 0.5506, ap_m is 0.6624, ap_l is 0.5629
+
 
 s2rn
-lr_1e3
+srn_1e3
 Best ap50 is 0.9791 at epoch 210
 crsp ap_s is 0.5499, ap_m is 0.6479, ap_l is 0.5426
 Best ap   is 0.5881 at epoch 220
 crsp ap_s is 0.5498, ap_m is 0.6535, ap_l is 0.5569
-lr_2e3
+srn_2e3
 Best ap50 is 0.9762 at epoch 245
 crsp ap_s is 0.5509, ap_m is 0.6693, ap_l is 0.6126
 Best ap   is 0.5978 at epoch 245
