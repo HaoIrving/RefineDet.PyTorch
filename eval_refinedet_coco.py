@@ -347,4 +347,7 @@ Best ap   is 0.5090 at epoch 300
 srn_anchor3_1e3
 Best ap50 is 0.9669 at epoch 250
 Best ap   is 0.5942 at epoch 230
+srn_rtcb_1e3
+Best ap50 is 0.9081 at epoch 250
+Best ap   is 0.4031 at epoch 230
 """
