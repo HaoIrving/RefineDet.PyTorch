@@ -258,8 +258,7 @@ if __name__ == '__main__':
     # prefix = 'weights/lr_5e4'
     # prefix = 'weights/lr_1e3'
     prefix = 'weights/srn_1e3'
-    # prefix = 'weights/srn_rtcb_1e3'
-    prefix = 'weights/srn_rtcb_2e3'
+    # prefix = 'weights/srn_rtcb_2e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_threshold = 0.49
@@ -309,8 +308,10 @@ if __name__ == '__main__':
 
     max_idx = np.argmax(np.asarray(ap_stats['ap50']))
     print('Best ap50 is {:.4f} at epoch {}'.format(ap_stats['ap50'][max_idx], ap_stats['epoch'][max_idx]))
+    print('crsp ap_s is {:.4f}, ap_m is {:.4f}, ap_l is {:.4f}'.format(ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
     max_idx = np.argmax(np.asarray(ap_stats['ap']))
     print('Best ap   is {:.4f} at epoch {}'.format(ap_stats['ap'][max_idx], ap_stats['epoch'][max_idx]))
+    print('crsp ap_s is {:.4f}, ap_m is {:.4f}, ap_l is {:.4f}'.format(ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
 
     import json
     print('Writing ap stats json to {}'.format(res_file))
@@ -339,7 +340,7 @@ Best ap   is 0.5945 at epoch 300
 
 s2rn
 lr_1e3
-Best ap50 is 0.9791 at epoch 210
+Best ap50 is 0.9791 at epoch 210  ap_samll 0.5499442954926821 
 Best ap   is 0.5881 at epoch 220
 lr_2e3
 Best ap50 is 0.9538 at epoch 270
@@ -347,7 +348,8 @@ Best ap   is 0.5090 at epoch 300
 srn_anchor3_1e3
 Best ap50 is 0.9669 at epoch 250
 Best ap   is 0.5942 at epoch 230
-srn_rtcb_1e3
-Best ap50 is 0.9081 at epoch 250
-Best ap   is 0.4031 at epoch 230
+srn_rtcb_2e3
+Best ap50 is 0.9773 at epoch 250  ap_samll 0.5603268559725083, 47 fps
+Best ap   is 0.6048 at epoch 250
+
 """
