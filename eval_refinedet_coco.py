@@ -261,7 +261,7 @@ if __name__ == '__main__':
     # prefix = 'weights/lr_2e3'
     # prefix = 'weights/srn_1e3'
     # prefix = 'weights/srn_2e3'
-    # prefix = 'weights/srn_rtcb_2e3'
+    prefix = 'weights/srn_3e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_threshold = 0.49
@@ -279,8 +279,8 @@ if __name__ == '__main__':
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
-    net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
-    # net = build_s2rn('test', int(args.input_size), num_classes, detector=detect) 
+    # net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
+    net = build_s2rn('test', int(args.input_size), num_classes, detector=detect) 
     load_to_cpu = not args.cuda
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
