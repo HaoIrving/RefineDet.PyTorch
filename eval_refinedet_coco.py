@@ -257,11 +257,15 @@ if __name__ == '__main__':
     # args.show_image = True
     prefix = args.prefix
     # prefix = 'weights/lr_5e4'
-    prefix = 'weights/lr_1e3'
+    # prefix = 'weights/lr_1e3'
     # prefix = 'weights/lr_2e3'
+    prefix = 'weights/lr_3e3'
+    prefix = 'weights/lr_35e4'
+    prefix = 'weights/lr_375e5'
     # prefix = 'weights/srn_1e3'
     # prefix = 'weights/srn_2e3'
-    prefix = 'weights/srn_3e3'
+    # prefix = 'weights/srn_3e3'
+    # prefix = 'weights/srn_4e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_threshold = 0.49
@@ -279,8 +283,8 @@ if __name__ == '__main__':
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
-    # net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
-    net = build_s2rn('test', int(args.input_size), num_classes, detector=detect) 
+    net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
+    # net = build_s2rn('test', int(args.input_size), num_classes, detector=detect) 
     load_to_cpu = not args.cuda
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
@@ -341,13 +345,36 @@ Best ap50: 0.9802 at epoch 240
 ap: 0.6022, ap50: 0.9802, ap75: 0.6750, ap_s: 0.5550, ap_m: 0.6715, ap_l: 0.6515
 Best ap  : 0.6090 at epoch 290
 ap: 0.6090, ap50: 0.9783, ap75: 0.6921, ap_s: 0.5645, ap_m: 0.6710, ap_l: 0.6569
-
+lr_3e3
+Best ap50: 0.9814 at epoch 240
+ap: 0.6055, ap50: 0.9814, ap75: 0.6981, ap_s: 0.5580, ap_m: 0.6792, ap_l: 0.6230
+Best ap  : 0.6094 at epoch 285
+ap: 0.6094, ap50: 0.9797, ap75: 0.7029, ap_s: 0.5587, ap_m: 0.6797, ap_l: 0.6458
+lr_35e4
+Best ap50: 0.9791 at epoch 260
+ap: 0.6113, ap50: 0.9791, ap75: 0.6933, ap_s: 0.5603, ap_m: 0.6809, ap_l: 0.6734
+Best ap  : 0.6191 at epoch 295
+ap: 0.6191, ap50: 0.9727, ap75: 0.7042, ap_s: 0.5728, ap_m: 0.6832, ap_l: 0.6674
+lr_375e5
+Best ap50: 0.9776 at epoch 230
+ap: 0.6053, ap50: 0.9776, ap75: 0.6783, ap_s: 0.5599, ap_m: 0.6696, ap_l: 0.6402
+Best ap  : 0.6122 at epoch 270
+ap: 0.6122, ap50: 0.9743, ap75: 0.6923, ap_s: 0.5666, ap_m: 0.6751, ap_l: 0.6785
 s2rn
 srn_2e3
 Best ap50 is 0.9762 at epoch 245
 crsp ap_s is 0.5509, ap_m is 0.6693, ap_l is 0.6126
 Best ap   is 0.5978 at epoch 245
 crsp ap_s is 0.5509, ap_m is 0.6693, ap_l is 0.6126
-
+srn_3e3
+Best ap50: 0.9791 at epoch 205
+ap: 0.5883, ap50: 0.9791, ap75: 0.6338, ap_s: 0.5306, ap_m: 0.6810, ap_l: 0.5896
+Best ap  : 0.6106 at epoch 270
+ap: 0.6106, ap50: 0.9730, ap75: 0.7050, ap_s: 0.5628, ap_m: 0.6875, ap_l: 0.6137
+srn_4e3
+Best ap50: 0.9792 at epoch 280
+ap: 0.6088, ap50: 0.9792, ap75: 0.7029, ap_s: 0.5639, ap_m: 0.6745, ap_l: 0.6397
+Best ap  : 0.6109 at epoch 255
+ap: 0.6109, ap50: 0.9750, ap75: 0.7135, ap_s: 0.5753, ap_m: 0.6664, ap_l: 0.6088
 
 """

@@ -7,4 +7,4 @@ python train_refinedet.py --num_workers 16 --lr 3e-3 --save_folder weights/lr_3e
 # python eval_refinedet_coco.py
 git pull origin master
 
-python train_refinedet.py --num_workers 16 --lr 3e-3 --save_folder weights/srn_3e3/
+python train_refinedet.py --num_workers 16 --lr 4e-3 --save_folder weights/srn_4e3/
