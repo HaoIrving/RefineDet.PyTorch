@@ -9,3 +9,4 @@ utils/nms/*.cpp
 
 eval
 data/SSDD
+data/tianchi_tile_coco

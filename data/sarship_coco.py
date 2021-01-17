@@ -64,7 +64,10 @@ class COCODetection(data.Dataset):
         #                 if coco_name in self._view_map
         #                 else coco_name)
         for (dataset, image_set) in image_sets:
-            coco_name = dataset + '_' + image_set  # 'sarship_train'
+            if not dataset:
+                coco_name = image_set
+            else:
+                coco_name = dataset + '_' + image_set  # 'sarship_train'
             data_name = image_set  # 'train'
             annofile = self._get_ann_file(coco_name)
             _COCO = COCO(annofile)

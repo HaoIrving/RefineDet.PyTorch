@@ -1,7 +1,7 @@
 import torch
 from torch.autograd import Function
 from ..box_utils import decode, nms, center_size
-from data import voc_refinedet as cfg
+from data import coco_refinedet as cfg
 
 
 class Detect_RefineDet(Function):
