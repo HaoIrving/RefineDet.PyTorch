@@ -3,8 +3,6 @@ from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss
 #from ssd import build_ssd
 from models.refinedet import build_refinedet
-# from models.s2rn import build_s2rn
-from models.s2rnv3 import build_s2rn
 
 import os
 import sys
