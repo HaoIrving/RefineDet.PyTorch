@@ -259,8 +259,8 @@ def train():
         t1 = time.time()
         batch_time = t1 - t0
         eta = int(batch_time * (max_iter - iteration))
-        print('Epoch:{}/{} || Epochiter: {}/{} || Iter: {}/{} || ARM_L Loss: {:.4f} ARM_C Loss: {:.4f} ODM_L Loss: {:.4f} ODM_C Loss: {:.4f} loss: {:.4f} || LR: {:.8f} || Batchtime: {:.4f} s || ETA: {}'.\
-            format(epoch, args.max_epoch, (iteration % epoch_size) + 1, epoch_size, iteration + 1, max_iter, arm_loss_l.item(), arm_loss_c.item(), odm_loss_l.item(), odm_loss_c.item(), loss.item(), lr, batch_time, str(datetime.timedelta(seconds=eta))))
+        print('Epoch:{}/{} || Epochiter: {}/{} || Iter: {}/{} || ARM_L Loss: {:.4f} ARM_C Loss: {:.4f} ODM_L Loss: {:.4f} ODM_C Loss: {:.4f} ATT Loss: {:.4f} loss: {:.4f} || LR: {:.8f} || Batchtime: {:.4f} s || ETA: {}'.\
+            format(epoch, args.max_epoch, (iteration % epoch_size) + 1, epoch_size, iteration + 1, max_iter, arm_loss_l.item(), arm_loss_c.item(), odm_loss_l.item(), odm_loss_c.item(), attention_loss.item(), loss.item(), lr, batch_time, str(datetime.timedelta(seconds=eta))))
         # if iteration % 10 == 0:
         #     print('Batch time: %.4f sec. ||' % (batch_time) + 'Eta: {}'.format(str(datetime.timedelta(seconds=eta))))
         #     print('iter ' + repr(iteration) + ' || ARM_L Loss: %.4f ARM_C Loss: %.4f ODM_L Loss: %.4f ODM_C Loss: %.4f loss: %.4f ||' \

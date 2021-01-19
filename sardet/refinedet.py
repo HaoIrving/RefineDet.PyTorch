@@ -5,7 +5,7 @@ import os
 
 from layers import *
 from data import voc_refinedet, coco_refinedet
-from weights_init import normal_init, bias_init_with_prob
+from .weights_init import normal_init, bias_init_with_prob
 
 # mmd
 # from mmcv.cnn import ConvModule, constant_init, kaiming_init

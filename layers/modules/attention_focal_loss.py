@@ -44,22 +44,13 @@ class AttentionFocalLoss(nn.Module):
     def __init__(self, num_classes, input_size, loss_cate, seg_num_grids):
         super(AttentionFocalLoss, self).__init__()
         self.num_classes = num_classes
+        self.cate_out_channels = num_classes - 1
         self.input_size = input_size
         self.loss_cate = build_loss(loss_cate)
         self.seg_num_grids = seg_num_grids
         # ((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048)) for stride from 4
         self.scale_ranges = ((1, 96), (48, 192), (96, 384), (192, 768))
         self.sigma = 0.2
-
-        self.use_gpu = use_gpu
-        self.threshold = overlap_thresh
-        self.background_label = bkg_label
-        self.encode_target = encode_target
-        self.use_prior_for_matching = prior_for_matching
-        self.do_neg_mining = neg_mining
-        self.negpos_ratio = neg_pos
-        self.neg_overlap = neg_overlap
-        self.variance = cfg['variance']
 
     def forward(self, cate_preds, targets):
         gt_bbox_list  = [targets[i][:, :-1] for i in range(len(targets))]
