@@ -6,6 +6,11 @@ from layers import *
 from data import voc_refinedet, coco_refinedet
 import os
 
+# mmd
+# from mmcv.cnn import ConvModule, constant_init, kaiming_init
+
+# solo
+from mmdet.models.utils import ConvModule
 
 class RefineDet(nn.Module):
     """Single Shot Multibox Architecture
@@ -54,6 +59,40 @@ class RefineDet(nn.Module):
         if phase == 'test':
             self.softmax = nn.Softmax(dim=-1)
             self.detect = detector
+        
+        self.stacked_convs = 3
+        self.in_channels = [512, 512, 1024, 512]
+        self.seg_feat_channels = 256
+        self._init_solo_layers()
+
+    def _init_solo_layers(self):
+        norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
+        head_num = len(self.in_channels)
+        self.cate_convs_low = nn.ModuleList()
+        for i in range(head_num):
+            self.cate_convs_low.append(
+                ConvModule(
+                    self.in_channels[i],
+                    self.seg_feat_channels,
+                    3,
+                    stride=1,
+                    padding=1,
+                    norm_cfg=norm_cfg,
+                    bias=norm_cfg is None))
+            )
+        self.cate_convs = nn.ModuleList()
+        for i in range(self.stacked_convs - 1):
+            self.cate_convs.append(
+                ConvModule(
+                    self.seg_feat_channels,
+                    self.seg_feat_channels,
+                    3,
+                    stride=1,
+                    padding=1,
+                    norm_cfg=norm_cfg,
+                    bias=norm_cfg is None))
+        self.solo_cate = nn.Conv2d(
+            self.seg_feat_channels, 1, 3, padding=1)
 
     def forward(self, x):
         """Applies network layers and ops on input image(s) x.
