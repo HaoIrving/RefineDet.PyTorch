@@ -13,7 +13,7 @@ from data import VOC_ROOT, VOCAnnotationTransform, VOCDetection, BaseTransform
 from data import VOC_CLASSES as labelmap
 import torch.utils.data as data
 
-from models.refinedet import build_refinedet
+from sardet.refinedet import build_refinedet
 
 import sys
 import os

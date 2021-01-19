@@ -48,6 +48,11 @@ def kaiming_init(module,
     if hasattr(module, 'bias') and module.bias is not None:
         nn.init.constant_(module.bias, bias)
 
+def bias_init_with_prob(prior_prob):
+    """ initialize conv/fc bias value according to giving probablity"""
+    bias_init = float(-np.log((1 - prior_prob) / prior_prob))
+    return bias_init
+
 """
 
     def init_weights(self, pretrained=None):

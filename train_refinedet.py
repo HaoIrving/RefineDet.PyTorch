@@ -1,8 +1,8 @@
 from data import *
 from utils.augmentations import SSDAugmentation
-from layers.modules import RefineDetMultiBoxLoss
-#from ssd import build_ssd
-from models.refinedet import build_refinedet
+from layers.modules import RefineDetMultiBoxLoss, AttentionFocalLoss
+from sardet.refinedet import build_refinedet
+
 
 import os
 import sys
@@ -19,7 +19,7 @@ from utils.logger import Logger
 import math
 import datetime
 
-from models.weights_init import kaiming_init, constant_init, normal_init
+from sardet.weights_init import kaiming_init, constant_init, normal_init
 
 def weights_init_relu(m):
     if isinstance(m, nn.Conv2d):
@@ -99,6 +99,7 @@ sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 args.input_size = str(512)
 args.max_epoch = 300
 
+seg_num_grids = [36, 24, 16, 12]
 negpos_ratio = 3
 initial_lr = args.lr
 
@@ -120,8 +121,7 @@ def train():
         #                         transform=SSDAugmentation(cfg['min_dim'],
         #                                                   MEANS))
         train_sets = [('sarship', 'train')]
-        dataset = COCODetection(COCOroot, train_sets, SSDAugmentation(cfg['min_dim'],
-                                                          MEANS))
+        dataset = COCODetection(COCOroot, train_sets, SSDAugmentation(cfg['min_dim'],MEANS))
     elif args.dataset == 'VOC':
         '''if args.dataset_root == COCO_ROOT:
             parser.error('Must specify dataset if specifying dataset_root')'''
@@ -134,7 +134,7 @@ def train():
     print(args)
 
     device = torch.device('cuda:0' if args.cuda else 'cpu')
-    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'])
+    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'], seg_num_grids)
     net = refinedet_net
     print(net)
 
@@ -148,6 +148,7 @@ def train():
         refinedet_net.load_weights(args.resume)
     else:
         print('Initializing weights...')
+        refinedet_net.init_solo_weights()
         refinedet_net.vgg.apply(weights_init_relu)
         refinedet_net.extras.apply(weights_init)
         refinedet_net.arm_loc.apply(weights_init)
@@ -165,6 +166,14 @@ def train():
                              False, args.cuda)
     odm_criterion = RefineDetMultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, negpos_ratio, 0.5,
                              False, args.cuda, use_ARM=True)
+    # attention criterion 
+    loss_cate = dict(
+                type='FocalLoss',
+                use_sigmoid=True,
+                gamma=2.0,
+                alpha=0.25,
+                loss_weight=1.0)
+    attention_criterion = AttentionFocalLoss(cfg['num_classes'], cfg['min_dim'], loss_cate, seg_num_grids)
 
     net.train()
     # loss counters
@@ -228,7 +237,8 @@ def train():
                         raise StopIteration
 
         # forward
-        out = net(images)
+        attention_maps, arm_loc, arm_conf, odm_loc, odm_conf, priors = net(images)
+        out = (arm_loc, arm_conf, odm_loc, odm_conf, priors)
 
         # backprop
         optimizer.zero_grad()
@@ -236,7 +246,10 @@ def train():
         odm_loss_l, odm_loss_c = odm_criterion(out, targets)
         arm_loss = arm_loss_l + arm_loss_c
         odm_loss = odm_loss_l + odm_loss_c
-        loss = arm_loss + odm_loss
+
+        attention_loss = attention_criterion(attention_maps, targets)
+        loss = arm_loss + odm_loss + attention_loss
+        
         loss.backward()
         optimizer.step()
         arm_loc_loss += arm_loss_l.item()

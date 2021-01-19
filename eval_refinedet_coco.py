@@ -12,8 +12,8 @@ from torch.autograd import Variable
 from data import COCOroot, COCODetection
 import torch.utils.data as data
 
-from models.refinedet import build_refinedet
-from models.s2rn import build_s2rn
+from sardet.refinedet import build_refinedet
+from sardet.s2rn import build_s2rn
 
 from layers import Detect_RefineDet
 from utils.nms_wrapper import nms

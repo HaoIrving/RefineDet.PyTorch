@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import os
 
 from layers import *
 from data import voc_refinedet, coco_refinedet
-import os
+from weights_init import normal_init, bias_init_with_prob
 
 # mmd
 # from mmcv.cnn import ConvModule, constant_init, kaiming_init
@@ -30,7 +31,7 @@ class RefineDet(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, size, base, extras, ARM, ODM, TCB, num_classes, detector=None):
+    def __init__(self, phase, size, base, extras, ARM, ODM, TCB, num_classes, seg_num_grids=[36, 24, 16, 12], detector=None):
         super(RefineDet, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
@@ -60,6 +61,8 @@ class RefineDet(nn.Module):
             self.softmax = nn.Softmax(dim=-1)
             self.detect = detector
         
+        # [40, 36, 24, 16, 12] from stride 4 to 64
+        self.seg_num_grids = seg_num_grids
         self.stacked_convs = 3
         self.in_channels = [512, 512, 1024, 512]
         self.seg_feat_channels = 256
@@ -92,7 +95,15 @@ class RefineDet(nn.Module):
                     norm_cfg=norm_cfg,
                     bias=norm_cfg is None))
         self.solo_cate = nn.Conv2d(
-            self.seg_feat_channels, 1, 3, padding=1)
+            self.seg_feat_channels, self.num_classes - 1, 3, padding=1)
+    
+    def init_solo_weights(self):
+        for m in self.cate_convs_low:
+            normal_init(m.conv, std=0.01)
+        for m in self.cate_convs:
+            normal_init(m.conv, std=0.01)
+        bias_cate = bias_init_with_prob(0.01)
+        normal_init(self.solo_cate, std=0.01, bias=bias_cate)
 
     def forward(self, x):
         """Applies network layers and ops on input image(s) x.
@@ -147,9 +158,23 @@ class RefineDet(nn.Module):
             arm_conf.append(c(x).permute(0, 2, 3, 1).contiguous())
         arm_loc = torch.cat([o.view(o.size(0), -1) for o in arm_loc], 1)
         arm_conf = torch.cat([o.view(o.size(0), -1) for o in arm_conf], 1)
-        #print([x.size() for x in sources])
+
+        # apply solo head
+        attention_sources = list()
+        attention_maps = list()
+        for (x, cate_conv_low, seg_num_grid) in zip(sources, self.cate_convs_low, self.seg_num_grids):
+            oh, ow = x.shape[-2:]
+            cate_feat = F.interpolate(x, size=seg_num_grid, mode='bilinear')
+            cate_feat = cate_conv_low(cate_feat)
+            for cate_layer in self.cate_convs:
+                cate_feat = cate_layer(cate_feat)
+            cate_feat = self.solo_cate(cate_feat)
+            attention_maps.append(cate_feat)
+
+            cate_pred = F.interpolate(cate_feat, size=(oh, ow), mode='bilinear')
+            attention_sources.append(cate_pred)
+
         # calculate TCB features
-        #print([x.size() for x in sources])
         p = None
         for k, v in enumerate(sources[::-1]):
             s = v
@@ -164,11 +189,16 @@ class RefineDet(nn.Module):
                 s = self.tcb2[(3-k)*3 + i](s)
             p = s
             tcb_source.append(s)
-        #print([x.size() for x in tcb_source])
         tcb_source.reverse()
 
+        # apply attention
+        tcb_source_new = list()
+        for attention, tcbx in zip(attention_sources, tcb_source):
+            feature = tcbx * torch.exp(attention)
+            tcb_source_new.append(feature)
+
         # apply ODM to source layers
-        for (x, l, c) in zip(tcb_source, self.odm_loc, self.odm_conf):
+        for (x, l, c) in zip(tcb_source_new, self.odm_loc, self.odm_conf):
             odm_loc.append(l(x).permute(0, 2, 3, 1).contiguous())
             odm_conf.append(c(x).permute(0, 2, 3, 1).contiguous())
         odm_loc = torch.cat([o.view(o.size(0), -1) for o in odm_loc], 1)
@@ -188,6 +218,7 @@ class RefineDet(nn.Module):
             )
         else:
             output = (
+                attention_maps,
                 arm_loc.view(arm_loc.size(0), -1, 4),
                 arm_conf.view(arm_conf.size(0), -1, 2),
                 odm_loc.view(odm_loc.size(0), -1, 4),
@@ -314,7 +345,7 @@ tcb = {
 }
 
 
-def build_refinedet(phase, size=320, num_classes=21, detector=None):
+def build_refinedet(phase, size=320, num_classes=21, seg_num_grids=[36, 24, 16, 12], detector=None):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
@@ -327,4 +358,4 @@ def build_refinedet(phase, size=320, num_classes=21, detector=None):
     ARM_ = arm_multibox(base_, extras_, mbox[str(size)])
     ODM_ = odm_multibox(base_, extras_, mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
-    return RefineDet(phase, size, base_, extras_, ARM_, ODM_, TCB_, num_classes, detector)
+    return RefineDet(phase, size, base_, extras_, ARM_, ODM_, TCB_, num_classes, seg_num_grids, detector)
