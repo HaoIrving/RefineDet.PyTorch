@@ -20,6 +20,7 @@ import math
 import datetime
 
 from models.weights_init import kaiming_init, constant_init, normal_init
+
 def weights_init_relu(m):
     if isinstance(m, nn.Conv2d):
         kaiming_init(m)
@@ -148,9 +149,7 @@ def train():
     else:
         print('Initializing weights...')
         refinedet_net.vgg.apply(weights_init_relu)
-
         refinedet_net.extras.apply(weights_init)
-        
         refinedet_net.arm_loc.apply(weights_init)
         refinedet_net.arm_conf.apply(weights_init)
         refinedet_net.odm_loc.apply(weights_init)
