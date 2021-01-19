@@ -150,7 +150,7 @@ class S2RN(nn.Module):
         self.conv4_3_Norm    = BasicRFB_a(512,512,stride = 1,scale=1.0)
         self.conv5_3_Norm    = BasicRFB_a(512,512,stride = 1,scale=1.0)
         self.conv7_Norm      = BasicRFB_a(1024,1024,stride = 1,scale=1.0)
-        # self.conv_extra_Norm = BasicRFB(512, 512,stride = 1,scale = 1.0, visual=2)
+        self.conv_extra_Norm = BasicRFB(512, 512,stride = 1,scale = 1.0, visual=2)
 
         self.conv4_3_L2Norm = L2Norm(512, 10)
         self.conv5_3_L2Norm = L2Norm(512, 8)
@@ -218,9 +218,9 @@ class S2RN(nn.Module):
         for k, v in enumerate(self.extras):
             x = F.relu(v(x), inplace=True)
             if k % 2 == 1:
-                # s = self.conv_extra_Norm(x)
-                # sources.append(s)
-                sources.append(x)
+                s = self.conv_extra_Norm(x)
+                sources.append(s)
+                # sources.append(x)
 
         # apply ARM and ODM to source layers
         for (x, l, c) in zip(sources, self.arm_loc, self.arm_conf):
@@ -318,23 +318,23 @@ def add_extras(cfg, size, i, batch_norm=False):
     layers = []
     in_channels = i
     flag = False
-    for k, v in enumerate(cfg):
-        if in_channels != 'S':
-            if v == 'S':
-                if in_channels == 256 and size == 512:
-                    layers += [BasicRFB(in_channels, cfg[k+1], stride=2, scale = 1.0, visual=1)]
-            else:
-                layers += [BasicRFB(in_channels, v, scale = 1.0, visual=2)]
-        in_channels = v
     # for k, v in enumerate(cfg):
     #     if in_channels != 'S':
     #         if v == 'S':
-    #             layers += [nn.Conv2d(in_channels, cfg[k + 1],
-    #                        kernel_size=(1, 3)[flag], stride=2, padding=1)]
+    #             if in_channels == 256 and size == 512:
+    #                 layers += [BasicRFB(in_channels, cfg[k+1], stride=2, scale = 1.0, visual=1)]
     #         else:
-    #             layers += [nn.Conv2d(in_channels, v, kernel_size=(1, 3)[flag])]
-    #         flag = not flag
+    #             layers += [BasicRFB(in_channels, v, scale = 1.0, visual=2)]
     #     in_channels = v
+    for k, v in enumerate(cfg):
+        if in_channels != 'S':
+            if v == 'S':
+                layers += [nn.Conv2d(in_channels, cfg[k + 1],
+                           kernel_size=(1, 3)[flag], stride=2, padding=1)]
+            else:
+                layers += [nn.Conv2d(in_channels, v, kernel_size=(1, 3)[flag])]
+            flag = not flag
+        in_channels = v
     return layers
 
 def arm_multibox(vgg, extra_layers, cfg):

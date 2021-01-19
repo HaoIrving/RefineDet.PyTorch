@@ -3,7 +3,8 @@ from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss
 #from ssd import build_ssd
 from models.refinedet import build_refinedet
-from models.s2rn import build_s2rn
+# from models.s2rn import build_s2rn
+from models.s2rnv3 import build_s2rn
 
 import os
 import sys
@@ -127,8 +128,8 @@ def train():
     print(args)
 
     device = torch.device('cuda:0' if args.cuda else 'cpu')
-    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'])
-    # refinedet_net = build_s2rn('train', cfg['min_dim'], cfg['num_classes'])
+    # refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'])
+    refinedet_net = build_s2rn('train', cfg['min_dim'], cfg['num_classes'])
     net = refinedet_net
     print(net)
 
@@ -159,9 +160,11 @@ def train():
         # initialize newly added layers' weights with xavier method
         # refinedet_net.conv4_3_Norm.apply(weights_init_relu)
         # refinedet_net.conv5_3_Norm.apply(weights_init_relu)
-        # refinedet_net.extras.apply(weights_init_relu)
+        # refinedet_net.conv7_Norm.apply(weights_init_relu)
+        # refinedet_net.conv_extra_Norm.apply(weights_init_relu)
+        refinedet_net.extras.apply(weights_init_relu)
         
-        refinedet_net.extras.apply(weights_init)
+        # refinedet_net.extras.apply(weights_init)
         
         refinedet_net.arm_loc.apply(weights_init)
         refinedet_net.arm_conf.apply(weights_init)
