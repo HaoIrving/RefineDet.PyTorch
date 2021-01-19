@@ -82,7 +82,6 @@ class RefineDet(nn.Module):
                     padding=1,
                     norm_cfg=norm_cfg,
                     bias=norm_cfg is None))
-            )
         self.cate_convs = nn.ModuleList()
         for i in range(self.stacked_convs - 1):
             self.cate_convs.append(
