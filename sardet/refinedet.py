@@ -174,7 +174,8 @@ class RefineDet(nn.Module):
         attention_maps = list()
         for (x, cate_conv_low, seg_num_grid) in zip(sources, self.cate_convs_low, self.seg_num_grids):
             oh, ow = x.shape[-2:]
-            cate_feat = F.interpolate(x, size=seg_num_grid, mode='bilinear')
+            if oh != seg_num_grid or ow != seg_num_grid:
+                cate_feat = F.interpolate(x, size=seg_num_grid, mode='bilinear')
             cate_feat = cate_conv_low(cate_feat)
             for cate_layer in self.cate_convs:
                 cate_feat = cate_layer(cate_feat)
