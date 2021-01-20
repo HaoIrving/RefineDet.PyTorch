@@ -275,7 +275,7 @@ if __name__ == '__main__':
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
     prefix = 'weights/tmp'
-    # prefix = 'weights/solo_4e3'
+    prefix = 'weights/solo_4e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
@@ -306,9 +306,9 @@ if __name__ == '__main__':
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_290.pth') 
+    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_290.pth') 
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)

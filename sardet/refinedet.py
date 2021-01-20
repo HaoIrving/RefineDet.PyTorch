@@ -182,26 +182,26 @@ class RefineDet(nn.Module):
             attention_maps.append(cate_feat)
 
             cate_pred = self.sigmoid(cate_feat)
-            print(cate_feat.max(), cate_feat.min())
-            print(cate_pred.max(), cate_pred.min())
+            # print(cate_feat.max(), cate_feat.min())
+            # print(cate_pred.max(), cate_pred.min())
             cate_pred = F.interpolate(cate_pred, size=(oh, ow), mode='bilinear')
             attention_sources.append(cate_pred)
 
-        if self.phase == 'test':
-            save_dir = './eval/attention_maps'
-            if not os.path.exists(save_dir):
-                os.mkdir(save_dir)
-            for index, level in enumerate(attention_sources):
-                i = self.cfg[str(self.size)]['steps'][index]
-                level = F.interpolate(level, scale_factor=float(i), mode='bilinear')
-                level = level.squeeze(0)
-                level = level.cpu().numpy().copy()
-                level = np.transpose(level, (1, 2, 0))
-                plt.imsave(os.path.join(save_dir, str(i) + '.png'), level[:,:,0])#, cmap='gray')
-                # plt.imshow(level[:,:,0], cmap='gray')
-                # plt.show()
-                # cv2.imshow('attention map', level[:,:,0])
-                # cv2.waitKey(0)
+        # if self.phase == 'test':
+        #     save_dir = './eval/attention_maps'
+        #     if not os.path.exists(save_dir):
+        #         os.mkdir(save_dir)
+        #     for index, level in enumerate(attention_sources):
+        #         i = self.cfg[str(self.size)]['steps'][index]
+        #         level = F.interpolate(level, scale_factor=float(i), mode='bilinear')
+        #         level = level.squeeze(0)
+        #         level = level.cpu().numpy().copy()
+        #         level = np.transpose(level, (1, 2, 0))
+        #         plt.imsave(os.path.join(save_dir, str(i) + '.png'), level[:,:,0])#, cmap='gray')
+        #         # plt.imshow(level[:,:,0], cmap='gray')
+        #         # plt.show()
+        #         # cv2.imshow('attention map', level[:,:,0])
+        #         # cv2.waitKey(0)
 
 
         # calculate TCB features
@@ -224,11 +224,11 @@ class RefineDet(nn.Module):
         # apply attention
         tcb_source_new = list()
         for attention, tcbx in zip(attention_sources, tcb_source):
-            print(attention.max(), attention.min())
-            print(torch.exp(attention).max(), torch.exp(attention).min())
-            print(tcbx.max(), tcbx.min())
+            # print(attention.max(), attention.min())
+            # print(torch.exp(attention).max(), torch.exp(attention).min())
+            # print(tcbx.max(), tcbx.min())
             feature = tcbx * torch.exp(attention)
-            print(feature.max(), feature.min())
+            # print(feature.max(), feature.min())
             tcb_source_new.append(feature)
 
         # apply ODM to source layers
