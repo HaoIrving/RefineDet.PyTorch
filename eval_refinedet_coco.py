@@ -13,7 +13,6 @@ from data import COCOroot, COCODetection
 import torch.utils.data as data
 
 from sardet.refinedet import build_refinedet
-from sardet.s2rn import build_s2rn
 
 from layers import Detect_RefineDet
 from utils.nms_wrapper import nms
@@ -256,23 +255,15 @@ if __name__ == '__main__':
     # args.retest = True
     # args.show_image = True
     prefix = args.prefix
-    # prefix = 'weights/lr_5e4'
-    # prefix = 'weights/lr_1e3'
-    # prefix = 'weights/lr_2e3'
-    prefix = 'weights/lr_3e3'
-    prefix = 'weights/lr_35e4'
-    prefix = 'weights/lr_375e5'
-    prefix = 'weights/lr_4e3'
-    # prefix = 'weights/srn_1e3'
-    # prefix = 'weights/srn_2e3'
-    # prefix = 'weights/srn_3e3'
-    prefix = 'weights/srn_4e3'
-    # prefix = 'weights/srnv2_4e3'
+    prefix = 'weights/solo_2e3'
+    prefix = 'weights/solo_4e3'
+
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_threshold = 0.49
     confidence_threshold = 0.01
     objectness_thre = 0.01
+    seg_num_grids = [36, 24, 16, 12]
 
     num_classes = 2 
     top_k = 1000
@@ -285,8 +276,7 @@ if __name__ == '__main__':
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
-    # net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
-    net = build_s2rn('test', int(args.input_size), num_classes, detector=detect) 
+    net = build_refinedet('test', int(args.input_size), num_classes, seg_num_grids, detector=detect) 
     load_to_cpu = not args.cuda
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
