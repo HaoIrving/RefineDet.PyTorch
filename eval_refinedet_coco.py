@@ -271,7 +271,7 @@ if __name__ == '__main__':
     # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
-    args.show_image = True
+    # args.show_image = True
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
     # prefix = 'weights/tmp'
@@ -309,7 +309,7 @@ if __name__ == '__main__':
     ToBeTested = []
     # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_10.pth') 
+    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_20.pth') 
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
