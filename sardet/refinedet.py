@@ -95,6 +95,7 @@ class RefineDet(nn.Module):
                     bias=norm_cfg is None))
         self.solo_cate = nn.Conv2d(
             self.seg_feat_channels, self.num_classes - 1, 3, padding=1)
+        self.sigmoid = nn.Sigmoid()
     
     def init_solo_weights(self):
         for m in self.cate_convs_low:
@@ -170,6 +171,7 @@ class RefineDet(nn.Module):
             cate_feat = self.solo_cate(cate_feat)
             attention_maps.append(cate_feat)
 
+            cate_feat = self.sigmoid(cate_feat)
             cate_pred = F.interpolate(cate_feat, size=(oh, ow), mode='bilinear')
             attention_sources.append(cate_pred)
 
