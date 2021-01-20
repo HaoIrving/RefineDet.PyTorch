@@ -184,7 +184,8 @@ class RefineDet(nn.Module):
             cate_pred = self.sigmoid(cate_feat)
             # print(cate_feat.max())
             # print(cate_pred.max())
-            cate_pred = F.interpolate(cate_pred, size=(oh, ow), mode='bilinear')
+            if cate_pred.shape[-1] != ow:
+                cate_pred = F.interpolate(cate_pred, size=(oh, ow), mode='bilinear')
             attention_sources.append(cate_pred)
 
         # if self.phase == 'test':
