@@ -210,25 +210,35 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
 
         # print('im_detect: {:d}/{:d} forward_nms_time{:.4f}s'.format(i + 1, num_images, _t['im_detect'].average_time))
         if args.show_image:
+            h, w, _ = img.shape
+            xr = net.size / w
+            yr = net.size / h
             img_gt = img.astype(np.uint8)
+            img_gt = cv2.resize(img_gt, (net.size, net.size),interpolation=cv2.INTER_LINEAR)
             for b in target:
-                text = "{}".format(int(b[4]))
+                b[0] *= xr
+                b[2] *= xr
+                b[1] *= yr
+                b[3] *= yr
                 b = list(map(int, b))
-                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 2)
-                cx = b[0]
-                cy = b[1] + 12
-                cv2.putText(img_gt, text, (cx, cy - 4),
-                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
+                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 1)
+                cx = b[2]
+                cy = b[1]
+                # text = "ship"
+                # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
             for b in all_boxes[1][i]:
+                b[0] *= xr
+                b[2] *= xr
+                b[1] *= yr
+                b[3] *= yr
                 if b[4] < args.vis_thres:
                     continue
-                text = "{:.4f}".format(b[4])
                 b = list(map(int, b))
-                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
-                cx = b[0]
+                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 1)
+                cx = b[2]
                 cy = b[1] + 12
-                cv2.putText(img_gt, text, (cx, cy),
-                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
+                # text = "{:.2f}".format(b[4])
+                # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
             cv2.imshow('res', img_gt)
             cv2.waitKey(0)
 
@@ -261,9 +271,10 @@ if __name__ == '__main__':
     # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
-    # args.show_image = True
+    args.show_image = True
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
+    prefix = 'weights/tmp'
     # prefix = 'weights/solo_4e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
@@ -271,7 +282,8 @@ if __name__ == '__main__':
     nms_threshold = 0.49
     confidence_threshold = 0.01
     objectness_thre = 0.01
-    seg_num_grids = [36, 24, 16, 12]
+    # 'feature_maps': [64, 32, 16, 8]
+    seg_num_grids = [32, 16, 8, 4]
 
     num_classes = 2 
     top_k = 1000
@@ -294,9 +306,9 @@ if __name__ == '__main__':
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_180.pth') 
+    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_290.pth') 
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)

@@ -99,7 +99,8 @@ sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 args.input_size = str(512)
 args.max_epoch = 300
 
-seg_num_grids = [36, 24, 16, 12]
+# 'feature_maps': [64, 32, 16, 8],
+seg_num_grids = [32, 16, 8, 4]
 negpos_ratio = 3
 initial_lr = args.lr
 

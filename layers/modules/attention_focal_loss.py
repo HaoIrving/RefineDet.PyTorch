@@ -50,7 +50,8 @@ class AttentionFocalLoss(nn.Module):
         self.seg_num_grids = seg_num_grids
         # ((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048)) for stride from 4
         # anchor [32, 64, 128, 256]
-        self.scale_ranges = ((1, 64), (32, 128), (64, 256), (128, 512))
+        # self.scale_ranges = ((1, 64), (32, 128), (64, 256), (128, 512))
+        self.scale_ranges = ((1, 96), (48, 192), (96, 384), (192, 768))
         self.sigma = 0.2
 
     def forward(self, cate_preds, targets):
