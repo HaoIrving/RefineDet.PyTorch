@@ -264,7 +264,7 @@ if __name__ == '__main__':
     # args.show_image = True
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
-    prefix = 'weights/solo_4e3'
+    # prefix = 'weights/solo_4e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
@@ -359,8 +359,8 @@ Best ap  : 0.6257 at epoch 290
 ap: 0.6257, ap50: 0.9751, ap75: 0.7296, ap_s: 0.5739, ap_m: 0.7000, ap_l: 0.6462
 
 solo 4e3 bs16
-Best ap50: 0.9743 at epoch 290
-ap: 0.6177, ap50: 0.9743, ap75: 0.7258, ap_s: 0.5746, ap_m: 0.6800, ap_l: 0.6524
+Best ap50: 0.9745 at epoch 295
+ap: 0.6137, ap50: 0.9745, ap75: 0.7282, ap_s: 0.5715, ap_m: 0.6787, ap_l: 0.6376
 Best ap  : 0.6177 at epoch 290
 ap: 0.6177, ap50: 0.9743, ap75: 0.7258, ap_s: 0.5746, ap_m: 0.6800, ap_l: 0.6524
 
