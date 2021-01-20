@@ -107,7 +107,7 @@ seg_num_grids = [36, 24, 16, 12]
 # anchor [32, 64, 128, 256]
 # scale_ranges = ((1, 96), (48, 192), (96, 384), (192, 768))
 scale_ranges = ((1, 64), (32, 128), (64, 256), (128, 512))
-att_loss_weight = 2
+att_loss_weight = 1
 
 negpos_ratio = 3
 initial_lr = args.lr

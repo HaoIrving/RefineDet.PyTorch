@@ -275,7 +275,7 @@ if __name__ == '__main__':
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
     # prefix = 'weights/tmp'
-    prefix = 'weights/solo_a3_2e3'
+    # prefix = 'weights/solo_a3_2e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
@@ -284,7 +284,7 @@ if __name__ == '__main__':
     objectness_thre = 0.01
     # 'feature_maps': [64, 32, 16, 8]
     seg_num_grids = [36, 24, 16, 12]
-    seg_num_grids = [32, 16, 16, 8]
+    # seg_num_grids = [32, 16, 16, 8]
 
     num_classes = 2 
     top_k = 1000
