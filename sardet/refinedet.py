@@ -182,8 +182,8 @@ class RefineDet(nn.Module):
             attention_maps.append(cate_feat)
 
             cate_pred = self.sigmoid(cate_feat)
-            # print(cate_feat.max(), cate_feat.min())
-            # print(cate_pred.max(), cate_pred.min())
+            # print(cate_feat.max())
+            # print(cate_pred.max())
             cate_pred = F.interpolate(cate_pred, size=(oh, ow), mode='bilinear')
             attention_sources.append(cate_pred)
 
@@ -198,11 +198,6 @@ class RefineDet(nn.Module):
         #         level = level.cpu().numpy().copy()
         #         level = np.transpose(level, (1, 2, 0))
         #         plt.imsave(os.path.join(save_dir, str(i) + '.png'), level[:,:,0])#, cmap='gray')
-        #         # plt.imshow(level[:,:,0], cmap='gray')
-        #         # plt.show()
-        #         # cv2.imshow('attention map', level[:,:,0])
-        #         # cv2.waitKey(0)
-
 
         # calculate TCB features
         p = None
@@ -224,10 +219,10 @@ class RefineDet(nn.Module):
         # apply attention
         tcb_source_new = list()
         for attention, tcbx in zip(attention_sources, tcb_source):
+            feature = tcbx * torch.exp(attention)
             # print(attention.max(), attention.min())
             # print(torch.exp(attention).max(), torch.exp(attention).min())
             # print(tcbx.max(), tcbx.min())
-            feature = tcbx * torch.exp(attention)
             # print(feature.max(), feature.min())
             tcb_source_new.append(feature)
 

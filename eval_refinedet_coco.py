@@ -275,7 +275,7 @@ if __name__ == '__main__':
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
     prefix = 'weights/tmp'
-    prefix = 'weights/solo_4e3'
+    # prefix = 'weights/solo_4e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
@@ -283,7 +283,8 @@ if __name__ == '__main__':
     confidence_threshold = 0.01
     objectness_thre = 0.01
     # 'feature_maps': [64, 32, 16, 8]
-    seg_num_grids = [32, 16, 8, 4]
+    seg_num_grids = [36, 24, 16, 12]
+    # seg_num_grids = [32, 16, 8, 4]
 
     num_classes = 2 
     top_k = 1000
@@ -306,9 +307,9 @@ if __name__ == '__main__':
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_290.pth') 
+    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_290.pth') 
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)

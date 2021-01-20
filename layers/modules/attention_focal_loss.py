@@ -41,21 +41,18 @@ class AttentionFocalLoss(nn.Module):
         See: https://arxiv.org/pdf/1512.02325.pdf for more details.
     """
 
-    def __init__(self, num_classes, input_size, loss_cate, seg_num_grids):
+    def __init__(self, num_classes, input_size, loss_cate, seg_num_grids, scale_ranges):
         super(AttentionFocalLoss, self).__init__()
         self.num_classes = num_classes
         self.cate_out_channels = num_classes - 1
         self.input_size = input_size
         self.loss_cate = build_loss(loss_cate)
         self.seg_num_grids = seg_num_grids
-        # ((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048)) for stride from 4
-        # anchor [32, 64, 128, 256]
-        # self.scale_ranges = ((1, 96), (48, 192), (96, 384), (192, 768))
-        self.scale_ranges = ((1, 64), (32, 128), (64, 256), (128, 512))
+        self.scale_ranges = scale_ranges
         self.sigma = 0.2
 
     def forward(self, cate_preds, targets):
-        gt_bbox_list  = [targets[i][:, :-1] for i in range(len(targets))]
+        gt_bbox_list  = [targets[i][:, :-1] * self.input_size for i in range(len(targets))]
         gt_label_list = [targets[i][:, -1] for i in range(len(targets))]
         cate_label_list = multi_apply(
             self.solo_target_single,
@@ -83,7 +80,6 @@ class AttentionFocalLoss(nn.Module):
 
         device = gt_labels_raw[0].device
 
-        # ins
         gt_areas = torch.sqrt((gt_bboxes_raw[:, 2] - gt_bboxes_raw[:, 0]) * (
                 gt_bboxes_raw[:, 3] - gt_bboxes_raw[:, 1]))
 
@@ -104,8 +100,8 @@ class AttentionFocalLoss(nn.Module):
             half_hs = 0.5 * (gt_bboxes[:, 3] - gt_bboxes[:, 1]) * self.sigma
 
             # mass center
-            center_ws = gt_bboxes[:, 2] + gt_bboxes[:, 0]
-            center_hs = gt_bboxes[:, 3] + gt_bboxes[:, 1]
+            center_ws = (gt_bboxes[:, 2] + gt_bboxes[:, 0]) / 2
+            center_hs = (gt_bboxes[:, 3] + gt_bboxes[:, 1]) / 2
 
             for gt_label, half_h, half_w, center_h, center_w in zip(gt_labels, half_hs, half_ws, center_hs, center_ws):
                 coord_w = int((center_w / self.input_size) // (1. / num_grid))

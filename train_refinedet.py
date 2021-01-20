@@ -100,7 +100,14 @@ args.input_size = str(512)
 args.max_epoch = 300
 
 # 'feature_maps': [64, 32, 16, 8],
-seg_num_grids = [32, 16, 8, 4]
+seg_num_grids = [36, 24, 16, 12]
+# seg_num_grids = [32, 16, 8, 4]
+
+# ((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048)) for stride from 4
+# anchor [32, 64, 128, 256]
+# scale_ranges = ((1, 96), (48, 192), (96, 384), (192, 768))
+scale_ranges = ((1, 64), (32, 128), (64, 256), (128, 512))
+
 negpos_ratio = 3
 initial_lr = args.lr
 
@@ -174,7 +181,7 @@ def train():
                 gamma=2.0,
                 alpha=0.25,
                 loss_weight=1.0)
-    attention_criterion = AttentionFocalLoss(cfg['num_classes'], cfg['min_dim'], loss_cate, seg_num_grids)
+    attention_criterion = AttentionFocalLoss(cfg['num_classes'], cfg['min_dim'], loss_cate, seg_num_grids, scale_ranges)
 
     net.train()
     # loss counters
