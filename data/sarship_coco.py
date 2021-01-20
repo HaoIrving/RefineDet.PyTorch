@@ -214,6 +214,7 @@ class COCODetection(data.Dataset):
         '''
         img_id = self.ids[index]
         img = cv2.imread(img_id, -1)
+        target = self.annotations[index]
 
         # pixel_max = img.max()
         # # # pixel_min = img.min()
@@ -224,7 +225,7 @@ class COCODetection(data.Dataset):
         # img = img[:, :, np.newaxis]
         # img = np.concatenate((img, img, img), axis=2)
 
-        return img
+        return img, target
 
 
     def pull_tensor(self, index):

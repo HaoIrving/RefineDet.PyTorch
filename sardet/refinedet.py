@@ -2,9 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import os
+import matplotlib.pyplot as plt
+import numpy as np
+import cv2
 
 from layers import *
-from data import voc_refinedet, coco_refinedet
+from data import voc_refinedet, coco_refinedet, MEANS
 from .weights_init import normal_init, bias_init_with_prob
 
 # mmd
@@ -12,6 +15,13 @@ from .weights_init import normal_init, bias_init_with_prob
 
 # solo
 from mmdet.models.utils import ConvModule
+
+def unnormalize(tensor):
+    mean = MEANS
+    std = [1, 1, 1]
+    for t, m, s in zip(tensor, mean, std):
+        t.mul_(s).add_(m)
+    return tensor
 
 class RefineDet(nn.Module):
     """Single Shot Multibox Architecture
@@ -174,6 +184,24 @@ class RefineDet(nn.Module):
             cate_feat = self.sigmoid(cate_feat)
             cate_pred = F.interpolate(cate_feat, size=(oh, ow), mode='bilinear')
             attention_sources.append(cate_pred)
+
+        if self.phase == 'test':
+            save_dir = './eval/attention_maps'
+            if not os.path.exists(save_dir):
+                os.mkdir(save_dir)
+            for index, level in enumerate(attention_sources):
+                i = self.cfg[str(self.size)]['steps'][index]
+                level = F.interpolate(level, scale_factor=float(i), mode='bilinear')
+                level = level.squeeze(0)
+                # level = unnormalize(255 * level).cpu().numpy().copy()
+                level = level.cpu().numpy().copy()
+                level = np.transpose(level, (1, 2, 0))
+                plt.imsave(os.path.join(save_dir, str(i) + '.png'), level[:,:,0], cmap='gray')
+                # plt.imshow(level[:,:,0], cmap='gray')
+                # plt.show()
+                # cv2.imshow('attention map', level[:,:,0])
+                # cv2.waitKey(0)
+
 
         # calculate TCB features
         p = None

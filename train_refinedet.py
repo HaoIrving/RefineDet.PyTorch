@@ -121,7 +121,7 @@ def train():
         #                         transform=SSDAugmentation(cfg['min_dim'],
         #                                                   MEANS))
         train_sets = [('sarship', 'train')]
-        dataset = COCODetection(COCOroot, train_sets, SSDAugmentation(cfg['min_dim'],MEANS))
+        dataset = COCODetection(COCOroot, train_sets, SSDAugmentation(cfg['min_dim'], MEANS))
     elif args.dataset == 'VOC':
         '''if args.dataset_root == COCO_ROOT:
             parser.error('Must specify dataset if specifying dataset_root')'''

@@ -170,7 +170,7 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
         return
 
     for i in range(num_images):
-        img = dataset.pull_image(i)
+        img, target = dataset.pull_image(i)
         scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
         x = transform(img).unsqueeze(0)
         x = x.to(device)
@@ -211,6 +211,14 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
         # print('im_detect: {:d}/{:d} forward_nms_time{:.4f}s'.format(i + 1, num_images, _t['im_detect'].average_time))
         if args.show_image:
             img_gt = img.astype(np.uint8)
+            for b in target:
+                text = "{}".format(int(b[4]))
+                b = list(map(int, b))
+                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 2)
+                cx = b[0]
+                cy = b[1] + 12
+                cv2.putText(img_gt, text, (cx, cy - 4),
+                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
             for b in all_boxes[1][i]:
                 if b[4] < args.vis_thres:
                     continue
@@ -256,7 +264,7 @@ if __name__ == '__main__':
     # args.show_image = True
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
-    prefix = 'weights/solo_4e3'
+    # prefix = 'weights/solo_4e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
@@ -285,8 +293,10 @@ if __name__ == '__main__':
 
     start_epoch = 10; step = 10
     # start_epoch = 200; step = 5
-    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    ToBeTested = []
+    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_180.pth') 
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
@@ -347,33 +357,12 @@ Best ap50: 0.9826 at epoch 245
 ap: 0.6111, ap50: 0.9826, ap75: 0.6637, ap_s: 0.5572, ap_m: 0.6933, ap_l: 0.6133
 Best ap  : 0.6257 at epoch 290
 ap: 0.6257, ap50: 0.9751, ap75: 0.7296, ap_s: 0.5739, ap_m: 0.7000, ap_l: 0.6462
-s2rn
-srn_2e3
-Best ap50 is 0.9762 at epoch 245
-crsp ap_s is 0.5509, ap_m is 0.6693, ap_l is 0.6126
-Best ap   is 0.5978 at epoch 245
-crsp ap_s is 0.5509, ap_m is 0.6693, ap_l is 0.6126
-srn_3e3
-Best ap50: 0.9791 at epoch 205
-ap: 0.5883, ap50: 0.9791, ap75: 0.6338, ap_s: 0.5306, ap_m: 0.6810, ap_l: 0.5896
-Best ap  : 0.6106 at epoch 270
-ap: 0.6106, ap50: 0.9730, ap75: 0.7050, ap_s: 0.5628, ap_m: 0.6875, ap_l: 0.6137
-srn_4e3 bs 32
-Best ap50: 0.9792 at epoch 280
-ap: 0.6088, ap50: 0.9792, ap75: 0.7029, ap_s: 0.5639, ap_m: 0.6745, ap_l: 0.6397
-Best ap  : 0.6109 at epoch 255
-ap: 0.6109, ap50: 0.9750, ap75: 0.7135, ap_s: 0.5753, ap_m: 0.6664, ap_l: 0.6088
-srn_4e3 bs 16 (conv7_norm)
-Best ap50: 0.9744 at epoch 255
-ap: 0.6080, ap50: 0.9744, ap75: 0.7123, ap_s: 0.5683, ap_m: 0.6718, ap_l: 0.6312
-Best ap  : 0.6104 at epoch 290
-ap: 0.6104, ap50: 0.9725, ap75: 0.7000, ap_s: 0.5683, ap_m: 0.6773, ap_l: 0.6281
 
-s2rn v2 
-srn 4e3 bs 16
-Best ap50: 0.9739 at epoch 230
-ap: 0.5960, ap50: 0.9739, ap75: 0.6751, ap_s: 0.5506, ap_m: 0.6634, ap_l: 0.6209
-Best ap  : 0.6051 at epoch 300
-ap: 0.6051, ap50: 0.9731, ap75: 0.6803, ap_s: 0.5664, ap_m: 0.6741, ap_l: 0.5744
+solo 4e3 bs16
+Best ap50: 0.9743 at epoch 290
+ap: 0.6177, ap50: 0.9743, ap75: 0.7258, ap_s: 0.5746, ap_m: 0.6800, ap_l: 0.6524
+Best ap  : 0.6177 at epoch 290
+ap: 0.6177, ap50: 0.9743, ap75: 0.7258, ap_s: 0.5746, ap_m: 0.6800, ap_l: 0.6524
+
 
 """
