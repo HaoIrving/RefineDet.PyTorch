@@ -226,7 +226,8 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
                 cy = b[1]
                 # text = "ship"
                 # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
-            for b in all_boxes[1][i]:
+            boxes = all_boxes[1][i][:]
+            for b in boxes:
                 b[0] *= xr
                 b[2] *= xr
                 b[1] *= yr
@@ -275,7 +276,7 @@ if __name__ == '__main__':
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
     # prefix = 'weights/tmp'
-    prefix = 'weights/solo_a2_2e3'
+    prefix = 'weights/solo_g8_2e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
@@ -284,7 +285,7 @@ if __name__ == '__main__':
     objectness_thre = 0.01
     # 'feature_maps': [64, 32, 16, 8]
     seg_num_grids = [36, 24, 16, 12]
-    # seg_num_grids = [32, 16, 16, 8]
+    seg_num_grids = [32, 16, 16, 8]
 
     num_classes = 2 
     top_k = 1000
@@ -307,9 +308,9 @@ if __name__ == '__main__':
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_10.pth') 
+    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_140.pth') 
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
@@ -371,11 +372,11 @@ ap: 0.6111, ap50: 0.9826, ap75: 0.6637, ap_s: 0.5572, ap_m: 0.6933, ap_l: 0.6133
 Best ap  : 0.6257 at epoch 290
 ap: 0.6257, ap50: 0.9751, ap75: 0.7296, ap_s: 0.5739, ap_m: 0.7000, ap_l: 0.6462
 
-solo 4e3 bs16
-Best ap50: 0.9745 at epoch 295
-ap: 0.6137, ap50: 0.9745, ap75: 0.7282, ap_s: 0.5715, ap_m: 0.6787, ap_l: 0.6376
-Best ap  : 0.6177 at epoch 290
-ap: 0.6177, ap50: 0.9743, ap75: 0.7258, ap_s: 0.5746, ap_m: 0.6800, ap_l: 0.6524
+solo 2e3 bs16
+Best ap50: 0.9826 at epoch 265
+ap: 0.6140, ap50: 0.9826, ap75: 0.7032, ap_s: 0.5641, ap_m: 0.6851, ap_l: 0.6542
+Best ap  : 0.6212 at epoch 295
+ap: 0.6212, ap50: 0.9809, ap75: 0.7185, ap_s: 0.5688, ap_m: 0.6948, ap_l: 0.6764
 
 
 """
