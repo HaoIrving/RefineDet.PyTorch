@@ -277,7 +277,7 @@ if __name__ == '__main__':
     prefix = 'weights/solo_2e3'
     # prefix = 'weights/tmp'
     prefix = 'weights/solo_g8_2e3'
-    prefix = 'weights/solo_b32_2e3'
+    # prefix = 'weights/solo_b32_2e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
@@ -295,7 +295,9 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
@@ -311,7 +313,7 @@ if __name__ == '__main__':
     ToBeTested = []
     ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_140.pth') 
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_295.pth') 
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
@@ -383,5 +385,20 @@ Best ap50: 0.9811 at epoch 255
 ap: 0.6093, ap50: 0.9811, ap75: 0.6968, ap_s: 0.5779, ap_m: 0.6619, ap_l: 0.6132
 Best ap  : 0.6181 at epoch 295
 ap: 0.6181, ap50: 0.9757, ap75: 0.7067, ap_s: 0.5780, ap_m: 0.6801, ap_l: 0.6418
+solo 2e3 bs32 g12
+Best ap50: 0.9774 at epoch 205
+ap: 0.5887, ap50: 0.9774, ap75: 0.6448, ap_s: 0.5286, ap_m: 0.6708, ap_l: 0.6398
+Best ap  : 0.5967 at epoch 245
+ap: 0.5967, ap50: 0.9739, ap75: 0.6700, ap_s: 0.5463, ap_m: 0.6706, ap_l: 0.6326
 
+inshore 
+Best ap50: 0.9449 at epoch 280
+ap: 0.5335, ap50: 0.9449, ap75: 0.5323, ap_s: 0.4896, ap_m: 0.5979, ap_l: 0.5640
+Best ap  : 0.5391 at epoch 300
+ap: 0.5391, ap50: 0.9413, ap75: 0.5515, ap_s: 0.4916, ap_m: 0.6108, ap_l: 0.5388
+offshore 
+Best ap50: 0.9895 at epoch 200
+ap: 0.5956, ap50: 0.9895, ap75: 0.6853, ap_s: 0.5501, ap_m: 0.6572, ap_l: 0.7790
+Best ap  : 0.6562 at epoch 280
+ap: 0.6562, ap50: 0.9893, ap75: 0.7934, ap_s: 0.6000, ap_m: 0.7357, ap_l: 0.8126
 """
