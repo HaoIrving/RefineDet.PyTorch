@@ -296,8 +296,8 @@ if __name__ == '__main__':
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
     # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
@@ -355,8 +355,8 @@ if __name__ == '__main__':
     legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     plot_map(save_folder, ap_stats, metrics, legend, fig_name)
 
-    txt_log = prefix + '/log.txt'
-    plot_loss(save_folder, txt_log)
+    # txt_log = prefix + '/log.txt'
+    # plot_loss(save_folder, txt_log)
 """
 refinedet
 lr_2e3
