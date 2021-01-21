@@ -277,6 +277,7 @@ if __name__ == '__main__':
     prefix = 'weights/solo_2e3'
     # prefix = 'weights/tmp'
     prefix = 'weights/solo_g8_2e3'
+    prefix = 'weights/solo_b32_2e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
@@ -285,7 +286,7 @@ if __name__ == '__main__':
     objectness_thre = 0.01
     # 'feature_maps': [64, 32, 16, 8]
     seg_num_grids = [36, 24, 16, 12]
-    seg_num_grids = [32, 16, 16, 8]
+    # seg_num_grids = [32, 16, 16, 8]
 
     num_classes = 2 
     top_k = 1000
@@ -372,11 +373,15 @@ ap: 0.6111, ap50: 0.9826, ap75: 0.6637, ap_s: 0.5572, ap_m: 0.6933, ap_l: 0.6133
 Best ap  : 0.6257 at epoch 290
 ap: 0.6257, ap50: 0.9751, ap75: 0.7296, ap_s: 0.5739, ap_m: 0.7000, ap_l: 0.6462
 
-solo 2e3 bs16
+solo 2e3 bs16 g12
 Best ap50: 0.9826 at epoch 265
 ap: 0.6140, ap50: 0.9826, ap75: 0.7032, ap_s: 0.5641, ap_m: 0.6851, ap_l: 0.6542
 Best ap  : 0.6212 at epoch 295
 ap: 0.6212, ap50: 0.9809, ap75: 0.7185, ap_s: 0.5688, ap_m: 0.6948, ap_l: 0.6764
-
+solo 2e3 bs16 g8
+Best ap50: 0.9811 at epoch 255
+ap: 0.6093, ap50: 0.9811, ap75: 0.6968, ap_s: 0.5779, ap_m: 0.6619, ap_l: 0.6132
+Best ap  : 0.6181 at epoch 295
+ap: 0.6181, ap50: 0.9757, ap75: 0.7067, ap_s: 0.5780, ap_m: 0.6801, ap_l: 0.6418
 
 """
