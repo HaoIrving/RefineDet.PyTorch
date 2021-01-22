@@ -110,7 +110,7 @@ def match(threshold, truths, priors, variances, labels, loc_t, conf_t, idx):
     loc_t[idx] = loc    # [num_priors,4] encoded offsets to learn
     conf_t[idx] = conf  # [num_priors] top class label for each prior
 
-def refine_match(threshold, truths, priors, variances, labels, loc_t, conf_t, idx, arm_loc=None):
+def refine_match(threshold, truths, priors, variances, labels, loc_t, conf_t, best_truth_idx_t, idx, arm_loc=None):
     """Match each arm bbox with the ground truth box of the highest jaccard
     overlap, encode the bounding boxes, then return the matched indices
     corresponding to both confidence and location preds.
@@ -158,6 +158,8 @@ def refine_match(threshold, truths, priors, variances, labels, loc_t, conf_t, id
     conf[best_truth_overlap < threshold] = 0  # label as background
     loc_t[idx] = loc    # [num_priors,4] encoded offsets to learn
     conf_t[idx] = conf  # [num_priors] top class label for each prior
+    best_truth_idx[best_truth_overlap < threshold] = -1
+    best_truth_idx_t[idx] = best_truth_idx
 
 def encode(matched, priors, variances):
     """Encode the variances from the priorbox layers into the ground truth boxes

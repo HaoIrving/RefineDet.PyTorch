@@ -72,6 +72,7 @@ class RefineDetMultiBoxLoss(nn.Module):
         # match priors (default boxes) and ground truth boxes
         loc_t = torch.Tensor(num, num_priors, 4)
         conf_t = torch.LongTensor(num, num_priors)
+        best_truth_idx_t = torch.Tensor(num, num_priors)
         for idx in range(num):
             truths = targets[idx][:, :-1].data
             labels = targets[idx][:, -1].data
@@ -80,10 +81,10 @@ class RefineDetMultiBoxLoss(nn.Module):
             defaults = priors.data
             if self.use_ARM:
                 refine_match(self.threshold, truths, defaults, self.variance, labels,
-                    loc_t, conf_t, idx, arm_loc_data[idx].data)
+                    loc_t, conf_t, best_truth_idx_t, idx, arm_loc_data[idx].data)
             else:
                 refine_match(self.threshold, truths, defaults, self.variance, labels,
-                    loc_t, conf_t, idx)
+                    loc_t, conf_t, best_truth_idx_t, idx)
         if self.use_gpu:
             loc_t = loc_t.cuda()
             conf_t = conf_t.cuda()
@@ -136,4 +137,4 @@ class RefineDetMultiBoxLoss(nn.Module):
             return torch.zeros(1), torch.zeros(1)
         loss_l /= N
         loss_c /= N
-        return loss_l, loss_c
+        return loss_l, loss_c, best_truth_idx_t

@@ -176,13 +176,19 @@ def train():
     odm_criterion = RefineDetMultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, negpos_ratio, 0.5,
                              False, args.cuda, use_ARM=True)
     # attention criterion 
+    anchor_num = 1 * 3
+    anchor_mark = []
+    for i in range(len(cfg['feature_maps'])):
+        index = cfg['feature_maps'][i] ** 2 * anchor_num 
+        anchor_mark.append(index)
+    anchor_mark = np.array(anchor_mark).cumsum() - 1
     loss_cate = dict(
                 type='FocalLoss',
                 use_sigmoid=True,
                 gamma=2.0,
                 alpha=0.25,
                 loss_weight=1.0)
-    attention_criterion = AttentionFocalLoss(cfg['num_classes'], cfg['min_dim'], loss_cate, seg_num_grids, scale_ranges)
+    attention_criterion = AttentionFocalLoss(cfg['num_classes'], cfg['min_dim'], anchor_mark, loss_cate, seg_num_grids, scale_ranges)
 
     net.train()
     # loss counters
@@ -251,12 +257,12 @@ def train():
 
         # backprop
         optimizer.zero_grad()
-        arm_loss_l, arm_loss_c = arm_criterion(out, targets)
-        odm_loss_l, odm_loss_c = odm_criterion(out, targets)
+        arm_loss_l, arm_loss_c, best_truth_idx_t = arm_criterion(out, targets)
+        odm_loss_l, odm_loss_c, _ = odm_criterion(out, targets)
         arm_loss = arm_loss_l + arm_loss_c
         odm_loss = odm_loss_l + odm_loss_c
 
-        attention_loss = attention_criterion(attention_maps, targets)
+        attention_loss = attention_criterion(attention_maps, targets, best_truth_idx_t)
         loss = arm_loss + odm_loss + attention_loss * att_loss_weight
         
         loss.backward()
