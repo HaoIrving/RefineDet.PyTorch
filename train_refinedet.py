@@ -101,6 +101,7 @@ args.max_epoch = 300
 
 # 'feature_maps': [64, 32, 16, 8],
 seg_num_grids = [36, 24, 16, 12]
+seg_num_grids = [64, 32, 16, 8]
 # seg_num_grids = [36, 24, 16, 8]
 
 # ((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048)) for stride from 4
