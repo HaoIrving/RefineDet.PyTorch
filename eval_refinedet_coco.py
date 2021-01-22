@@ -272,9 +272,10 @@ if __name__ == '__main__':
     # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
-    args.show_image = True
+    # args.show_image = True
     prefix = args.prefix
-    prefix = 'weights/solo_2e3'
+    prefix = 'weights/solo_2e3' # no consistent sampling and solo grid
+    prefix = 'weights/solo_fcos_2e3'
     # prefix = 'weights/tmp'
     # prefix = 'weights/solo_g8_2e3'
     # prefix = 'weights/solo_b32_2e3'
@@ -285,8 +286,7 @@ if __name__ == '__main__':
     confidence_threshold = 0.01
     objectness_thre = 0.01
     # 'feature_maps': [64, 32, 16, 8]
-    seg_num_grids = [36, 24, 16, 12]
-    # seg_num_grids = [32, 16, 16, 8]
+    seg_num_grids = [64, 32, 16, 8]
 
     num_classes = 2 
     top_k = 1000
@@ -311,9 +311,9 @@ if __name__ == '__main__':
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
+    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
