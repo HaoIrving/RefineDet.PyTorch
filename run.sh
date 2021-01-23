@@ -7,13 +7,13 @@
 # python eval_refinedet_coco.py
 # git pull origin master
 
-git fetch --tags
+# git fetch --tags
 
 python train_refinedet.py --num_workers 12 --lr 2e-3 --save_folder weights/solo_cs_fcos_2e3/ --batch_size 16
+python eval_refinedet_coco.py
+# CUDA_VISIBLE_DEVICES=2,3 python train_refinedet.py --num_workers 12 --lr 2e-3 --save_folder weights/solo_cs_2e3/ --ngpu 2 --batch_size 16
+# CUDA_VISIBLE_DEVICES=2,3 python train_refinedet.py --num_workers 12 --lr 2e-3 --save_folder weights/solo_2e3/ --ngpu 2  --batch_size 16
+# CUDA_VISIBLE_DEVICES=0,1,2,3 python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/srn_4e3/  #--ngpu 2 --batch_size 16
+# CUDA_VISIBLE_DEVICES=0,1,2,3 python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/srnv2_4e3/ # --ngpu 2 --batch_size 16
 
-CUDA_VISIBLE_DEVICES=2,3 python train_refinedet.py --num_workers 12 --lr 2e-3 --save_folder weights/solo_cs_2e3/ --ngpu 2 --batch_size 16
-CUDA_VISIBLE_DEVICES=2,3 python train_refinedet.py --num_workers 12 --lr 2e-3 --save_folder weights/solo_2e3/ --ngpu 2  --batch_size 16
-CUDA_VISIBLE_DEVICES=0,1,2,3 python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/srn_4e3/  #--ngpu 2 --batch_size 16
-CUDA_VISIBLE_DEVICES=0,1,2,3 python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/srnv2_4e3/ # --ngpu 2 --batch_size 16
-
-CUDA_VISIBLE_DEVICES=0,1,2,3 python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/srnv3_4e3/
+# CUDA_VISIBLE_DEVICES=0,1,2,3 python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/srnv3_4e3/

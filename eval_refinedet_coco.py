@@ -276,7 +276,7 @@ if __name__ == '__main__':
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
     prefix = 'weights/solo_cs_2e3'
-    # prefix = 'weights/solo_cs_fcos_2e3'
+    prefix = 'weights/solo_cs_fcos_2e3'
     # prefix = 'weights/tmp'
     # prefix = 'weights/solo_g8_2e3'
     # prefix = 'weights/solo_b32_2e3'
@@ -287,8 +287,8 @@ if __name__ == '__main__':
     confidence_threshold = 0.01
     objectness_thre = 0.01
     # 'feature_maps': [64, 32, 16, 8]
-    # seg_num_grids = [64, 32, 16, 8]
-    seg_num_grids = [36, 24, 16, 12]
+    # seg_num_grids = [36, 24, 16, 12]
+    seg_num_grids = [64, 32, 16, 8]
 
     num_classes = 2 
     top_k = 1000
@@ -297,9 +297,9 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
