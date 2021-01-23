@@ -272,7 +272,7 @@ if __name__ == '__main__':
     # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
-    args.show_image = True
+    # args.show_image = True
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
     prefix = 'weights/solo_cs_2e3'
