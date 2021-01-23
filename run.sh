@@ -9,7 +9,7 @@
 
 git fetch --tags
 
-python train_refinedet.py --num_workers 12 --lr 2e-3 --save_folder weights/solo_cs_2e3/ --batch_size 16
+python train_refinedet.py --num_workers 12 --lr 2e-3 --save_folder weights/solo_cs_fcos_2e3/ --batch_size 16
 
 CUDA_VISIBLE_DEVICES=2,3 python train_refinedet.py --num_workers 12 --lr 2e-3 --save_folder weights/solo_cs_2e3/ --ngpu 2 --batch_size 16
 CUDA_VISIBLE_DEVICES=2,3 python train_refinedet.py --num_workers 12 --lr 2e-3 --save_folder weights/solo_2e3/ --ngpu 2  --batch_size 16

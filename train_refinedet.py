@@ -138,6 +138,10 @@ def train():
     print('Using the specified args:')
     print(args)
 
+    # 'feature_maps': [64, 32, 16, 8],
+    seg_num_grids = [36, 24, 16, 12]
+    seg_num_grids = cfg['feature_maps']
+
     device = torch.device('cuda:0' if args.cuda else 'cpu')
     refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'], seg_num_grids)
     net = refinedet_net
@@ -172,10 +176,6 @@ def train():
     odm_criterion = RefineDetMultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, negpos_ratio, 0.5,
                              False, args.cuda, use_ARM=True)
     # attention criterion 
-    # 'feature_maps': [64, 32, 16, 8],
-    seg_num_grids = [36, 24, 16, 12]
-    seg_num_grids = cfg['feature_maps']
-
     anchor_num = 1 * 3
     anchor_mark = []
     for i in range(len(cfg['feature_maps'])):
