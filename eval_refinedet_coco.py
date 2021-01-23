@@ -297,8 +297,8 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
@@ -364,29 +364,17 @@ refinedet
 lr_2e3
 Best ap50: 0.9802 at epoch 240
 ap: 0.6022, ap50: 0.9802, ap75: 0.6750, ap_s: 0.5550, ap_m: 0.6715, ap_l: 0.6515
-Best ap  : 0.6090 at epoch 290
-ap: 0.6090, ap50: 0.9783, ap75: 0.6921, ap_s: 0.5645, ap_m: 0.6710, ap_l: 0.6569
-lr_3e3
-Best ap50: 0.9814 at epoch 240
-ap: 0.6055, ap50: 0.9814, ap75: 0.6981, ap_s: 0.5580, ap_m: 0.6792, ap_l: 0.6230
-Best ap  : 0.6094 at epoch 285
-ap: 0.6094, ap50: 0.9797, ap75: 0.7029, ap_s: 0.5587, ap_m: 0.6797, ap_l: 0.6458
-lr 4e3 bs16
-Best ap50: 0.9826 at epoch 245
-ap: 0.6111, ap50: 0.9826, ap75: 0.6637, ap_s: 0.5572, ap_m: 0.6933, ap_l: 0.6133
-Best ap  : 0.6257 at epoch 290
-ap: 0.6257, ap50: 0.9751, ap75: 0.7296, ap_s: 0.5739, ap_m: 0.7000, ap_l: 0.6462
-
-solo 2e3 bs16 g8
-Best ap50: 0.9811 at epoch 255
-ap: 0.6093, ap50: 0.9811, ap75: 0.6968, ap_s: 0.5779, ap_m: 0.6619, ap_l: 0.6132
-Best ap  : 0.6181 at epoch 295
-ap: 0.6181, ap50: 0.9757, ap75: 0.7067, ap_s: 0.5780, ap_m: 0.6801, ap_l: 0.6418
-solo 2e3 bs32 g12
-Best ap50: 0.9774 at epoch 205
-ap: 0.5887, ap50: 0.9774, ap75: 0.6448, ap_s: 0.5286, ap_m: 0.6708, ap_l: 0.6398
-Best ap  : 0.5967 at epoch 245
-ap: 0.5967, ap50: 0.9739, ap75: 0.6700, ap_s: 0.5463, ap_m: 0.6706, ap_l: 0.6326
+Best ap  : 0.6091 at epoch 290
+ap: 0.6091, ap50: 0.9783, ap75: 0.6921, ap_s: 0.5646, ap_m: 0.6713, ap_l: 0.6569
+inshore 
+Best ap50: 0.9400 at epoch 270
+ap: 0.5124, ap50: 0.9400, ap75: 0.5157, ap_s: 0.4715, ap_m: 0.5679, ap_l: 0.5575
+Best ap  : 0.5171 at epoch 250
+ap: 0.5171, ap50: 0.9365, ap75: 0.5157, ap_s: 0.4693, ap_m: 0.5835, ap_l: 0.5242
+Best ap50: 0.9893 at epoch 225
+ap: 0.6393, ap50: 0.9893, ap75: 0.7521, ap_s: 0.5869, ap_m: 0.7125, ap_l: 0.7697
+Best ap  : 0.6500 at epoch 275
+ap: 0.6500, ap50: 0.9888, ap75: 0.7740, ap_s: 0.6026, ap_m: 0.7166, ap_l: 0.7605
 
 solo 2e3 bs16 g12
 Best ap50: 0.9826 at epoch 265
@@ -419,5 +407,10 @@ Best ap50: 0.9894 at epoch 210
 ap: 0.6308, ap50: 0.9894, ap75: 0.7157, ap_s: 0.5792, ap_m: 0.6993, ap_l: 0.7628
 Best ap  : 0.6491 at epoch 295
 ap: 0.6491, ap50: 0.9890, ap75: 0.7612, ap_s: 0.5980, ap_m: 0.7160, ap_l: 0.8113
+2.0cs fcos
+Best ap50: 0.9790 at epoch 240
+ap: 0.6124, ap50: 0.9790, ap75: 0.7034, ap_s: 0.5725, ap_m: 0.6739, ap_l: 0.6302
+Best ap  : 0.6135 at epoch 290
+ap: 0.6135, ap50: 0.9734, ap75: 0.7075, ap_s: 0.5666, ap_m: 0.6798, ap_l: 0.6465
 
 """
