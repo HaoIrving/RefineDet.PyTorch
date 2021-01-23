@@ -275,7 +275,7 @@ if __name__ == '__main__':
     # args.show_image = True
     prefix = args.prefix
     prefix = 'weights/solo_2e3' # no consistent sampling and solo grid
-    prefix = 'weights/solo_fcos_2e3'
+    prefix = 'weights/solo_ncs_fcos_2e3'
     # prefix = 'weights/tmp'
     # prefix = 'weights/solo_g8_2e3'
     # prefix = 'weights/solo_b32_2e3'
@@ -295,8 +295,8 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
@@ -401,4 +401,13 @@ Best ap50: 0.9895 at epoch 200
 ap: 0.5956, ap50: 0.9895, ap75: 0.6853, ap_s: 0.5501, ap_m: 0.6572, ap_l: 0.7790
 Best ap  : 0.6562 at epoch 280
 ap: 0.6562, ap50: 0.9893, ap75: 0.7934, ap_s: 0.6000, ap_m: 0.7357, ap_l: 0.8126
+
+1.0 fcos
+inshore 
+Best ap50: 0.9345 at epoch 235
+ap: 0.5218, ap50: 0.9345, ap75: 0.5302, ap_s: 0.4627, ap_m: 0.6103, ap_l: 0.5061
+Best ap  : 0.5418 at epoch 295
+ap: 0.5418, ap50: 0.9334, ap75: 0.5716, ap_s: 0.4998, ap_m: 0.6064, ap_l: 0.5539
+offshore
+
 """
