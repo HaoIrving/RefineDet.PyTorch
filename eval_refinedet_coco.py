@@ -280,8 +280,8 @@ if __name__ == '__main__':
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
     # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
@@ -347,6 +347,13 @@ Best ap50: 0.9802 at epoch 240
 ap: 0.6022, ap50: 0.9802, ap75: 0.6750, ap_s: 0.5550, ap_m: 0.6715, ap_l: 0.6515
 Best ap  : 0.6091 at epoch 290
 ap: 0.6091, ap50: 0.9783, ap75: 0.6921, ap_s: 0.5646, ap_m: 0.6713, ap_l: 0.6569
+inshore 
+Best ap50: 0.9400 at epoch 270
+ap: 0.5124, ap50: 0.9400, ap75: 0.5157, ap_s: 0.4715, ap_m: 0.5679, ap_l: 0.5575
+Best ap  : 0.5171 at epoch 250
+ap: 0.5171, ap50: 0.9365, ap75: 0.5157, ap_s: 0.4693, ap_m: 0.5835, ap_l: 0.5242
+
+
 lr_3e3
 Best ap50: 0.9814 at epoch 240
 ap: 0.6055, ap50: 0.9814, ap75: 0.6981, ap_s: 0.5580, ap_m: 0.6792, ap_l: 0.6230
