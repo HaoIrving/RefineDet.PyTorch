@@ -68,7 +68,7 @@ class COCODetection(data.Dataset):
                 coco_name = image_set
             else:
                 coco_name = dataset + '_' + image_set  # 'sarship_train'
-            data_name = image_set  # 'train'
+            data_name = image_set.split('_')[0]  # 'train'
             annofile = self._get_ann_file(coco_name)
             _COCO = COCO(annofile)
             self._COCO = _COCO
