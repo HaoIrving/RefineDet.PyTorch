@@ -99,11 +99,6 @@ sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 args.input_size = str(512)
 args.max_epoch = 300
 
-# 'feature_maps': [64, 32, 16, 8],
-seg_num_grids = [36, 24, 16, 12]
-seg_num_grids = [64, 32, 16, 8]
-# seg_num_grids = [36, 24, 16, 8]
-
 # ((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048)) for stride from 4
 # anchor [32, 64, 128, 256]
 # scale_ranges = ((1, 96), (48, 192), (96, 384), (192, 768))
@@ -177,6 +172,10 @@ def train():
     odm_criterion = RefineDetMultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, negpos_ratio, 0.5,
                              False, args.cuda, use_ARM=True)
     # attention criterion 
+    # 'feature_maps': [64, 32, 16, 8],
+    seg_num_grids = [36, 24, 16, 12]
+    seg_num_grids = cfg['feature_maps']
+
     anchor_num = 1 * 3
     anchor_mark = []
     for i in range(len(cfg['feature_maps'])):
