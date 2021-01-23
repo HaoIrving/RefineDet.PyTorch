@@ -275,7 +275,8 @@ if __name__ == '__main__':
     args.show_image = True
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
-    prefix = 'weights/solo_cs_fcos_2e3'
+    prefix = 'weights/solo_cs_2e3'
+    # prefix = 'weights/solo_cs_fcos_2e3'
     # prefix = 'weights/tmp'
     # prefix = 'weights/solo_g8_2e3'
     # prefix = 'weights/solo_b32_2e3'
@@ -286,8 +287,8 @@ if __name__ == '__main__':
     confidence_threshold = 0.01
     objectness_thre = 0.01
     # 'feature_maps': [64, 32, 16, 8]
-    seg_num_grids = [64, 32, 16, 8]
-    # seg_num_grids = [32, 16, 16, 8]
+    # seg_num_grids = [64, 32, 16, 8]
+    seg_num_grids = [36, 24, 16, 12]
 
     num_classes = 2 
     top_k = 1000
