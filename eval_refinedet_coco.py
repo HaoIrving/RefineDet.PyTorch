@@ -297,8 +297,8 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
@@ -377,11 +377,6 @@ ap: 0.6111, ap50: 0.9826, ap75: 0.6637, ap_s: 0.5572, ap_m: 0.6933, ap_l: 0.6133
 Best ap  : 0.6257 at epoch 290
 ap: 0.6257, ap50: 0.9751, ap75: 0.7296, ap_s: 0.5739, ap_m: 0.7000, ap_l: 0.6462
 
-solo 2e3 bs16 g12
-Best ap50: 0.9826 at epoch 265
-ap: 0.6140, ap50: 0.9826, ap75: 0.7032, ap_s: 0.5641, ap_m: 0.6851, ap_l: 0.6542
-Best ap  : 0.6212 at epoch 295
-ap: 0.6212, ap50: 0.9809, ap75: 0.7185, ap_s: 0.5688, ap_m: 0.6948, ap_l: 0.6764
 solo 2e3 bs16 g8
 Best ap50: 0.9811 at epoch 255
 ap: 0.6093, ap50: 0.9811, ap75: 0.6968, ap_s: 0.5779, ap_m: 0.6619, ap_l: 0.6132
@@ -393,6 +388,11 @@ ap: 0.5887, ap50: 0.9774, ap75: 0.6448, ap_s: 0.5286, ap_m: 0.6708, ap_l: 0.6398
 Best ap  : 0.5967 at epoch 245
 ap: 0.5967, ap50: 0.9739, ap75: 0.6700, ap_s: 0.5463, ap_m: 0.6706, ap_l: 0.6326
 
+solo 2e3 bs16 g12
+Best ap50: 0.9826 at epoch 265
+ap: 0.6140, ap50: 0.9826, ap75: 0.7032, ap_s: 0.5641, ap_m: 0.6851, ap_l: 0.6542
+Best ap  : 0.6212 at epoch 295
+ap: 0.6212, ap50: 0.9809, ap75: 0.7185, ap_s: 0.5688, ap_m: 0.6948, ap_l: 0.6764
 inshore 
 Best ap50: 0.9449 at epoch 280
 ap: 0.5335, ap50: 0.9449, ap75: 0.5323, ap_s: 0.4896, ap_m: 0.5979, ap_l: 0.5640
@@ -403,4 +403,11 @@ Best ap50: 0.9895 at epoch 200
 ap: 0.5956, ap50: 0.9895, ap75: 0.6853, ap_s: 0.5501, ap_m: 0.6572, ap_l: 0.7790
 Best ap  : 0.6562 at epoch 280
 ap: 0.6562, ap50: 0.9893, ap75: 0.7934, ap_s: 0.6000, ap_m: 0.7357, ap_l: 0.8126
+
+2.0 
+Best ap50: 0.9723 at epoch 250
+ap: 0.6037, ap50: 0.9723, ap75: 0.6872, ap_s: 0.5528, ap_m: 0.6759, ap_l: 0.6628
+Best ap  : 0.6109 at epoch 295
+ap: 0.6109, ap50: 0.9707, ap75: 0.7024, ap_s: 0.5656, ap_m: 0.6742, ap_l: 0.6737
+
 """
