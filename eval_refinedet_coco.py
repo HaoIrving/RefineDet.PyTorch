@@ -258,15 +258,13 @@ if __name__ == '__main__':
     prefix = args.prefix
     # prefix = 'weights/lr_5e4'
     # prefix = 'weights/lr_1e3'
-    # prefix = 'weights/lr_2e3'
-    prefix = 'weights/lr_3e3'
-    prefix = 'weights/lr_35e4'
-    prefix = 'weights/lr_375e5'
-    prefix = 'weights/lr_4e3'
+    prefix = 'weights/lr_2e3'
+    # prefix = 'weights/lr_3e3'
+    # prefix = 'weights/lr_4e3'
     # prefix = 'weights/srn_1e3'
     # prefix = 'weights/srn_2e3'
     # prefix = 'weights/srn_3e3'
-    prefix = 'weights/srn_4e3'
+    # prefix = 'weights/srn_4e3'
     # prefix = 'weights/srnv2_4e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
