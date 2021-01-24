@@ -362,18 +362,18 @@ refinedet
 lr_2e3
 Best ap50: 0.9802 at epoch 240
 ap: 0.6022, ap50: 0.9802, ap75: 0.6750, ap_s: 0.5550, ap_m: 0.6715, ap_l: 0.6515
-Best ap  : 0.6090 at epoch 290
-ap: 0.6090, ap50: 0.9783, ap75: 0.6921, ap_s: 0.5645, ap_m: 0.6710, ap_l: 0.6569
-lr_3e3
-Best ap50: 0.9814 at epoch 240
-ap: 0.6055, ap50: 0.9814, ap75: 0.6981, ap_s: 0.5580, ap_m: 0.6792, ap_l: 0.6230
-Best ap  : 0.6094 at epoch 285
-ap: 0.6094, ap50: 0.9797, ap75: 0.7029, ap_s: 0.5587, ap_m: 0.6797, ap_l: 0.6458
-lr 4e3 bs16
-Best ap50: 0.9826 at epoch 245
-ap: 0.6111, ap50: 0.9826, ap75: 0.6637, ap_s: 0.5572, ap_m: 0.6933, ap_l: 0.6133
-Best ap  : 0.6257 at epoch 290
-ap: 0.6257, ap50: 0.9751, ap75: 0.7296, ap_s: 0.5739, ap_m: 0.7000, ap_l: 0.6462
+Best ap  : 0.6091 at epoch 290
+ap: 0.6091, ap50: 0.9783, ap75: 0.6921, ap_s: 0.5646, ap_m: 0.6713, ap_l: 0.6569
+inshore 
+Best ap50: 0.9400 at epoch 270
+ap: 0.5124, ap50: 0.9400, ap75: 0.5157, ap_s: 0.4715, ap_m: 0.5679, ap_l: 0.5575
+Best ap  : 0.5171 at epoch 250
+ap: 0.5171, ap50: 0.9365, ap75: 0.5157, ap_s: 0.4693, ap_m: 0.5835, ap_l: 0.5242
+offshore 
+Best ap50: 0.9893 at epoch 225
+ap: 0.6393, ap50: 0.9893, ap75: 0.7521, ap_s: 0.5869, ap_m: 0.7125, ap_l: 0.7697
+Best ap  : 0.6500 at epoch 275
+ap: 0.6500, ap50: 0.9888, ap75: 0.7740, ap_s: 0.6026, ap_m: 0.7166, ap_l: 0.7605
 
 solo 2e3 bs16 g12
 Best ap50: 0.9826 at epoch 265
@@ -406,5 +406,39 @@ Best ap50: 0.9897 at epoch 210
 ap: 0.6415, ap50: 0.9897, ap75: 0.7580, ap_s: 0.5853, ap_m: 0.7127, ap_l: 0.8235
 Best ap  : 0.6594 at epoch 240
 ap: 0.6594, ap50: 0.9896, ap75: 0.7994, ap_s: 0.6058, ap_m: 0.7275, ap_l: 0.7844
+
+2.0cs
+Best ap50: 0.9723 at epoch 250
+ap: 0.6037, ap50: 0.9723, ap75: 0.6872, ap_s: 0.5528, ap_m: 0.6759, ap_l: 0.6628
+Best ap  : 0.6109 at epoch 295
+ap: 0.6109, ap50: 0.9707, ap75: 0.7024, ap_s: 0.5656, ap_m: 0.6742, ap_l: 0.6737
+inshore 
+Best ap50: 0.9217 at epoch 285
+ap: 0.5187, ap50: 0.9217, ap75: 0.5607, ap_s: 0.4865, ap_m: 0.5697, ap_l: 0.5492
+Best ap  : 0.5193 at epoch 275
+ap: 0.5193, ap50: 0.9193, ap75: 0.5444, ap_s: 0.4824, ap_m: 0.5792, ap_l: 0.5443
+offshore 
+Best ap50: 0.9894 at epoch 210
+ap: 0.6308, ap50: 0.9894, ap75: 0.7157, ap_s: 0.5792, ap_m: 0.6993, ap_l: 0.7628
+Best ap  : 0.6491 at epoch 295
+ap: 0.6491, ap50: 0.9890, ap75: 0.7612, ap_s: 0.5980, ap_m: 0.7160, ap_l: 0.8113
+
+2.0cs fcos
+Best ap50: 0.9790 at epoch 240
+ap: 0.6124, ap50: 0.9790, ap75: 0.7034, ap_s: 0.5725, ap_m: 0.6739, ap_l: 0.6302
+Best ap  : 0.6135 at epoch 290
+ap: 0.6135, ap50: 0.9734, ap75: 0.7075, ap_s: 0.5666, ap_m: 0.6798, ap_l: 0.6465
+inshore 
+Best ap50: 0.9363 at epoch 220
+ap: 0.5110, ap50: 0.9363, ap75: 0.5118, ap_s: 0.4567, ap_m: 0.5925, ap_l: 0.4804
+Best ap  : 0.5284 at epoch 250
+ap: 0.5284, ap50: 0.9327, ap75: 0.5372, ap_s: 0.4880, ap_m: 0.5949, ap_l: 0.4907
+offshore
+Best ap50: 0.9896 at epoch 255
+ap: 0.6485, ap50: 0.9896, ap75: 0.7613, ap_s: 0.5956, ap_m: 0.7226, ap_l: 0.7752
+Best ap  : 0.6524 at epoch 290
+ap: 0.6524, ap50: 0.9893, ap75: 0.7766, ap_s: 0.5994, ap_m: 0.7228, ap_l: 0.7984
+
+
 
 """
