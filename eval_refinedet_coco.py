@@ -177,7 +177,7 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
         scale = scale.to(device)
 
         _t['im_detect'].tic()
-        boxes, scores = net(x)
+        boxes, scores = net(x, i)
         boxes = boxes[0]
         scores=scores[0]
 
@@ -240,8 +240,12 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
                 cy = b[1] + 12
                 # text = "{:.2f}".format(b[4])
                 # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
-            cv2.imshow('res', img_gt)
-            cv2.waitKey(0)
+            # cv2.imshow('res', img_gt)
+            # cv2.waitKey(0)
+            save_gt_dir = os.path.join(save_folder, 'gt_img')
+            if not os.path.exists(save_gt_dir):
+                os.mkdir(save_gt_dir)
+            cv2.imwrite(save_gt_dir + f'/{i}.png',img_gt, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
 
     # with open(det_file, 'wb') as f:
     #     pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
@@ -299,7 +303,7 @@ if __name__ == '__main__':
     rgb_means = (98.13131, 98.13131, 98.13131)
     # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
     dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
@@ -313,9 +317,9 @@ if __name__ == '__main__':
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
+    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_290.pth') 
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
