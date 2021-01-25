@@ -195,7 +195,9 @@ class RefineDet(nn.Module):
                 os.mkdir(save_dir)
             for index, level in enumerate(attention_sources):
                 i = self.cfg[str(self.size)]['steps'][index]
-                level = F.interpolate(level, size=(self.size, self.size), mode='bicubic') # bilinear, nearest
+                mask = level < 0.05
+                level[mask] = 0
+                level = F.interpolate(level, size=(self.size, self.size), mode='bilinear') # bilinear, bicubic,nearest
                 level = level.squeeze(0)
                 level = level.cpu().numpy().copy()
                 level = np.transpose(level, (1, 2, 0))

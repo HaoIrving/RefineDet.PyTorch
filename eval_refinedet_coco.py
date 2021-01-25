@@ -177,7 +177,8 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
         scale = scale.to(device)
 
         _t['im_detect'].tic()
-        boxes, scores = net(x, i)
+        # boxes, scores = net(x, i)
+        boxes, scores = net(x)
         boxes = boxes[0]
         scores=scores[0]
 
@@ -221,7 +222,7 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
                 b[1] *= yr
                 b[3] *= yr
                 b = list(map(int, b))
-                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 1)
+                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 2)
                 cx = b[2]
                 cy = b[1]
                 # text = "ship"
@@ -235,7 +236,7 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
                 if b[4] < args.vis_thres:
                     continue
                 b = list(map(int, b))
-                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 1)
+                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
                 cx = b[2]
                 cy = b[1] + 12
                 # text = "{:.2f}".format(b[4])
@@ -301,8 +302,8 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
@@ -320,6 +321,7 @@ if __name__ == '__main__':
     # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
     ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_290.pth') 
+    ToBeTested *= 5
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
