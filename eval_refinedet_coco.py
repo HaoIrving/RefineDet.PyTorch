@@ -279,9 +279,9 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
@@ -295,8 +295,12 @@ if __name__ == '__main__':
 
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
-    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    ToBeTested = []
+    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_290.pth') 
+    ToBeTested *= 5
+
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
