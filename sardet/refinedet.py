@@ -189,19 +189,19 @@ class RefineDet(nn.Module):
                 cate_pred = F.interpolate(cate_pred, size=(oh, ow), mode='bilinear')
             attention_sources.append(cate_pred)
 
-        if self.phase == 'test' and img_id is not None:
-            save_dir = './eval/attention_maps'
-            if not os.path.exists(save_dir):
-                os.mkdir(save_dir)
-            for index, level in enumerate(attention_sources):
-                i = self.cfg[str(self.size)]['steps'][index]
-                mask = level < 0.05
-                level[mask] = 0
-                level = F.interpolate(level, size=(self.size, self.size), mode='bilinear') # bilinear, bicubic,nearest
-                level = level.squeeze(0)
-                level = level.cpu().numpy().copy()
-                level = np.transpose(level, (1, 2, 0))
-                plt.imsave(os.path.join(save_dir, str(img_id) + '_' + str(i) + '.png'), level[:,:,0])#, cmap='gray')
+        # if self.phase == 'test' and img_id is not None:
+        #     save_dir = './eval/attention_maps'
+        #     if not os.path.exists(save_dir):
+        #         os.mkdir(save_dir)
+        #     for index, level in enumerate(attention_sources):
+        #         i = self.cfg[str(self.size)]['steps'][index]
+        #         mask = level < 0.05
+        #         level[mask] = 0
+        #         level = F.interpolate(level, size=(self.size, self.size), mode='bilinear') # bilinear, bicubic,nearest
+        #         level = level.squeeze(0)
+        #         level = level.cpu().numpy().copy()
+        #         level = np.transpose(level, (1, 2, 0))
+        #         plt.imsave(os.path.join(save_dir, str(img_id) + '_' + str(i) + '.png'), level[:,:,0])#, cmap='gray')
 
         # calculate TCB features
         p = None
