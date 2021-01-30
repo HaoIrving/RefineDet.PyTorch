@@ -282,7 +282,7 @@ if __name__ == '__main__':
     # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
-    args.show_image = True
+    # args.show_image = True
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
     prefix = 'weights/solo_cs_2e3'
@@ -372,6 +372,17 @@ if __name__ == '__main__':
     # plot_loss(save_folder, txt_log)
 """
 refinedet
+lr_3e3
+Best ap50: 0.9814 at epoch 240
+ap: 0.6055, ap50: 0.9814, ap75: 0.6981, ap_s: 0.5580, ap_m: 0.6792, ap_l: 0.6230
+Best ap  : 0.6094 at epoch 285
+ap: 0.6094, ap50: 0.9797, ap75: 0.7029, ap_s: 0.5587, ap_m: 0.6797, ap_l: 0.6458
+lr 4e3 bs16
+Best ap50: 0.9826 at epoch 245
+ap: 0.6111, ap50: 0.9826, ap75: 0.6637, ap_s: 0.5572, ap_m: 0.6933, ap_l: 0.6133
+Best ap  : 0.6257 at epoch 290
+ap: 0.6257, ap50: 0.9751, ap75: 0.7296, ap_s: 0.5739, ap_m: 0.7000, ap_l: 0.6462
+
 lr_2e3
 Best ap50: 0.9802 at epoch 240
 ap: 0.6022, ap50: 0.9802, ap75: 0.6750, ap_s: 0.5550, ap_m: 0.6715, ap_l: 0.6515
@@ -388,7 +399,7 @@ ap: 0.6393, ap50: 0.9893, ap75: 0.7521, ap_s: 0.5869, ap_m: 0.7125, ap_l: 0.7697
 Best ap  : 0.6500 at epoch 275
 ap: 0.6500, ap50: 0.9888, ap75: 0.7740, ap_s: 0.6026, ap_m: 0.7166, ap_l: 0.7605
 
-solo 2e3 bs16 g12
+solo 2e3 bs16 g12(1.0)
 Best ap50: 0.9826 at epoch 265
 ap: 0.6140, ap50: 0.9826, ap75: 0.7032, ap_s: 0.5641, ap_m: 0.6851, ap_l: 0.6542
 Best ap  : 0.6212 at epoch 295
@@ -430,6 +441,7 @@ Best ap50: 0.9363 at epoch 220
 ap: 0.5110, ap50: 0.9363, ap75: 0.5118, ap_s: 0.4567, ap_m: 0.5925, ap_l: 0.4804
 Best ap  : 0.5284 at epoch 250
 ap: 0.5284, ap50: 0.9327, ap75: 0.5372, ap_s: 0.4880, ap_m: 0.5949, ap_l: 0.4907
+Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.591
 offshore
 Best ap50: 0.9896 at epoch 255
 ap: 0.6485, ap50: 0.9896, ap75: 0.7613, ap_s: 0.5956, ap_m: 0.7226, ap_l: 0.7752
