@@ -279,8 +279,8 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
@@ -298,8 +298,8 @@ if __name__ == '__main__':
     ToBeTested = []
     # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_290.pth') 
-    ToBeTested *= 5
+    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_250.pth') 
+    # ToBeTested *= 5
 
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
@@ -340,10 +340,10 @@ if __name__ == '__main__':
     fig_name = 'ap_last10.png'
     metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    plot_map(save_folder, ap_stats, metrics, legend, fig_name)
+    # plot_map(save_folder, ap_stats, metrics, legend, fig_name)
 
-    txt_log = prefix + '/log.txt'
-    plot_loss(save_folder, txt_log)
+    # txt_log = prefix + '/log.txt'
+    # plot_loss(save_folder, txt_log)
 """
 refinedet
 lr_2e3
@@ -356,6 +356,7 @@ Best ap50: 0.9400 at epoch 270
 ap: 0.5124, ap50: 0.9400, ap75: 0.5157, ap_s: 0.4715, ap_m: 0.5679, ap_l: 0.5575
 Best ap  : 0.5171 at epoch 250
 ap: 0.5171, ap50: 0.9365, ap75: 0.5157, ap_s: 0.4693, ap_m: 0.5835, ap_l: 0.5242
+offshore 
 Best ap50: 0.9893 at epoch 225
 ap: 0.6393, ap50: 0.9893, ap75: 0.7521, ap_s: 0.5869, ap_m: 0.7125, ap_l: 0.7697
 Best ap  : 0.6500 at epoch 275
