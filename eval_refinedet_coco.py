@@ -176,9 +176,30 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
         x = x.to(device)
         scale = scale.to(device)
 
-        _t['im_detect'].tic()
-        # boxes, scores = net(x, i)
-        boxes, scores = net(x)
+
+
+        if args.show_image:
+            h, w, _ = img.shape
+            xr = net.size / w
+            yr = net.size / h
+            img_gt = img.astype(np.uint8)
+            img_gt = cv2.resize(img_gt, (net.size, net.size),interpolation=cv2.INTER_LINEAR)
+            for b in target:
+                b[0] *= xr
+                b[2] *= xr
+                b[1] *= yr
+                b[3] *= yr
+                b = list(map(int, b))
+                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 2)
+                # cx = b[2]
+                # cy = b[1]
+                # text = "ship"
+                # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
+            _t['im_detect'].tic()
+            boxes, scores = net(x, i, img_gt)
+        else:
+            _t['im_detect'].tic()
+            boxes, scores = net(x)
         boxes = boxes[0]
         scores=scores[0]
 
@@ -211,22 +232,6 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
 
         # print('im_detect: {:d}/{:d} forward_nms_time{:.4f}s'.format(i + 1, num_images, _t['im_detect'].average_time))
         if args.show_image:
-            h, w, _ = img.shape
-            xr = net.size / w
-            yr = net.size / h
-            img_gt = img.astype(np.uint8)
-            img_gt = cv2.resize(img_gt, (net.size, net.size),interpolation=cv2.INTER_LINEAR)
-            for b in target:
-                b[0] *= xr
-                b[2] *= xr
-                b[1] *= yr
-                b[3] *= yr
-                b = list(map(int, b))
-                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 2)
-                cx = b[2]
-                cy = b[1]
-                # text = "ship"
-                # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
             boxes = all_boxes[1][i][:]
             for b in boxes:
                 b[0] *= xr
@@ -277,7 +282,7 @@ if __name__ == '__main__':
     # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
-    # args.show_image = True
+    args.show_image = True
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
     prefix = 'weights/solo_cs_2e3'
@@ -302,8 +307,8 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
@@ -320,8 +325,8 @@ if __name__ == '__main__':
     ToBeTested = []
     # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_290.pth') 
-    ToBeTested *= 5
+    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_250.pth') 
+    # ToBeTested *= 5
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
@@ -361,7 +366,7 @@ if __name__ == '__main__':
     fig_name = 'ap_last10.png'
     metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    plot_map(save_folder, ap_stats, metrics, legend, fig_name)
+    # plot_map(save_folder, ap_stats, metrics, legend, fig_name)
 
     # txt_log = prefix + '/log.txt'
     # plot_loss(save_folder, txt_log)
