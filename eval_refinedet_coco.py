@@ -279,8 +279,8 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
