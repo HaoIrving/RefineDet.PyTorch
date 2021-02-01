@@ -68,6 +68,43 @@ def plot_map(save_folder, ap_stats, metrics, legend, fig_name):
     plt.show()
     plt.cla()
 
+def plot_pr_curve(save_folder_list, model_name, iou):
+    ious = [0.5 + round(0.05 * i, 2) for i in range(10)]
+    iou_map = {x: i for i, x in enumerate(ious)}
+
+    # extract eval data
+    n = len(save_folder_list)
+    for i in range(n):
+        save_folder = os.path.join('eval/', save_folder_list[i])
+        coco_eval_pkl = os.path.join(save_folder, 'detection_results.pkl')
+        f = open(coco_eval_pkl,'rb')
+        coco_eval = pickle.load(f)
+        precisions = coco_eval.eval["precision"]
+        '''
+        precisions[T, R, K, A, M]
+        T: iou thresholds [0.5 : 0.05 : 0.95], idx from 0 to 9
+        R: recall thresholds [0 : 0.01 : 1], idx from 0 to 100
+        K: category, idx from 0 to ...
+        A: area range, (all, small, medium, large), idx from 0 to 3 
+        M: max dets, (1, 10, 100), idx from 0 to 2
+        '''
+        index = iou_map[iou]
+        pr_array1 = precisions[index, :, 0, 0, 2] 
+
+        x = np.arange(0.0, 1.01, 0.01)
+        # plot PR curve
+        plt.plot(x, pr_array1, label=model_name[i])
+
+    # plt.title(f"iou={iou}")
+    print(iou)
+    plt.xlabel("recall")
+    plt.ylabel("precison")
+    plt.xlim(0, 1.0)
+    plt.ylim(0, 1.01)
+    plt.grid(True)
+    plt.legend(loc="lower left")
+    plt.show()
+
 
 if __name__ == '__main__':
     # save_folder = os.path.join('eval/', 'lr_5e4')
@@ -87,50 +124,29 @@ if __name__ == '__main__':
     # legend  = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     # plot_map(save_folder, ap_stats, metrics, legend)
 
-    save_folder = os.path.join('eval/', 'solo_cs_fcos_2e3')
-    coco_eval_pkl = os.path.join(save_folder, 'detection_results.pkl')
+
+    save_folder_list = ['solo_cs_fcos_2e3', 'lr_2e3']
+    model_name = ['ours', 'baseline']
+    plot_pr_curve(save_folder_list, model_name, 0.5)
+    plot_pr_curve(save_folder_list, model_name, 0.55)
+    plot_pr_curve(save_folder_list, model_name, 0.6)
+    plot_pr_curve(save_folder_list, model_name, 0.65)
+    plot_pr_curve(save_folder_list, model_name, 0.7)
+    plot_pr_curve(save_folder_list, model_name, 0.75)
+    plot_pr_curve(save_folder_list, model_name, 0.8)
+    plot_pr_curve(save_folder_list, model_name, 0.85)
+    plot_pr_curve(save_folder_list, model_name, 0.9)
+    plot_pr_curve(save_folder_list, model_name, 0.95)
+"""
+"iou=0.5"
+"iou=0.55"
+"iou=0.6"
+"iou=0.65"
+"iou=0.7"
+"iou=0.75"
+"iou=0.8"
+"iou=0.85"
+"iou=0.9"
+"iou=0.95"
+"""
     
-    f = open(coco_eval_pkl,'rb')
-    coco_eval = pickle.load(f)
-
-    # extract eval data
-    precisions = coco_eval.eval["precision"]
-    '''
-    precisions[T, R, K, A, M]
-    T: iou thresholds [0.5 : 0.05 : 0.95], idx from 0 to 9
-    R: recall thresholds [0 : 0.01 : 1], idx from 0 to 100
-    K: category, idx from 0 to ...
-    A: area range, (all, small, medium, large), idx from 0 to 3 
-    M: max dets, (1, 10, 100), idx from 0 to 2
-    '''
-    pr_array1 = precisions[0, :, 0, 0, 2] 
-    pr_array2 = precisions[1, :, 0, 0, 2] 
-    pr_array3 = precisions[2, :, 0, 0, 2] 
-    pr_array4 = precisions[3, :, 0, 0, 2] 
-    pr_array5 = precisions[4, :, 0, 0, 2] 
-    pr_array6 = precisions[5, :, 0, 0, 2] 
-    pr_array7 = precisions[6, :, 0, 0, 2] 
-    pr_array8 = precisions[7, :, 0, 0, 2] 
-    pr_array9 = precisions[8, :, 0, 0, 2] 
-    pr_array10 = precisions[9, :, 0, 0, 2] 
-
-    x = np.arange(0.0, 1.01, 0.01)
-    # plot PR curve
-    plt.plot(x, pr_array1, label="iou=0.5")
-    plt.plot(x, pr_array2, label="iou=0.55")
-    plt.plot(x, pr_array3, label="iou=0.6")
-    plt.plot(x, pr_array4, label="iou=0.65")
-    plt.plot(x, pr_array5, label="iou=0.7")
-    plt.plot(x, pr_array6, label="iou=0.75")
-    plt.plot(x, pr_array7, label="iou=0.8")
-    plt.plot(x, pr_array8, label="iou=0.85")
-    plt.plot(x, pr_array9, label="iou=0.9")
-    plt.plot(x, pr_array10, label="iou=0.95")
-
-    plt.xlabel("recall")
-    plt.ylabel("precison")
-    plt.xlim(0, 1.0)
-    plt.ylim(0, 1.01)
-    plt.grid(True)
-    plt.legend(loc="lower left")
-    plt.show()
