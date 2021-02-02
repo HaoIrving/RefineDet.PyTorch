@@ -197,7 +197,8 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
                 # text = "ship"
                 # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
             _t['im_detect'].tic()
-            boxes, scores = net(x, i, img_gt)
+            # boxes, scores = net(x, i, img_gt)
+            boxes, scores = net(x)
         else:
             _t['im_detect'].tic()
             boxes, scores = net(x)
@@ -283,7 +284,8 @@ if __name__ == '__main__':
     # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
-    # args.show_image = True
+    args.show_image = True
+    args.vis_thres = 0.01
     prefix = args.prefix
     # prefix = 'weights/lr_5e4'
     # prefix = 'weights/lr_1e3'
@@ -309,8 +311,8 @@ if __name__ == '__main__':
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
     # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
