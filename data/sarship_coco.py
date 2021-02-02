@@ -63,7 +63,10 @@ class COCODetection(data.Dataset):
         #     data_name = (self._view_map[coco_name]  # 'sarship_train'
         #                 if coco_name in self._view_map
         #                 else coco_name)
+
+        # only support single dataset now.
         for (dataset, image_set) in image_sets:
+            self.image_set = image_set
             if not dataset:
                 coco_name = image_set
             else:
@@ -281,7 +284,7 @@ class COCODetection(data.Dataset):
         coco_eval.evaluate()
         coco_eval.accumulate()
         self._print_detection_eval_metrics(coco_eval)
-        eval_file = os.path.join(output_dir, 'detection_results.pkl')
+        eval_file = os.path.join(output_dir, self.image_set + '_' + 'detection_results.pkl')
         with open(eval_file, 'wb') as fid:
             pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
         print('Wrote COCO eval results to: {}'.format(eval_file))
