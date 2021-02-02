@@ -171,14 +171,36 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
         return
 
     for i in range(num_images):
-        img = dataset.pull_image(i)
+        img, target = dataset.pull_image(i)
         scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
         x = transform(img).unsqueeze(0)
         x = x.to(device)
         scale = scale.to(device)
 
-        _t['im_detect'].tic()
-        boxes, scores = net(x)
+
+
+        if args.show_image:
+            h, w, _ = img.shape
+            xr = net.size / w
+            yr = net.size / h
+            img_gt = img.astype(np.uint8)
+            img_gt = cv2.resize(img_gt, (net.size, net.size),interpolation=cv2.INTER_LINEAR)
+            for b in target:
+                b[0] *= xr
+                b[2] *= xr
+                b[1] *= yr
+                b[3] *= yr
+                b = list(map(int, b))
+                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 2)
+                # cx = b[2]
+                # cy = b[1]
+                # text = "ship"
+                # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
+            _t['im_detect'].tic()
+            boxes, scores = net(x, i, img_gt)
+        else:
+            _t['im_detect'].tic()
+            boxes, scores = net(x)
         boxes = boxes[0]
         scores=scores[0]
 
@@ -211,19 +233,26 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
 
         # print('im_detect: {:d}/{:d} forward_nms_time{:.4f}s'.format(i + 1, num_images, _t['im_detect'].average_time))
         if args.show_image:
-            img_gt = img.astype(np.uint8)
-            for b in all_boxes[1][i]:
+            boxes = all_boxes[1][i][:]
+            for b in boxes:
+                b[0] *= xr
+                b[2] *= xr
+                b[1] *= yr
+                b[3] *= yr
                 if b[4] < args.vis_thres:
                     continue
-                text = "{:.4f}".format(b[4])
                 b = list(map(int, b))
                 cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
-                cx = b[0]
+                cx = b[2]
                 cy = b[1] + 12
-                cv2.putText(img_gt, text, (cx, cy),
-                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
-            cv2.imshow('res', img_gt)
-            cv2.waitKey(0)
+                # text = "{:.2f}".format(b[4])
+                # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
+            # cv2.imshow('res', img_gt)
+            # cv2.waitKey(0)
+            save_gt_dir = os.path.join(save_folder, 'gt_img')
+            if not os.path.exists(save_gt_dir):
+                os.mkdir(save_gt_dir)
+            cv2.imwrite(save_gt_dir + f'/{i}.png',img_gt, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
 
     # with open(det_file, 'wb') as f:
     #     pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
