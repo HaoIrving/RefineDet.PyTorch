@@ -97,18 +97,22 @@ def plot_pr_curve(save_folder_list, image_set, model_name, iou):
 
     # plt.title(f"iou={iou}")
     print(iou)
-    plt.xlabel("recall")
-    plt.ylabel("precison")
+    plt.xlabel("Recall")
+    plt.ylabel("Precison")
     # plt.xlim(0, 1.0)
     # xtick = [0.6 + round(0.05 * i , 2) for i in range(9)]
     # xtick = [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
     xtick = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
     xtick = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+    xtick = [0.7, 0.75, 0.8, 0.85, 0.9]
+    ytick = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     plt.xticks(xtick, [str(i) for i in xtick])
+    plt.yticks(ytick, [str(i) for i in ytick])
     plt.xlim(xtick[0], xtick[-1])
     plt.ylim(0, 1.01)
     plt.grid(True)
-    plt.legend(loc="lower left")
+    # plt.legend(loc="lower left")
+    plt.legend(loc="best")
     plt.show()
 
 
@@ -132,15 +136,15 @@ if __name__ == '__main__':
 
 
     save_folder_list = ['solo_cs_fcos_2e3', 'lr_2e3']
-    model_name = ['ours', 'baseline']
+    model_name = ['Ours', 'Baseline']
     image_set = 'test'
-    # image_set = 'test_inshore'
+    image_set = 'test_inshore'
     # image_set = 'test_offshore'
-    plot_pr_curve(save_folder_list, image_set, model_name, 0.5)
-    plot_pr_curve(save_folder_list, image_set, model_name, 0.55)
-    plot_pr_curve(save_folder_list, image_set, model_name, 0.6)
+    # plot_pr_curve(save_folder_list, image_set, model_name, 0.5)
+    # plot_pr_curve(save_folder_list, image_set, model_name, 0.55)
+    # plot_pr_curve(save_folder_list, image_set, model_name, 0.6)
     plot_pr_curve(save_folder_list, image_set, model_name, 0.65)
-    plot_pr_curve(save_folder_list, image_set, model_name, 0.7)
+    # plot_pr_curve(save_folder_list, image_set, model_name, 0.7)
     # plot_pr_curve(save_folder_list, image_set, model_name, 0.75)
     # plot_pr_curve(save_folder_list, image_set, model_name, 0.8)
     # plot_pr_curve(save_folder_list, image_set, model_name, 0.85)
