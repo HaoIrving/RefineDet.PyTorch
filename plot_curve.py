@@ -68,7 +68,7 @@ def plot_map(save_folder, ap_stats, metrics, legend, fig_name):
     plt.show()
     plt.cla()
 
-def plot_pr_curve(save_folder_list, model_name, iou):
+def plot_pr_curve(save_folder_list, image_set, model_name, iou):
     ious = [0.5 + round(0.05 * i, 2) for i in range(10)]
     iou_map = {x: i for i, x in enumerate(ious)}
 
@@ -76,7 +76,7 @@ def plot_pr_curve(save_folder_list, model_name, iou):
     n = len(save_folder_list)
     for i in range(n):
         save_folder = os.path.join('eval/', save_folder_list[i])
-        coco_eval_pkl = os.path.join(save_folder, 'detection_results.pkl')
+        coco_eval_pkl = os.path.join(save_folder, image_set + '_' + 'detection_results.pkl')
         f = open(coco_eval_pkl,'rb')
         coco_eval = pickle.load(f)
         precisions = coco_eval.eval["precision"]
@@ -99,7 +99,12 @@ def plot_pr_curve(save_folder_list, model_name, iou):
     print(iou)
     plt.xlabel("recall")
     plt.ylabel("precison")
-    plt.xlim(0, 1.0)
+    # plt.xlim(0, 1.0)
+    # xtick = [0.6 + round(0.05 * i , 2) for i in range(9)]
+    # xtick = [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
+    xtick = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
+    plt.xticks(xtick, [str(i) for i in xtick])
+    plt.xlim(xtick[0], xtick[-1])
     plt.ylim(0, 1.01)
     plt.grid(True)
     plt.legend(loc="lower left")
@@ -127,16 +132,19 @@ if __name__ == '__main__':
 
     save_folder_list = ['solo_cs_fcos_2e3', 'lr_2e3']
     model_name = ['ours', 'baseline']
-    plot_pr_curve(save_folder_list, model_name, 0.5)
-    plot_pr_curve(save_folder_list, model_name, 0.55)
-    plot_pr_curve(save_folder_list, model_name, 0.6)
-    plot_pr_curve(save_folder_list, model_name, 0.65)
-    plot_pr_curve(save_folder_list, model_name, 0.7)
-    plot_pr_curve(save_folder_list, model_name, 0.75)
-    plot_pr_curve(save_folder_list, model_name, 0.8)
-    plot_pr_curve(save_folder_list, model_name, 0.85)
-    plot_pr_curve(save_folder_list, model_name, 0.9)
-    plot_pr_curve(save_folder_list, model_name, 0.95)
+    # image_set = 'test'
+    image_set = 'test_inshore'
+    # image_set = 'test_offshore'
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.5)
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.55)
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.6)
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.65)
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.7)
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.75)
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.8)
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.85)
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.9)
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.95)
 """
 "iou=0.5"
 "iou=0.55"
