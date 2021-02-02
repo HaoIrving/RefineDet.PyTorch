@@ -282,7 +282,8 @@ if __name__ == '__main__':
     # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
-    # args.show_image = True
+    args.show_image = True
+    args.vis_thres = 0.01
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
     prefix = 'weights/solo_cs_2e3'
@@ -308,8 +309,8 @@ if __name__ == '__main__':
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
     # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
