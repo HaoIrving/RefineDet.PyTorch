@@ -285,7 +285,7 @@ if __name__ == '__main__':
     # args.cuda = False
     # args.retest = True
     args.show_image = True
-    args.vis_thres = 0.01
+    args.vis_thres = 0.3
     prefix = args.prefix
     # prefix = 'weights/lr_5e4'
     # prefix = 'weights/lr_1e3'
