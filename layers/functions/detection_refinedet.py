@@ -66,6 +66,7 @@ class Detect_RefineDet(Function):
 
     def forward_python_nms(self, arm_loc_data, arm_conf_data, odm_loc_data, odm_conf_data, prior_data):
         """
+        Deprecated.
         Args:
             loc_data: (tensor) Loc preds from loc layers
                 Shape: [batch,num_priors*4]

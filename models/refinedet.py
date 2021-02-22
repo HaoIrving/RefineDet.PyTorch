@@ -6,6 +6,9 @@ from layers import *
 from data import voc_refinedet, coco_refinedet
 import os
 
+# mmd
+from mmcv.ops import DeformConv2d
+
 
 class RefineDet(nn.Module):
     """Single Shot Multibox Architecture
@@ -34,6 +37,7 @@ class RefineDet(nn.Module):
         with torch.no_grad():
             self.priors = self.priorbox.forward()
         self.size = size
+        num_anchor = 3
 
         # SSD network
         self.vgg = nn.ModuleList(base)
@@ -128,6 +132,19 @@ class RefineDet(nn.Module):
         #print([x.size() for x in tcb_source])
         tcb_source.reverse()
 
+        # calculate offset
+        num = arm_loc.size(0)  # batch size
+        num_priors = self.priors.size(0)
+        boxes = torch.zeros(num, num_priors, 4)
+
+        variance = self.cfg[str(size)]['variance']
+        arm_loc_data = arm_loc.view(arm_loc.size(0), -1, 4)
+        for i in range(num):
+            decoded_boxes = decode(arm_loc_data[i], self.priors, variance)
+            boxes[i] = decoded_boxes
+        boxes = boxes * self.size / 
+
+
         # apply ODM to source layers
         for (x, l, c) in zip(tcb_source, self.odm_loc, self.odm_conf):
             odm_loc.append(l(x).permute(0, 2, 3, 1).contiguous())
@@ -167,6 +184,12 @@ class RefineDet(nn.Module):
         else:
             print('Sorry only .pth and .pkl files supported.')
 
+def get_offset():
+    """
+    calculate offset for one anchor
+    Args: 
+    Return: 
+    """
 
 # This function is derived from torchvision VGG make_layers()
 # https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
@@ -230,12 +253,26 @@ def odm_multibox(vgg, extra_layers, cfg, num_classes):
     odm_conf_layers = []
     vgg_source = [21, 28, -2]
     for k, v in enumerate(vgg_source):
-        odm_loc_layers += [nn.Conv2d(256, cfg[k] * 4, kernel_size=3, padding=1)]
-        odm_conf_layers += [nn.Conv2d(256, cfg[k] * num_classes, kernel_size=3, padding=1)]
+        for _ in range(cfg[k]):
+            odm_loc_layers += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
+            odm_conf_layers += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
     for k, v in enumerate(extra_layers[1::2], 3):
-        odm_loc_layers += [nn.Conv2d(256, cfg[k] * 4, kernel_size=3, padding=1)]
-        odm_conf_layers += [nn.Conv2d(256, cfg[k] * num_classes, kernel_size=3, padding=1)]
+        for _ in range(cfg[k]):
+            odm_loc_layers += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
+            odm_conf_layers += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
     return (odm_loc_layers, odm_conf_layers)
+
+# def odm_multibox(vgg, extra_layers, cfg, num_classes):
+#     odm_loc_layers = []
+#     odm_conf_layers = []
+#     vgg_source = [21, 28, -2]
+#     for k, v in enumerate(vgg_source):
+#         odm_loc_layers += [nn.Conv2d(256, cfg[k] * 4, kernel_size=3, padding=1)]
+#         odm_conf_layers += [nn.Conv2d(256, cfg[k] * num_classes, kernel_size=3, padding=1)]
+#     for k, v in enumerate(extra_layers[1::2], 3):
+#         odm_loc_layers += [nn.Conv2d(256, cfg[k] * 4, kernel_size=3, padding=1)]
+#         odm_conf_layers += [nn.Conv2d(256, cfg[k] * num_classes, kernel_size=3, padding=1)]
+#     return (odm_loc_layers, odm_conf_layers)
 
 def add_tcb(cfg):
     feature_scale_layers = []
