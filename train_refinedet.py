@@ -4,7 +4,7 @@ from layers.modules import RefineDetMultiBoxLoss
 #from ssd import build_ssd
 from models.refinedet import build_refinedet
 # from models.s2rn import build_s2rn
-from models.s2rnv3 import build_s2rn
+# from models.s2rnv3 import build_s2rn
 
 import os
 import sys
@@ -126,8 +126,8 @@ def train():
     print(args)
 
     device = torch.device('cuda:0' if args.cuda else 'cpu')
-    # refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'])
-    refinedet_net = build_s2rn('train', cfg['min_dim'], cfg['num_classes'])
+    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'])
+    # refinedet_net = build_s2rn('train', cfg['min_dim'], cfg['num_classes'])
     net = refinedet_net
     print(net)
 

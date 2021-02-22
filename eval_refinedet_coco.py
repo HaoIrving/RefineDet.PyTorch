@@ -13,7 +13,7 @@ from data import COCOroot, COCODetection
 import torch.utils.data as data
 
 from models.refinedet import build_refinedet
-from models.s2rn import build_s2rn
+# from models.s2rn import build_s2rn
 
 from layers import Detect_RefineDet
 from utils.nms_wrapper import nms
@@ -284,7 +284,7 @@ if __name__ == '__main__':
     # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
-    args.show_image = True
+    # args.show_image = True
     args.vis_thres = 0.3
     prefix = args.prefix
     # prefix = 'weights/lr_5e4'
