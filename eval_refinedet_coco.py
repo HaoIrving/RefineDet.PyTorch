@@ -232,18 +232,18 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
 
         # print('im_detect: {:d}/{:d} forward_nms_time{:.4f}s'.format(i + 1, num_images, _t['im_detect'].average_time))
         if args.show_image:
-            boxes = all_boxes[1][i][:]
-            for b in boxes:
-                b[0] *= xr
-                b[2] *= xr
-                b[1] *= yr
-                b[3] *= yr
-                if b[4] < args.vis_thres:
-                    continue
-                b = list(map(int, b))
-                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
-                cx = b[2]
-                cy = b[1] + 12
+            # boxes = all_boxes[1][i][:]
+            # for b in boxes:
+            #     b[0] *= xr
+            #     b[2] *= xr
+            #     b[1] *= yr
+            #     b[3] *= yr
+            #     if b[4] < args.vis_thres:
+            #         continue
+            #     b = list(map(int, b))
+            #     cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
+            #     cx = b[2]
+            #     cy = b[1] + 12
                 # text = "{:.2f}".format(b[4])
                 # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
             # cv2.imshow('res', img_gt)
@@ -283,7 +283,7 @@ if __name__ == '__main__':
     # args.cuda = False
     # args.retest = True
     args.show_image = True
-    args.vis_thres = 0.01
+    args.vis_thres = 0.9
     prefix = args.prefix
     prefix = 'weights/solo_2e3'
     prefix = 'weights/solo_cs_2e3'

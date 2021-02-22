@@ -76,9 +76,9 @@ class RefineDet(nn.Module):
         self.stacked_convs = 3
         self.in_channels = [512, 512, 1024, 512]
         self.seg_feat_channels = 256
-        self._init_solo_layers()
+        self._init_sanet_layers()
 
-    def _init_solo_layers(self):
+    def _init_sanet_layers(self):
         norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
         head_num = len(self.in_channels)
         self.cate_convs_low = nn.ModuleList()
@@ -103,17 +103,17 @@ class RefineDet(nn.Module):
                     padding=1,
                     norm_cfg=norm_cfg,
                     bias=norm_cfg is None))
-        self.solo_cate = nn.Conv2d(
+        self.sanet_cate = nn.Conv2d(
             self.seg_feat_channels, self.num_classes - 1, 3, padding=1)
         self.sigmoid = nn.Sigmoid()
     
-    def init_solo_weights(self):
+    def init_sanet_weights(self):
         for m in self.cate_convs_low:
             normal_init(m.conv, std=0.01)
         for m in self.cate_convs:
             normal_init(m.conv, std=0.01)
         bias_cate = bias_init_with_prob(0.01)
-        normal_init(self.solo_cate, std=0.01, bias=bias_cate)
+        normal_init(self.sanet_cate, std=0.01, bias=bias_cate)
 
     def forward(self, x, img_id=None, img_gt=None):
         """Applies network layers and ops on input image(s) x.
@@ -169,7 +169,7 @@ class RefineDet(nn.Module):
         arm_loc = torch.cat([o.view(o.size(0), -1) for o in arm_loc], 1)
         arm_conf = torch.cat([o.view(o.size(0), -1) for o in arm_conf], 1)
 
-        # apply solo head
+        # apply sanet head
         attention_sources = list()
         attention_maps = list()
         for (x, cate_conv_low, seg_num_grid) in zip(sources, self.cate_convs_low, self.seg_num_grids):
@@ -179,7 +179,7 @@ class RefineDet(nn.Module):
             cate_feat = cate_conv_low(x)
             for cate_layer in self.cate_convs:
                 cate_feat = cate_layer(cate_feat)
-            cate_feat = self.solo_cate(cate_feat)
+            cate_feat = self.sanet_cate(cate_feat)
             attention_maps.append(cate_feat)
 
             cate_pred = self.sigmoid(cate_feat)

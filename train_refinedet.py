@@ -139,7 +139,7 @@ def train():
     print(args)
 
     # 'feature_maps': [64, 32, 16, 8],
-    seg_num_grids = [36, 24, 16, 12]
+    # seg_num_grids = [36, 24, 16, 12]
     seg_num_grids = cfg['feature_maps']
 
     device = torch.device('cuda:0' if args.cuda else 'cpu')
@@ -157,7 +157,7 @@ def train():
         refinedet_net.load_weights(args.resume)
     else:
         print('Initializing weights...')
-        refinedet_net.init_solo_weights()
+        refinedet_net.init_sanet_weights()
         refinedet_net.vgg.apply(weights_init_relu)
         refinedet_net.extras.apply(weights_init)
         refinedet_net.arm_loc.apply(weights_init)

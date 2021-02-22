@@ -56,7 +56,7 @@ class AttentionFocalLoss(nn.Module):
         gt_bbox_list  = [targets[i][:, :-1] * self.input_size for i in range(len(targets))]
         gt_label_list = [targets[i][:, -1] for i in range(len(targets))]
         cate_label_list = multi_apply(
-            self.solo_target_single,
+            self.sanet_target_single,
             gt_bbox_list,
             gt_label_list,
             best_truth_idx_t)
@@ -78,7 +78,7 @@ class AttentionFocalLoss(nn.Module):
         loss_cate = self.loss_cate(flatten_cate_preds, flatten_cate_labels, avg_factor=num_pos + 1)
         return loss_cate
 
-    def solo_target_single(self, gt_bboxes_raw, gt_labels_raw, best_truth_idx_raw):
+    def sanet_target_single(self, gt_bboxes_raw, gt_labels_raw, best_truth_idx_raw):
 
         device = gt_labels_raw[0].device
 
@@ -145,7 +145,7 @@ class AttentionFocalLoss(nn.Module):
     #     gt_bbox_list  = [targets[i][:, :-1] * self.input_size for i in range(len(targets))]
     #     gt_label_list = [targets[i][:, -1] for i in range(len(targets))]
     #     cate_label_list = multi_apply(
-    #         self.solo_target_single,
+    #         self.sanet_target_single,
     #         gt_bbox_list,
     #         gt_label_list)
     #     # cate
@@ -166,7 +166,7 @@ class AttentionFocalLoss(nn.Module):
     #     loss_cate = self.loss_cate(flatten_cate_preds, flatten_cate_labels, avg_factor=num_pos + 1)
     #     return loss_cate
 
-    # def solo_target_single(self, gt_bboxes_raw, gt_labels_raw):
+    # def sanet_target_single(self, gt_bboxes_raw, gt_labels_raw):
 
     #     device = gt_labels_raw[0].device
 
