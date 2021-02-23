@@ -6,6 +6,7 @@ from layers import *
 from data import voc_refinedet, coco_refinedet
 import os
 
+import numpy as np
 # mmd
 from mmcv.ops import DeformConv2d
 
@@ -28,16 +29,22 @@ class RefineDet(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, size, base, extras, ARM, ODM, TCB, num_classes, detector=None):
+    def __init__(self, phase, size, base, extras, ARM, ADM, TCB, num_classes, detector=None):
         super(RefineDet, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
-        self.cfg = (coco_refinedet, voc_refinedet)[num_classes == 21]
-        self.priorbox = PriorBox(self.cfg[str(size)])
+        self.cfg = (coco_refinedet, voc_refinedet)[num_classes == 21][str(size)]
+        self.priorbox = PriorBox(self.cfg)
         with torch.no_grad():
             self.priors = self.priorbox.forward()
         self.size = size
-        num_anchor = 3
+
+        # for calc offset of ADM
+        self.anchor_num = 3
+        self.dcn_kernel = 3
+        self.variance = self.cfg['variance']
+        self.lvl_mark = get_lvl_mark(self.cfg, self.anchor_num)
+        self.cell_coordinate = get_coordinate(self.cfg)
 
         # SSD network
         self.vgg = nn.ModuleList(base)
@@ -48,8 +55,8 @@ class RefineDet(nn.Module):
 
         self.arm_loc = nn.ModuleList(ARM[0])
         self.arm_conf = nn.ModuleList(ARM[1])
-        self.odm_loc = nn.ModuleList(ODM[0])
-        self.odm_conf = nn.ModuleList(ODM[1])
+        self.adm_loc = nn.ModuleList(ADM[0])
+        self.adm_conf = nn.ModuleList(ADM[1])
         #self.tcb = nn.ModuleList(TCB)
         self.tcb0 = nn.ModuleList(TCB[0])
         self.tcb1 = nn.ModuleList(TCB[1])
@@ -82,8 +89,8 @@ class RefineDet(nn.Module):
         tcb_source = list()
         arm_loc = list()
         arm_conf = list()
-        odm_loc = list()
-        odm_conf = list()
+        adm_loc = list()
+        adm_conf = list()
 
         # apply vgg up to conv4_3 relu and conv5_3 relu
         for k in range(30):
@@ -106,21 +113,19 @@ class RefineDet(nn.Module):
             if k % 2 == 1:
                 sources.append(x)
 
-        # apply ARM and ODM to source layers
+        # apply ARM and ADM to source layers
         for (x, l, c) in zip(sources, self.arm_loc, self.arm_conf):
             arm_loc.append(l(x).permute(0, 2, 3, 1).contiguous())
             arm_conf.append(c(x).permute(0, 2, 3, 1).contiguous())
         arm_loc = torch.cat([o.view(o.size(0), -1) for o in arm_loc], 1)
         arm_conf = torch.cat([o.view(o.size(0), -1) for o in arm_conf], 1)
-        #print([x.size() for x in sources])
+
         # calculate TCB features
-        #print([x.size() for x in sources])
         p = None
         for k, v in enumerate(sources[::-1]):
             s = v
             for i in range(3):
                 s = self.tcb0[(3-k)*3 + i](s)
-                #print(s.size())
             if k != 0:
                 u = p
                 u = self.tcb1[3-k](u)
@@ -129,47 +134,62 @@ class RefineDet(nn.Module):
                 s = self.tcb2[(3-k)*3 + i](s)
             p = s
             tcb_source.append(s)
-        #print([x.size() for x in tcb_source])
         tcb_source.reverse()
 
         # calculate offset
-        num = arm_loc.size(0)  # batch size
+        b = arm_loc.size(0)  # batch size
         num_priors = self.priors.size(0)
-        boxes = torch.zeros(num, num_priors, 4)
+        boxes = torch.zeros(b, num_priors, 4)
 
-        variance = self.cfg[str(size)]['variance']
-        arm_loc_data = arm_loc.view(arm_loc.size(0), -1, 4)
-        for i in range(num):
-            decoded_boxes = decode(arm_loc_data[i], self.priors, variance)
+        arm_loc_data = arm_loc.view(b, -1, 4)
+        for i in range(b):
+            decoded_boxes = decode(arm_loc_data[i], self.priors, self.variance)
             boxes[i] = decoded_boxes
-        boxes = boxes * self.size / 
+        total_lvl = len(self.lvl_mark) - 1
+        for start, end, lvl in zip(self.lvl_mark[:-1], self.lvl_mark[1:], range(total_lvl)):
+            boxes[:, start: end, ...] *= self.cfg['feature_maps'][lvl]
+        cell_centers = self.cell_coordinate.repeat(b, 1, self.anchor_num * 2).view(b, -1, 4)
+        relative_xyxy = boxes - cell_centers
+        
+        grid_left = relative_xyxy[..., [0]]
+        grid_top = relative_xyxy[..., [1]]
+        grid_width = relative_xyxy[..., [2]] - relative_xyxy[..., [0]]
+        grid_height = relative_xyxy[..., [3]] - relative_xyxy[..., [1]]
+        intervel = torch.linspace(0., 1., self.dcn_kernel).view(
+            1, self.dcn_kernel, 1, 1).type_as(reg)
+        grid_x = grid_left + grid_width * intervel
+        grid_x = grid_x.unsqueeze(1).repeat(1, self.dcn_kernel, 1, 1, 1)
+        grid_x = grid_x.view(b, -1, h, w)
+        grid_y = grid_top + grid_height * intervel
+        grid_y = grid_y.unsqueeze(2).repeat(1, 1, self.dcn_kernel, 1, 1)
+        grid_y = grid_y.view(b, -1, h, w)
+        grid_yx = torch.stack([grid_y, grid_x], dim=2)
+        grid_yx = grid_yx.view(b, -1, h, w)
 
 
-        # apply ODM to source layers
-        for (x, l, c) in zip(tcb_source, self.odm_loc, self.odm_conf):
-            odm_loc.append(l(x).permute(0, 2, 3, 1).contiguous())
-            odm_conf.append(c(x).permute(0, 2, 3, 1).contiguous())
-        odm_loc = torch.cat([o.view(o.size(0), -1) for o in odm_loc], 1)
-        odm_conf = torch.cat([o.view(o.size(0), -1) for o in odm_conf], 1)
-        #print(arm_loc.size(), arm_conf.size(), odm_loc.size(), odm_conf.size())
+        # apply alignconv to source layers
+        for (x, l, c) in zip(tcb_source, self.adm_loc, self.adm_conf):
+            adm_loc.append(l(x).permute(0, 2, 3, 1).contiguous())
+            adm_conf.append(c(x).permute(0, 2, 3, 1).contiguous())
+        adm_loc = torch.cat([o.view(o.size(0), -1) for o in adm_loc], 1)
+        adm_conf = torch.cat([o.view(o.size(0), -1) for o in adm_conf], 1)
 
         if self.phase == "test":
-            #print(loc, conf)
             output = self.detect.forward(
                 arm_loc.view(arm_loc.size(0), -1, 4),           # arm loc preds
                 self.softmax(arm_conf.view(arm_conf.size(0), -1,
                              2)),                               # arm conf preds
-                odm_loc.view(odm_loc.size(0), -1, 4),           # odm loc preds
-                self.softmax(odm_conf.view(odm_conf.size(0), -1,
-                             self.num_classes)),                # odm conf preds
+                adm_loc.view(adm_loc.size(0), -1, 4),           # adm loc preds
+                self.softmax(adm_conf.view(adm_conf.size(0), -1,
+                             self.num_classes)),                # adm conf preds
                 self.priors.type(type(x.data))                  # default boxes
             )
         else:
             output = (
                 arm_loc.view(arm_loc.size(0), -1, 4),
                 arm_conf.view(arm_conf.size(0), -1, 2),
-                odm_loc.view(odm_loc.size(0), -1, 4),
-                odm_conf.view(odm_conf.size(0), -1, self.num_classes),
+                adm_loc.view(adm_loc.size(0), -1, 4),
+                adm_conf.view(adm_conf.size(0), -1, self.num_classes),
                 self.priors
             )
         return output
@@ -187,9 +207,21 @@ class RefineDet(nn.Module):
 def get_offset():
     """
     calculate offset for one anchor
-    Args: 
-    Return: 
     """
+
+def get_coordinate(cfg):
+    coordinate = []
+    for k, f in enumerate(cfg['feature_maps']):
+        for i, j in product(range(f), repeat=2):
+            coordinate += [i, j]
+    return torch.Tensor(coordinate).view(-1, 2)
+
+def get_lvl_mark(cfg, anchor_num=3):
+    lvl_mark = [0]
+    for i in range(len(cfg['feature_maps'])):
+        index = cfg['feature_maps'][i] ** 2 * anchor_num 
+        lvl_mark.append(index)
+    return np.array(lvl_mark).cumsum()
 
 # This function is derived from torchvision VGG make_layers()
 # https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
@@ -248,31 +280,31 @@ def arm_multibox(vgg, extra_layers, cfg):
                                   * 2, kernel_size=3, padding=1)]
     return (arm_loc_layers, arm_conf_layers)
 
+def adm_multibox(vgg, extra_layers, cfg, num_classes):
+    adm_loc_layers = []
+    adm_conf_layers = []
+    vgg_source = [21, 28, -2]
+    for k, v in enumerate(vgg_source):
+        for _ in range(cfg[k]):
+            adm_loc_layers += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
+            adm_conf_layers += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
+    for k, v in enumerate(extra_layers[1::2], 3):
+        for _ in range(cfg[k]):
+            adm_loc_layers += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
+            adm_conf_layers += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
+    return (adm_loc_layers, adm_conf_layers)
+
 def odm_multibox(vgg, extra_layers, cfg, num_classes):
     odm_loc_layers = []
     odm_conf_layers = []
     vgg_source = [21, 28, -2]
     for k, v in enumerate(vgg_source):
-        for _ in range(cfg[k]):
-            odm_loc_layers += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
-            odm_conf_layers += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
+        odm_loc_layers += [nn.Conv2d(256, cfg[k] * 4, kernel_size=3, padding=1)]
+        odm_conf_layers += [nn.Conv2d(256, cfg[k] * num_classes, kernel_size=3, padding=1)]
     for k, v in enumerate(extra_layers[1::2], 3):
-        for _ in range(cfg[k]):
-            odm_loc_layers += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
-            odm_conf_layers += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
+        odm_loc_layers += [nn.Conv2d(256, cfg[k] * 4, kernel_size=3, padding=1)]
+        odm_conf_layers += [nn.Conv2d(256, cfg[k] * num_classes, kernel_size=3, padding=1)]
     return (odm_loc_layers, odm_conf_layers)
-
-# def odm_multibox(vgg, extra_layers, cfg, num_classes):
-#     odm_loc_layers = []
-#     odm_conf_layers = []
-#     vgg_source = [21, 28, -2]
-#     for k, v in enumerate(vgg_source):
-#         odm_loc_layers += [nn.Conv2d(256, cfg[k] * 4, kernel_size=3, padding=1)]
-#         odm_conf_layers += [nn.Conv2d(256, cfg[k] * num_classes, kernel_size=3, padding=1)]
-#     for k, v in enumerate(extra_layers[1::2], 3):
-#         odm_loc_layers += [nn.Conv2d(256, cfg[k] * 4, kernel_size=3, padding=1)]
-#         odm_conf_layers += [nn.Conv2d(256, cfg[k] * num_classes, kernel_size=3, padding=1)]
-#     return (odm_loc_layers, odm_conf_layers)
 
 def add_tcb(cfg):
     feature_scale_layers = []
@@ -323,6 +355,6 @@ def build_refinedet(phase, size=320, num_classes=21, detector=None):
     base_ = vgg(base[str(size)], 3)
     extras_ = add_extras(extras[str(size)], size, 1024)
     ARM_ = arm_multibox(base_, extras_, mbox[str(size)])
-    ODM_ = odm_multibox(base_, extras_, mbox[str(size)], num_classes)
+    ADM_ = adm_multibox(base_, extras_, mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
-    return RefineDet(phase, size, base_, extras_, ARM_, ODM_, TCB_, num_classes, detector)
+    return RefineDet(phase, size, base_, extras_, ARM_, ADM_, TCB_, num_classes, detector)
