@@ -44,9 +44,10 @@ class RefineDet(nn.Module):
             self.priors = self.priorbox.forward()
         self.size = size
         self.bn = bn
+        self.conv4_3_layer = (23, 33)[self.bn]
+        self.conv5_3_layer = (30, 43)[self.bn]
 
         # for calc offset of ADM
-        self.def_groups = 1
         self.lvl_num = len(self.cfg['feature_maps'])
         self.anchor_num = 3
         self.dcn_kernel = 3
@@ -66,6 +67,7 @@ class RefineDet(nn.Module):
         self.conv4_3_L2Norm = L2Norm(512, 10)
         self.conv5_3_L2Norm = L2Norm(512, 8)
 
+        self.def_groups = 1
         c7_channel = 1024
         num_box = 3
         if self.bn:
@@ -160,25 +162,23 @@ class RefineDet(nn.Module):
         adm_conf = list()
 
         # apply vgg up to conv4_3 relu and conv5_3 relu
-        for k in range(30):
+        for k in range(self.conv5_3_layer):
             x = self.vgg[k](x)
-            if 22 == k:
+            if self.conv4_3_layer - 1 == k:
                 s = self.conv4_3_L2Norm(x)
                 sources.append(s)
-            elif 29 == k:
+            elif self.conv5_3_layer - 1 == k:
                 s = self.conv5_3_L2Norm(x)
                 sources.append(s)
 
         # apply vgg up to fc7
-        for k in range(30, len(self.vgg)):
+        for k in range(self.conv5_3_layer, len(self.vgg)):
             x = self.vgg[k](x)
         sources.append(x)
 
         # apply extra layers and cache source layer outputs
-        for k, v in enumerate(self.extras):
-            x = F.relu(v(x), inplace=True)
-            if k % 2 == 1:
-                sources.append(x)
+        x = self.extras(x)
+        sources.append(x)
 
         # apply ARM and ADM to source layers
         for (x, l, c) in zip(sources, self.arm_loc, self.arm_conf):
@@ -305,6 +305,8 @@ def init_method(m):
         xavier_init(m, distribution='uniform', bias=0)
     elif isinstance(m, nn.ConvTranspose2d):
         xavier_init(m, distribution='uniform', bias=0)
+    elif isinstance(m, nn.BatchNorm2d):
+        constant_init(m, 1)
 
 def get_coordinate(cfg):
     coordinate = []

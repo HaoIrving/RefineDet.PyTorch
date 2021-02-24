@@ -2,7 +2,8 @@ from data import *
 from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss
 #from ssd import build_ssd
-from models.refinedet import build_refinedet
+# from models.refinedet import build_refinedet
+from models.refinedet_bn import build_refinedet
 
 import os
 import sys
