@@ -288,7 +288,7 @@ if __name__ == '__main__':
     # prefix = 'weights/lr_1e3'
     prefix = 'weights/align_2e3'
     # prefix = 'weights/lr_3e3'
-    # prefix = 'weights/align_4e3'
+    prefix = 'weights/align_4e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_threshold = 0.49
