@@ -303,7 +303,8 @@ def multi_apply(func, *args, **kwargs):
 
 # This function is derived from torchvision VGG make_layers()
 # https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
-def vgg(cfg, i, batch_norm=False):
+# def vgg(cfg, i, batch_norm=False):
+def vgg(cfg, i, batch_norm=True):
     layers = []
     in_channels = i
     for v in cfg:
