@@ -3,8 +3,6 @@ from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss
 #from ssd import build_ssd
 from models.refinedet import build_refinedet
-# from models.s2rn import build_s2rn
-# from models.s2rnv3 import build_s2rn
 
 import os
 import sys
@@ -127,7 +125,6 @@ def train():
 
     device = torch.device('cuda:0' if args.cuda else 'cpu')
     refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'])
-    # refinedet_net = build_s2rn('train', cfg['min_dim'], cfg['num_classes'])
     net = refinedet_net
     print(net)
 
@@ -140,38 +137,9 @@ def train():
         print('Resuming training, loading {}...'.format(args.resume))
         refinedet_net.load_weights(args.resume)
     else:
-        from weights_init import kaiming_init, constant_init, normal_init
-        def weights_init_relu(m):
-            if isinstance(m, nn.Conv2d):
-                kaiming_init(m)
-            elif isinstance(m, nn.BatchNorm2d):
-                constant_init(m, 1)
-            elif isinstance(m, nn.Linear):
-                normal_init(m, std=0.01)
-
         print('Initializing weights...')
-        refinedet_net.vgg.apply(weights_init_relu)
-        # vgg_weights = torch.load(args.basenet)
-        # print('Loading base network...')
-        # refinedet_net.vgg.load_state_dict(vgg_weights)
-        
-        # initialize newly added layers' weights with xavier method
-        # refinedet_net.conv4_3_Norm.apply(weights_init_relu)
-        # refinedet_net.conv5_3_Norm.apply(weights_init_relu)
-        # refinedet_net.conv7_Norm.apply(weights_init_relu)
-        # refinedet_net.conv_extra_Norm.apply(weights_init_relu)
-        refinedet_net.extras.apply(weights_init_relu)
-        
-        # refinedet_net.extras.apply(weights_init)
-        
-        refinedet_net.arm_loc.apply(weights_init)
-        refinedet_net.arm_conf.apply(weights_init)
-        refinedet_net.odm_loc.apply(weights_init)
-        refinedet_net.odm_conf.apply(weights_init)
-        refinedet_net.tcb0.apply(weights_init)
-        refinedet_net.tcb1.apply(weights_init)
-        refinedet_net.tcb2.apply(weights_init)
-    
+        # refinedet_net.init_weights(pretrained=args.basenet)
+        refinedet_net.init_weights(pretrained=None)
 
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)

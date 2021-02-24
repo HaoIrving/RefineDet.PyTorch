@@ -6,10 +6,15 @@ from layers import *
 from data import voc_refinedet, coco_refinedet
 import os
 
+from layers.box_utils import decode
 import numpy as np
+from itertools import product as product
+from functools import partial
+from six.moves import map, zip
 # mmd
 from mmcv.ops import DeformConv2d
-
+# from mmdet.core import multi_apply
+from mmcv.cnn import normal_init, kaiming_init, constant_init, xavier_init
 
 class RefineDet(nn.Module):
     """Single Shot Multibox Architecture
@@ -40,8 +45,15 @@ class RefineDet(nn.Module):
         self.size = size
 
         # for calc offset of ADM
+        self.lvl_num = len(self.cfg['feature_maps'])
         self.anchor_num = 3
         self.dcn_kernel = 3
+        self.dcn_pad = 1
+        dcn_base = np.arange(-self.dcn_pad, self.dcn_pad + 1).astype(np.float64)
+        dcn_base_y = np.repeat(dcn_base, self.dcn_kernel)
+        dcn_base_x = np.tile(dcn_base, self.dcn_kernel)
+        dcn_base_offset = np.stack([dcn_base_y, dcn_base_x], axis=1).reshape((-1))
+        self.dcn_base_offset = torch.tensor(dcn_base_offset).view(1, -1, 1, 1)
         self.variance = self.cfg['variance']
         self.lvl_mark = get_lvl_mark(self.cfg, self.anchor_num)
         self.cell_coordinate = get_coordinate(self.cfg)
@@ -65,6 +77,34 @@ class RefineDet(nn.Module):
         if phase == 'test':
             self.softmax = nn.Softmax(dim=-1)
             self.detect = detector
+
+    def init_weights(self, pretrained=None):
+        if isinstance(pretrained, str):
+            vgg_weights = torch.load(pretrained)
+            print('Loading base network...')
+            self.vgg.load_state_dict(vgg_weights)
+        elif pretrained is None:
+            for m in self.vgg.modules():
+                if isinstance(m, nn.Conv2d):
+                    kaiming_init(m)
+                elif isinstance(m, nn.BatchNorm2d):
+                    constant_init(m, 1)
+                elif isinstance(m, nn.Linear):
+                    normal_init(m, std=0.01)
+        else:
+            raise TypeError('pretrained must be a str or None')
+        # initialize newly added layers' weights with xavier method
+        self.extras.apply(init_method)
+        self.arm_loc.apply(init_method)
+        self.arm_conf.apply(init_method)
+        self.tcb0.apply(init_method)
+        self.tcb1.apply(init_method)
+        self.tcb2.apply(init_method)
+        # initialize deform conv layers with normal method
+        for m in self.adm_loc:
+            normal_init(m, std=0.01)
+        for m in self.adm_conf:
+            normal_init(m, std=0.01)
 
     def forward(self, x):
         """Applies network layers and ops on input image(s) x.
@@ -117,6 +157,10 @@ class RefineDet(nn.Module):
         for (x, l, c) in zip(sources, self.arm_loc, self.arm_conf):
             arm_loc.append(l(x).permute(0, 2, 3, 1).contiguous())
             arm_conf.append(c(x).permute(0, 2, 3, 1).contiguous())
+        
+        # calculate init ponits of offset before shape change
+        adm_points = self.get_ponits(arm_loc)
+        
         arm_loc = torch.cat([o.view(o.size(0), -1) for o in arm_loc], 1)
         arm_conf = torch.cat([o.view(o.size(0), -1) for o in arm_conf], 1)
 
@@ -136,41 +180,19 @@ class RefineDet(nn.Module):
             tcb_source.append(s)
         tcb_source.reverse()
 
-        # calculate offset
-        b = arm_loc.size(0)  # batch size
-        num_priors = self.priors.size(0)
-        boxes = torch.zeros(b, num_priors, 4)
-
-        arm_loc_data = arm_loc.view(b, -1, 4)
-        for i in range(b):
-            decoded_boxes = decode(arm_loc_data[i], self.priors, self.variance)
-            boxes[i] = decoded_boxes
-        total_lvl = len(self.lvl_mark) - 1
-        for start, end, lvl in zip(self.lvl_mark[:-1], self.lvl_mark[1:], range(total_lvl)):
-            boxes[:, start: end, ...] *= self.cfg['feature_maps'][lvl]
-        cell_centers = self.cell_coordinate.repeat(b, 1, self.anchor_num * 2).view(b, -1, 4)
-        relative_xyxy = boxes - cell_centers
-        
-        grid_left = relative_xyxy[..., [0]]
-        grid_top = relative_xyxy[..., [1]]
-        grid_width = relative_xyxy[..., [2]] - relative_xyxy[..., [0]]
-        grid_height = relative_xyxy[..., [3]] - relative_xyxy[..., [1]]
-        intervel = torch.linspace(0., 1., self.dcn_kernel).view(
-            1, self.dcn_kernel, 1, 1).type_as(reg)
-        grid_x = grid_left + grid_width * intervel
-        grid_x = grid_x.unsqueeze(1).repeat(1, self.dcn_kernel, 1, 1, 1)
-        grid_x = grid_x.view(b, -1, h, w)
-        grid_y = grid_top + grid_height * intervel
-        grid_y = grid_y.unsqueeze(2).repeat(1, 1, self.dcn_kernel, 1, 1)
-        grid_y = grid_y.view(b, -1, h, w)
-        grid_yx = torch.stack([grid_y, grid_x], dim=2)
-        grid_yx = grid_yx.view(b, -1, h, w)
-
-
         # apply alignconv to source layers
-        for (x, l, c) in zip(tcb_source, self.adm_loc, self.adm_conf):
-            adm_loc.append(l(x).permute(0, 2, 3, 1).contiguous())
-            adm_conf.append(c(x).permute(0, 2, 3, 1).contiguous())
+        dcn_base_offset = self.dcn_base_offset.type_as(x)
+        for (x, lvl, ponits) in zip(tcb_source, range(self.lvl_num), adm_points):
+            loc = []
+            conf = []
+            for a in range(self.anchor_num):
+                l = self.adm_loc[lvl * self.anchor_num + a]
+                c = self.adm_conf[lvl * self.anchor_num + a]
+                dcn_offset = ponits[:, a, ...].contiguous() - dcn_base_offset
+                loc.append(l(x, dcn_offset))
+                conf.append(c(x, dcn_offset))
+            adm_loc.append(torch.cat(loc, 1).permute(0, 2, 3, 1).contiguous())
+            adm_conf.append(torch.cat(conf, 1).permute(0, 2, 3, 1).contiguous())
         adm_loc = torch.cat([o.view(o.size(0), -1) for o in adm_loc], 1)
         adm_conf = torch.cat([o.view(o.size(0), -1) for o in adm_conf], 1)
 
@@ -194,6 +216,53 @@ class RefineDet(nn.Module):
             )
         return output
 
+    def get_ponits(self, arm_loc):
+        return multi_apply(
+            self.get_ponits_single, 
+            arm_loc, 
+            self.lvl_mark[:-1], 
+            self.lvl_mark[1:], 
+            self.cfg['feature_maps'],
+            self.cell_coordinate,
+            )
+
+    # This fuction is modified from 
+    # https://github.com/open-mmlab/mmdetection/blob/master/mmdet/models/dense_heads/reppoints_head.py
+    def get_ponits_single(self, arm_loc_single, start, end, feature_size, center_coordinate):
+        priors = self.priors[start: end, :].type_as(arm_loc_single)
+        center_coordinate = center_coordinate.type_as(arm_loc_single)
+        
+        b, h, w, _ = arm_loc_single.shape
+        num_priors = priors.size(0)
+        boxes = torch.zeros(b, num_priors, 4)
+        arm_loc_data = arm_loc_single.view(b, -1, 4)
+        assert boxes.shape == arm_loc_data.shape
+        for i in range(b):
+            decoded_boxes = decode(arm_loc_data[i], priors, self.variance)
+            boxes[i] = decoded_boxes
+        boxes *= feature_size
+        cell_centers = center_coordinate.repeat(b, 1, self.anchor_num * 2).view(b, -1, 4)
+        relative_xyxy = boxes - cell_centers
+        
+        relative_xyxy = relative_xyxy.view(
+            b, h, w, self.anchor_num, 4).permute(0, 3, 4, 1, 2).contiguous()  # [b,3,4,h,w]
+        grid_left = relative_xyxy[:, :, [0], ...]
+        grid_top = relative_xyxy[:, :, [1], ...]
+        grid_width = relative_xyxy[:, :, [2], ...] - relative_xyxy[:, :, [0], ...]
+        grid_height = relative_xyxy[:, :, [3], ...] - relative_xyxy[:, :, [1], ...]
+
+        intervel = torch.tensor([(2 * i - 1) / (2 * self.dcn_kernel) for i in range(1, self.dcn_kernel + 1)]).view(
+            1, 1, self.dcn_kernel, 1, 1).type_as(arm_loc_single)        
+        grid_x = grid_left + grid_width * intervel
+        grid_x = grid_x.unsqueeze(2).repeat(1, 1, self.dcn_kernel, 1, 1, 1)
+        grid_x = grid_x.view(b, self.anchor_num, -1, h, w)
+        grid_y = grid_top + grid_height * intervel
+        grid_y = grid_y.unsqueeze(3).repeat(1, 1, 1, self.dcn_kernel, 1, 1)
+        grid_y = grid_y.view(b, self.anchor_num, -1, h, w)
+        grid_yx = torch.stack([grid_y, grid_x], dim=3)
+        grid_yx = grid_yx.view(b, self.anchor_num, -1, h, w)
+        return grid_yx
+
     def load_weights(self, base_file):
         other, ext = os.path.splitext(base_file)
         if ext == '.pkl' or '.pth':
@@ -204,17 +273,21 @@ class RefineDet(nn.Module):
         else:
             print('Sorry only .pth and .pkl files supported.')
 
-def get_offset():
-    """
-    calculate offset for one anchor
-    """
+def init_method(m):
+    if isinstance(m, nn.Conv2d):
+        xavier_init(m, distribution='uniform', bias=0)
+    elif isinstance(m, nn.ConvTranspose2d):
+        xavier_init(m, distribution='uniform', bias=0)
 
 def get_coordinate(cfg):
     coordinate = []
     for k, f in enumerate(cfg['feature_maps']):
+        coordinate_lvl = []
         for i, j in product(range(f), repeat=2):
-            coordinate += [i, j]
-    return torch.Tensor(coordinate).view(-1, 2)
+            coordinate_lvl += [i, j]
+        coordinate_lvl = torch.Tensor(coordinate_lvl).view(-1, 2)
+        coordinate.append(coordinate_lvl)
+    return coordinate
 
 def get_lvl_mark(cfg, anchor_num=3):
     lvl_mark = [0]
@@ -222,6 +295,11 @@ def get_lvl_mark(cfg, anchor_num=3):
         index = cfg['feature_maps'][i] ** 2 * anchor_num 
         lvl_mark.append(index)
     return np.array(lvl_mark).cumsum()
+
+def multi_apply(func, *args, **kwargs):
+    pfunc = partial(func, **kwargs) if kwargs else func
+    map_results = map(pfunc, *args)
+    return tuple(map_results)
 
 # This function is derived from torchvision VGG make_layers()
 # https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py

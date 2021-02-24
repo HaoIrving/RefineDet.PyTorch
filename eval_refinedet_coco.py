@@ -13,7 +13,6 @@ from data import COCOroot, COCODetection
 import torch.utils.data as data
 
 from models.refinedet import build_refinedet
-# from models.s2rn import build_s2rn
 
 from layers import Detect_RefineDet
 from utils.nms_wrapper import nms
@@ -280,8 +279,6 @@ if __name__ == '__main__':
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
     
-    # args.trained_model = 'weights/lr_1e3/RefineDet512_COCO_final.pth'
-    # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
     # args.show_image = True
@@ -289,14 +286,9 @@ if __name__ == '__main__':
     prefix = args.prefix
     # prefix = 'weights/lr_5e4'
     # prefix = 'weights/lr_1e3'
-    prefix = 'weights/lr_2e3'
+    prefix = 'weights/align_2e3'
     # prefix = 'weights/lr_3e3'
     # prefix = 'weights/lr_4e3'
-    # prefix = 'weights/srn_1e3'
-    # prefix = 'weights/srn_2e3'
-    # prefix = 'weights/srn_3e3'
-    # prefix = 'weights/srn_4e3'
-    # prefix = 'weights/srnv2_4e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_threshold = 0.49
@@ -310,14 +302,13 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
     net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
-    # net = build_s2rn('test', int(args.input_size), num_classes, detector=detect) 
     load_to_cpu = not args.cuda
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
@@ -325,11 +316,11 @@ if __name__ == '__main__':
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
 
     start_epoch = 10; step = 10
-    start_epoch = 200; step = 5
+    # start_epoch = 200; step = 5
     ToBeTested = []
-    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_250.pth') 
+    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_250.pth') 
     # ToBeTested *= 5
 
     for index, model_path in enumerate(ToBeTested):
@@ -368,13 +359,13 @@ if __name__ == '__main__':
     
     from plot_curve import plot_map, plot_loss
     fig_name = 'ap.png'
-    fig_name = 'ap_last10.png'
+    # fig_name = 'ap_last10.png'
     metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    # plot_map(save_folder, ap_stats, metrics, legend, fig_name)
+    plot_map(save_folder, ap_stats, metrics, legend, fig_name)
 
-    # txt_log = prefix + '/log.txt'
-    # plot_loss(save_folder, txt_log)
+    txt_log = prefix + '/log.txt'
+    plot_loss(save_folder, txt_log)
 """
 refinedet
 lr_2e3
