@@ -11,6 +11,7 @@ import numpy as np
 from itertools import product as product
 from functools import partial
 from six.moves import map, zip
+from math import sqrt as sqrt
 # mmd
 from mmcv.ops import DeformConv2d
 # from mmdet.core import multi_apply
@@ -49,6 +50,8 @@ class RefineDet(nn.Module):
 
         # for calc offset of ADM
         self.lvl_num = len(self.cfg['feature_maps'])
+        self.aspect_ratio = 2
+        self.anchor_stride_ratio = 4
         self.anchor_num = 3
         self.dcn_kernel = 3
         self.dcn_pad = 1
@@ -80,6 +83,7 @@ class RefineDet(nn.Module):
         else:
             self.extras = nn.Sequential(nn.Conv2d(c7_channel, 256, kernel_size=1, stride=1, padding=0), nn.ReLU(inplace=True),
                                     nn.Conv2d(256, 512, kernel_size=3, stride=2, padding=1), nn.ReLU(inplace=True))
+        
         self.arm_loc = nn.ModuleList([nn.Conv2d(512, num_box*4, kernel_size=3, stride=1, padding=1),
                                       nn.Conv2d(512, num_box*4, kernel_size=3, stride=1, padding=1),
                                       nn.Conv2d(c7_channel, num_box*4, kernel_size=3, stride=1, padding=1),
@@ -88,16 +92,37 @@ class RefineDet(nn.Module):
                                       nn.Conv2d(512, num_box*2, kernel_size=3, stride=1, padding=1),
                                       nn.Conv2d(c7_channel, num_box*2, kernel_size=3, stride=1, padding=1),
                                       nn.Conv2d(512, num_box*2, kernel_size=3, stride=1, padding=1),])
-        self.adm_loc = nn.ModuleList([DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+
+        self.adm_loc1 = nn.ModuleList([DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
                                       DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
                                       DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
                                       DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                      ] * num_box)
-        self.adm_conf = nn.ModuleList([DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                      ])
+        self.adm_loc2 = nn.ModuleList([DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                      ])
+        self.adm_loc3 = nn.ModuleList([DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                      ])
+        self.adm_conf1 = nn.ModuleList([DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
                                        DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
                                        DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
                                        DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                       ] * num_box)
+                                       ])
+        self.adm_conf2 = nn.ModuleList([DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                       ])
+        self.adm_conf3 = nn.ModuleList([DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
+                                       ])
         #self.tcb = nn.ModuleList(TCB)
         self.tcb0 = nn.ModuleList(TCB[0])
         self.tcb1 = nn.ModuleList(TCB[1])
@@ -106,34 +131,6 @@ class RefineDet(nn.Module):
         if phase == 'test':
             self.softmax = nn.Softmax(dim=-1)
             self.detect = detector
-
-    def init_weights(self, pretrained=None):
-        if isinstance(pretrained, str):
-            vgg_weights = torch.load(pretrained)
-            print('Loading base network...')
-            self.vgg.load_state_dict(vgg_weights)
-        elif pretrained is None:
-            for m in self.vgg.modules():
-                if isinstance(m, nn.Conv2d):
-                    kaiming_init(m)
-                elif isinstance(m, nn.BatchNorm2d):
-                    constant_init(m, 1)
-                elif isinstance(m, nn.Linear):
-                    normal_init(m, std=0.01)
-        else:
-            raise TypeError('pretrained must be a str or None')
-        # initialize newly added layers' weights with xavier method
-        self.extras.apply(init_method)
-        self.arm_loc.apply(init_method)
-        self.arm_conf.apply(init_method)
-        self.tcb0.apply(init_method)
-        self.tcb1.apply(init_method)
-        self.tcb2.apply(init_method)
-        # initialize deform conv layers with normal method
-        for m in self.adm_loc:
-            normal_init(m, std=0.01)
-        for m in self.adm_conf:
-            normal_init(m, std=0.01)
 
     def forward(self, x):
         """Applies network layers and ops on input image(s) x.
@@ -181,12 +178,15 @@ class RefineDet(nn.Module):
         sources.append(x)
 
         # apply ARM and ADM to source layers
+        arm_loc_align = list()
         for (x, l, c) in zip(sources, self.arm_loc, self.arm_conf):
-            arm_loc.append(l(x).permute(0, 2, 3, 1).contiguous())
+            loc_tensor = l(x)
+            arm_loc_align.append(loc_tensor.detach())
+            arm_loc.append(loc_tensor.permute(0, 2, 3, 1).contiguous())
             arm_conf.append(c(x).permute(0, 2, 3, 1).contiguous())
         
         # calculate init ponits of offset before shape change
-        adm_points = self.get_ponits(arm_loc)
+        adm_points = self.get_ponits(arm_loc_align)
         
         arm_loc = torch.cat([o.view(o.size(0), -1) for o in arm_loc], 1)
         arm_conf = torch.cat([o.view(o.size(0), -1) for o in arm_conf], 1)
@@ -209,15 +209,22 @@ class RefineDet(nn.Module):
 
         # apply alignconv to source layers
         dcn_base_offset = self.dcn_base_offset.type_as(x)
-        for (x, lvl, ponits) in zip(tcb_source, range(self.lvl_num), adm_points):
+        for (x, ponits, l1, l2, l3, c1, c2, c3) in zip(
+            tcb_source, adm_points, 
+            self.adm_loc1, self.adm_loc2, self.adm_loc3, 
+            self.adm_conf1, self.adm_conf2, self.adm_conf3
+            ):
             loc = []
             conf = []
-            for a in range(self.anchor_num):
-                l = self.adm_loc[lvl * self.anchor_num + a]
-                c = self.adm_conf[lvl * self.anchor_num + a]
-                dcn_offset = ponits[:, a, ...].contiguous() - dcn_base_offset
-                loc.append(l(x, dcn_offset))
-                conf.append(c(x, dcn_offset))
+            dcn_offset1 = ponits[:, 0, ...].contiguous() - dcn_base_offset
+            loc.append(l1(x, dcn_offset1))
+            conf.append(c1(x, dcn_offset1))
+            dcn_offset2 = ponits[:, 1, ...].contiguous() - dcn_base_offset
+            loc.append(l2(x, dcn_offset2))
+            conf.append(c2(x, dcn_offset2))
+            dcn_offset3 = ponits[:, 2, ...].contiguous() - dcn_base_offset
+            loc.append(l3(x, dcn_offset3))
+            conf.append(c3(x, dcn_offset3))
             adm_loc.append(torch.cat(loc, 1).permute(0, 2, 3, 1).contiguous())
             adm_conf.append(torch.cat(conf, 1).permute(0, 2, 3, 1).contiguous())
         adm_loc = torch.cat([o.view(o.size(0), -1) for o in adm_loc], 1)
@@ -244,42 +251,34 @@ class RefineDet(nn.Module):
         return output
 
     def get_ponits(self, arm_loc):
-        return multi_apply(
-            self.get_ponits_single, 
-            arm_loc, 
-            self.lvl_mark[:-1], 
-            self.lvl_mark[1:], 
-            self.cfg['feature_maps'],
-            self.cell_coordinate,
-            )
+        return multi_apply(self.get_ponits_single, arm_loc)
 
     # This fuction is modified from 
     # https://github.com/open-mmlab/mmdetection/blob/master/mmdet/models/dense_heads/reppoints_head.py
-    def get_ponits_single(self, arm_loc_single, start, end, feature_size, center_coordinate):
-        priors = self.priors[start: end, :].type_as(arm_loc_single)
-        center_coordinate = center_coordinate.type_as(arm_loc_single)
-        
-        b, h, w, _ = arm_loc_single.shape
-        num_priors = priors.size(0)
-        boxes = torch.zeros(b, num_priors, 4)
-        arm_loc_data = arm_loc_single.view(b, -1, 4).detach()
-        assert boxes.shape == arm_loc_data.shape
-        for i in range(b):
-            decoded_boxes = decode(arm_loc_data[i], priors, self.variance)
-            boxes[i] = decoded_boxes
-        boxes *= feature_size
-        cell_centers = center_coordinate.repeat(b, 1, 1)
-        relative_xyxy = boxes - cell_centers
-        
-        relative_xyxy = relative_xyxy.view(
-            b, h, w, self.anchor_num, 4).permute(0, 3, 4, 1, 2).contiguous()  # [b,3,4,h,w]
-        grid_left = relative_xyxy[:, :, [0], ...]
-        grid_top = relative_xyxy[:, :, [1], ...]
-        grid_width = relative_xyxy[:, :, [2], ...] - relative_xyxy[:, :, [0], ...]
-        grid_height = relative_xyxy[:, :, [3], ...] - relative_xyxy[:, :, [1], ...]
+    def get_ponits_single(self, reg):
+        scale = self.anchor_stride_ratio / 2
+        anchors = [-scale, -scale, scale, scale]
+        ls = scale*sqrt(self.aspect_ratio)
+        ss = scale/sqrt(self.aspect_ratio)
+        anchors += [-ls, -ss, ls, ss]
+        anchors += [-ss, -ls, ss, ls]
+        previous_boxes = reg.new_tensor(anchors).view(1, 3, 4, 1, 1)
 
+        b, _, h, w = reg.shape
+        reg = reg.view(b, self.anchor_num, 4, h, w)
+
+        bxy = (previous_boxes[:, :, :2, ...] + previous_boxes[:, :, 2:, ...]) / 2.
+        bwh = (previous_boxes[:, :, 2:, ...] -
+               previous_boxes[:, :, :2, ...]).clamp(min=1e-6)
+        grid_topleft = bxy + bwh * reg[:, :, :2, ...] * self.variance[0] - 0.5 * bwh * torch.exp(
+            reg[:, :, 2:, ...]) * self.variance[1]
+        grid_wh = bwh * torch.exp(reg[:, :, 2:, ...]) * self.variance[1]
+        grid_left = grid_topleft[:, :, [0], ...]
+        grid_top = grid_topleft[:, :, [1], ...]
+        grid_width = grid_wh[:, :, [0], ...]
+        grid_height = grid_wh[:, :, [1], ...]
         intervel = torch.tensor([(2 * i - 1) / (2 * self.dcn_kernel) for i in range(1, self.dcn_kernel + 1)]).view(
-            1, 1, self.dcn_kernel, 1, 1).type_as(arm_loc_single)
+            1, 1, self.dcn_kernel, 1, 1).type_as(reg)
         grid_x = grid_left + grid_width * intervel
         grid_x = grid_x.unsqueeze(2).repeat(1, 1, self.dcn_kernel, 1, 1, 1)
         grid_x = grid_x.view(b, self.anchor_num, -1, h, w)
@@ -288,7 +287,82 @@ class RefineDet(nn.Module):
         grid_y = grid_y.view(b, self.anchor_num, -1, h, w)
         grid_yx = torch.stack([grid_y, grid_x], dim=3)
         grid_yx = grid_yx.view(b, self.anchor_num, -1, h, w)
+    
         return grid_yx
+    
+    # def get_ponits(self, arm_loc):
+    #     return multi_apply(
+    #         self.get_ponits_single, 
+    #         arm_loc, 
+    #         self.lvl_mark[:-1], 
+    #         self.lvl_mark[1:], 
+    #         self.cfg['feature_maps'],
+    #         self.cell_coordinate,
+    #         )
+    # def get_ponits_single(self, arm_loc_single, start, end, feature_size, center_coordinate):
+    #     priors = self.priors[start: end, :].type_as(arm_loc_single)
+    #     center_coordinate = center_coordinate.type_as(arm_loc_single)
+        
+    #     b, h, w, _ = arm_loc_single.shape
+    #     num_priors = priors.size(0)
+    #     boxes = torch.zeros(b, num_priors, 4)
+    #     arm_loc_data = arm_loc_single.view(b, -1, 4).detach()
+    #     assert boxes.shape == arm_loc_data.shape
+    #     for i in range(b):
+    #         decoded_boxes = decode(arm_loc_data[i], priors, self.variance)
+    #         boxes[i] = decoded_boxes
+    #     boxes *= feature_size
+    #     cell_centers = center_coordinate.repeat(b, 1, 1)
+    #     relative_xyxy = boxes - cell_centers
+        
+    #     relative_xyxy = relative_xyxy.view(
+    #         b, h, w, self.anchor_num, 4).permute(0, 3, 4, 1, 2).contiguous()  # [b,3,4,h,w]
+    #     grid_left = relative_xyxy[:, :, [0], ...]
+    #     grid_top = relative_xyxy[:, :, [1], ...]
+    #     grid_width = relative_xyxy[:, :, [2], ...] - relative_xyxy[:, :, [0], ...]
+    #     grid_height = relative_xyxy[:, :, [3], ...] - relative_xyxy[:, :, [1], ...]
+
+    #     intervel = torch.tensor([(2 * i - 1) / (2 * self.dcn_kernel) for i in range(1, self.dcn_kernel + 1)]).view(
+    #         1, 1, self.dcn_kernel, 1, 1).type_as(arm_loc_single)
+    #     grid_x = grid_left + grid_width * intervel
+    #     grid_x = grid_x.unsqueeze(2).repeat(1, 1, self.dcn_kernel, 1, 1, 1)
+    #     grid_x = grid_x.view(b, self.anchor_num, -1, h, w)
+    #     grid_y = grid_top + grid_height * intervel
+    #     grid_y = grid_y.unsqueeze(3).repeat(1, 1, 1, self.dcn_kernel, 1, 1)
+    #     grid_y = grid_y.view(b, self.anchor_num, -1, h, w)
+    #     grid_yx = torch.stack([grid_y, grid_x], dim=3)
+    #     grid_yx = grid_yx.view(b, self.anchor_num, -1, h, w)
+    #     return grid_yx
+
+    def init_weights(self, pretrained=None):
+        if isinstance(pretrained, str):
+            vgg_weights = torch.load(pretrained)
+            print('Loading base network...')
+            self.vgg.load_state_dict(vgg_weights)
+        elif pretrained is None:
+            for m in self.vgg.modules():
+                if isinstance(m, nn.Conv2d):
+                    kaiming_init(m)
+                elif isinstance(m, nn.BatchNorm2d):
+                    constant_init(m, 1)
+                elif isinstance(m, nn.Linear):
+                    normal_init(m, std=0.01)
+        else:
+            raise TypeError('pretrained must be a str or None')
+        # initialize newly added layers' weights with xavier method
+        self.extras.apply(init_method)
+        self.arm_loc.apply(init_method)
+        self.arm_conf.apply(init_method)
+        self.tcb0.apply(init_method)
+        self.tcb1.apply(init_method)
+        self.tcb2.apply(init_method)
+        # initialize deform conv layers with normal method
+        for adm_loc in (self.adm_loc1, self.adm_loc2, self.adm_loc3):
+            for m in adm_loc:
+                normal_init(m, std=0.01)
+        for adm_conf in (self.adm_conf1, self.adm_conf2, self.adm_conf3):
+            for m in adm_conf:
+                normal_init(m, std=0.01)
 
     def load_weights(self, base_file):
         other, ext = os.path.splitext(base_file)
