@@ -262,7 +262,7 @@ class RefineDet(nn.Module):
         b, h, w, _ = arm_loc_single.shape
         num_priors = priors.size(0)
         boxes = torch.zeros(b, num_priors, 4)
-        arm_loc_data = arm_loc_single.view(b, -1, 4)
+        arm_loc_data = arm_loc_single.view(b, -1, 4).detach()
         assert boxes.shape == arm_loc_data.shape
         for i in range(b):
             decoded_boxes = decode(arm_loc_data[i], priors, self.variance)
