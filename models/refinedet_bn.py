@@ -268,7 +268,7 @@ class RefineDet(nn.Module):
             decoded_boxes = decode(arm_loc_data[i], priors, self.variance)
             boxes[i] = decoded_boxes
         boxes *= feature_size
-        cell_centers = center_coordinate.repeat(b, 1, self.anchor_num * 2).view(b, -1, 4)
+        cell_centers = center_coordinate.repeat(b, 1, 1)
         relative_xyxy = boxes - cell_centers
         
         relative_xyxy = relative_xyxy.view(
@@ -279,7 +279,7 @@ class RefineDet(nn.Module):
         grid_height = relative_xyxy[:, :, [3], ...] - relative_xyxy[:, :, [1], ...]
 
         intervel = torch.tensor([(2 * i - 1) / (2 * self.dcn_kernel) for i in range(1, self.dcn_kernel + 1)]).view(
-            1, 1, self.dcn_kernel, 1, 1).type_as(arm_loc_single)        
+            1, 1, self.dcn_kernel, 1, 1).type_as(arm_loc_single)
         grid_x = grid_left + grid_width * intervel
         grid_x = grid_x.unsqueeze(2).repeat(1, 1, self.dcn_kernel, 1, 1, 1)
         grid_x = grid_x.view(b, self.anchor_num, -1, h, w)
@@ -308,13 +308,13 @@ def init_method(m):
     elif isinstance(m, nn.BatchNorm2d):
         constant_init(m, 1)
 
-def get_coordinate(cfg):
+def get_coordinate(cfg, anchor_num=3):
     coordinate = []
     for k, f in enumerate(cfg['feature_maps']):
         coordinate_lvl = []
         for i, j in product(range(f), repeat=2):
-            coordinate_lvl += [i, j]
-        coordinate_lvl = torch.Tensor(coordinate_lvl).view(-1, 2)
+            coordinate_lvl += [i, j] * 2 * anchor_num
+        coordinate_lvl = torch.Tensor(coordinate_lvl).view(-1, 4)
         coordinate.append(coordinate_lvl)
     return coordinate
 

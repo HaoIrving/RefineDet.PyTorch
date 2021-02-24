@@ -12,7 +12,8 @@ from torch.autograd import Variable
 from data import COCOroot, COCODetection
 import torch.utils.data as data
 
-from models.refinedet import build_refinedet
+# from models.refinedet import build_refinedet
+from models.refinedet_bn import build_refinedet
 
 from layers import Detect_RefineDet
 from utils.nms_wrapper import nms
@@ -176,8 +177,6 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
         x = x.to(device)
         scale = scale.to(device)
 
-
-
         if args.show_image:
             h, w, _ = img.shape
             xr = net.size / w
@@ -288,7 +287,7 @@ if __name__ == '__main__':
     # prefix = 'weights/lr_1e3'
     prefix = 'weights/align_2e3'
     # prefix = 'weights/lr_3e3'
-    # prefix = 'weights/align_4e3'
+    prefix = 'weights/align_4e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_threshold = 0.49
@@ -384,7 +383,6 @@ ap: 0.6393, ap50: 0.9893, ap75: 0.7521, ap_s: 0.5869, ap_m: 0.7125, ap_l: 0.7697
 Best ap  : 0.6500 at epoch 275
 ap: 0.6500, ap50: 0.9888, ap75: 0.7740, ap_s: 0.6026, ap_m: 0.7166, ap_l: 0.7605
 
-
 lr_3e3
 Best ap50: 0.9814 at epoch 240
 ap: 0.6055, ap50: 0.9814, ap75: 0.6981, ap_s: 0.5580, ap_m: 0.6792, ap_l: 0.6230
@@ -395,33 +393,10 @@ Best ap50: 0.9826 at epoch 245
 ap: 0.6111, ap50: 0.9826, ap75: 0.6637, ap_s: 0.5572, ap_m: 0.6933, ap_l: 0.6133
 Best ap  : 0.6257 at epoch 290
 ap: 0.6257, ap50: 0.9751, ap75: 0.7296, ap_s: 0.5739, ap_m: 0.7000, ap_l: 0.6462
-s2rn
-srn_2e3
-Best ap50 is 0.9762 at epoch 245
-crsp ap_s is 0.5509, ap_m is 0.6693, ap_l is 0.6126
-Best ap   is 0.5978 at epoch 245
-crsp ap_s is 0.5509, ap_m is 0.6693, ap_l is 0.6126
-srn_3e3
-Best ap50: 0.9791 at epoch 205
-ap: 0.5883, ap50: 0.9791, ap75: 0.6338, ap_s: 0.5306, ap_m: 0.6810, ap_l: 0.5896
-Best ap  : 0.6106 at epoch 270
-ap: 0.6106, ap50: 0.9730, ap75: 0.7050, ap_s: 0.5628, ap_m: 0.6875, ap_l: 0.6137
-srn_4e3 bs 32
-Best ap50: 0.9792 at epoch 280
-ap: 0.6088, ap50: 0.9792, ap75: 0.7029, ap_s: 0.5639, ap_m: 0.6745, ap_l: 0.6397
-Best ap  : 0.6109 at epoch 255
-ap: 0.6109, ap50: 0.9750, ap75: 0.7135, ap_s: 0.5753, ap_m: 0.6664, ap_l: 0.6088
-srn_4e3 bs 16 (conv7_norm)
-Best ap50: 0.9744 at epoch 255
-ap: 0.6080, ap50: 0.9744, ap75: 0.7123, ap_s: 0.5683, ap_m: 0.6718, ap_l: 0.6312
-Best ap  : 0.6104 at epoch 290
-ap: 0.6104, ap50: 0.9725, ap75: 0.7000, ap_s: 0.5683, ap_m: 0.6773, ap_l: 0.6281
 
-s2rn v2 
-srn 4e3 bs 16
-Best ap50: 0.9739 at epoch 230
-ap: 0.5960, ap50: 0.9739, ap75: 0.6751, ap_s: 0.5506, ap_m: 0.6634, ap_l: 0.6209
-Best ap  : 0.6051 at epoch 300
-ap: 0.6051, ap50: 0.9731, ap75: 0.6803, ap_s: 0.5664, ap_m: 0.6741, ap_l: 0.5744
-
+align wo bn 4e3 
+Best ap50: 0.6712 at epoch 280
+ap: 0.3864, ap50: 0.6712, ap75: 0.3961, ap_s: 0.2757, ap_m: 0.5549, ap_l: 0.6247
+Best ap  : 0.3884 at epoch 270
+ap: 0.3884, ap50: 0.6689, ap75: 0.4016, ap_s: 0.2747, ap_m: 0.5607, ap_l: 0.6422
 """
