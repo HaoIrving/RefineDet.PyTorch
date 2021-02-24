@@ -303,8 +303,8 @@ def multi_apply(func, *args, **kwargs):
 
 # This function is derived from torchvision VGG make_layers()
 # https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
-# def vgg(cfg, i, batch_norm=False):
-def vgg(cfg, i, batch_norm=True):
+def vgg(cfg, i, batch_norm=False):
+# def vgg(cfg, i, batch_norm=True):
     layers = []
     in_channels = i
     for v in cfg:
@@ -322,8 +322,13 @@ def vgg(cfg, i, batch_norm=True):
     pool5 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
     conv6 = nn.Conv2d(512, 1024, kernel_size=3, padding=3, dilation=3)
     conv7 = nn.Conv2d(1024, 1024, kernel_size=1)
-    layers += [pool5, conv6,
-               nn.ReLU(inplace=True), conv7, nn.ReLU(inplace=True)]
+    # layers += [pool5, conv6,
+    #            nn.ReLU(inplace=True), conv7, nn.ReLU(inplace=True)]
+    if batch_norm:
+        layers += [pool5, conv6, nn.BatchNorm2d(conv6.out_channels),
+                   nn.ReLU(inplace=True), conv7, nn.BatchNorm2d(conv7.out_channels), nn.ReLU(inplace=True)]
+    else:
+        layers += [pool5, conv6, nn.ReLU(inplace=True), conv7, nn.ReLU(inplace=True)]
     return layers
 
 
