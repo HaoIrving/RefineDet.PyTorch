@@ -11,17 +11,11 @@ from data import voc_refinedet, coco_refinedet, MEANS
 from .weights_init import normal_init, bias_init_with_prob
 
 # mmd
-# from mmcv.cnn import ConvModule, constant_init, kaiming_init
+from mmcv.cnn import ConvModule
 
 # solo
-from mmdet.models.utils import ConvModule
+# from mmdet.models.utils import ConvModule
 
-def unnormalize(tensor):
-    mean = MEANS
-    std = [1, 1, 1]
-    for t, m, s in zip(tensor, mean, std):
-        t.mul_(s).add_(m)
-    return tensor
 
 class RefineDet(nn.Module):
     """Single Shot Multibox Architecture

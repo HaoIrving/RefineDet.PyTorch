@@ -14,7 +14,6 @@ from six.moves import map, zip
 from math import sqrt as sqrt
 # mmd
 from mmcv.ops import DeformConv2d
-# from mmdet.core import multi_apply
 from mmcv.cnn import normal_init, kaiming_init, constant_init, xavier_init
 
 class RefineDet(nn.Module):
