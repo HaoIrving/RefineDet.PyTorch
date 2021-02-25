@@ -288,6 +288,7 @@ if __name__ == '__main__':
     # prefix = 'weights/align_2e3_2x'
     # prefix = 'weights/lr_3e3'
     prefix = 'weights/align_4e3'
+    prefix = 'weights/align_2e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_threshold = 0.49
@@ -394,13 +395,13 @@ ap: 0.6111, ap50: 0.9826, ap75: 0.6637, ap_s: 0.5572, ap_m: 0.6933, ap_l: 0.6133
 Best ap  : 0.6257 at epoch 290
 ap: 0.6257, ap50: 0.9751, ap75: 0.7296, ap_s: 0.5739, ap_m: 0.7000, ap_l: 0.6462
 
-align w bn  4e3 b32
+align
+w bn  4e3 b32
 Best ap50: 0.9798 at epoch 230
 ap: 0.6113, ap50: 0.9798, ap75: 0.6928, ap_s: 0.5623, ap_m: 0.6816, ap_l: 0.6855
 Best ap  : 0.6187 at epoch 260
 ap: 0.6187, ap50: 0.9753, ap75: 0.7341, ap_s: 0.5799, ap_m: 0.6791, ap_l: 0.6271
-
-align w bn  4e3 b16
+w bn  4e3 b16
 Best ap50: 0.9825 at epoch 230
 ap: 0.6206, ap50: 0.9825, ap75: 0.7117, ap_s: 0.5782, ap_m: 0.6782, ap_l: 0.6902
 Best ap  : 0.6294 at epoch 280
