@@ -283,12 +283,10 @@ if __name__ == '__main__':
     # args.show_image = True
     args.vis_thres = 0.3
     prefix = args.prefix
-    # prefix = 'weights/lr_5e4'
-    # prefix = 'weights/lr_1e3'
     # prefix = 'weights/align_2e3_2x'
-    # prefix = 'weights/lr_3e3'
     prefix = 'weights/align_4e3'
-    prefix = 'weights/align_2e3'
+    prefix = 'weights/align_4e3_2x'
+    # prefix = 'weights/align_2e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     nms_threshold = 0.49
@@ -318,7 +316,7 @@ if __name__ == '__main__':
     start_epoch = 10; step = 10
     # start_epoch = 200; step = 5
     ToBeTested = []
-    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 600, step)]
     ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
     # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_250.pth') 
     # ToBeTested *= 5
