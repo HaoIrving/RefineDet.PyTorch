@@ -12,7 +12,8 @@ from torch.autograd import Variable
 from data import COCOroot, COCODetection
 import torch.utils.data as data
 
-from sardet.refinedet_bn import build_refinedet
+# from sardet.refinedet_bn import build_refinedet
+from sardet.refinedet_bn_at2 import build_refinedet
 
 from layers import Detect_RefineDet
 from utils.nms_wrapper import nms
@@ -280,7 +281,8 @@ if __name__ == '__main__':
     # prefix = args.prefix
     # prefix = 'weights/tmp'
     prefix = 'weights/at_2e3'
-    # prefix = 'weights/at_4e3'
+    prefix = 'weights/at_4e3'
+    prefix = 'weights/at2_4e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 

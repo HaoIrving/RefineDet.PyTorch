@@ -225,36 +225,6 @@ class RefineDet(nn.Module):
         arm_loc = torch.cat([o.view(o.size(0), -1) for o in arm_loc], 1)
         arm_conf = torch.cat([o.view(o.size(0), -1) for o in arm_conf], 1)
 
-        # apply solo head
-        attention_sources = list()
-        attention_maps = list()
-        for (x, cate_conv_low, seg_num_grid) in zip(sources, self.cate_convs_low, self.seg_num_grids):
-            oh, ow = x.shape[-2:]
-            if oh != seg_num_grid or ow != seg_num_grid:
-                x = F.interpolate(x, size=seg_num_grid, mode='bilinear')
-            cate_feat = cate_conv_low(x)
-            for cate_layer in self.cate_convs:
-                cate_feat = cate_layer(cate_feat)
-            cate_feat = self.solo_cate(cate_feat)
-            attention_maps.append(cate_feat)
-
-            cate_pred = self.sigmoid(cate_feat)
-            if cate_pred.shape[-1] != ow:
-                cate_pred = F.interpolate(cate_pred, size=(oh, ow), mode='bilinear')
-            attention_sources.append(cate_pred)
-
-        # if self.phase == 'test':
-        #     save_dir = './eval/attention_maps'
-        #     if not os.path.exists(save_dir):
-        #         os.mkdir(save_dir)
-        #     for index, level in enumerate(attention_sources):
-        #         i = self.cfg[str(self.size)]['steps'][index]
-        #         level = F.interpolate(level, size=(self.size, self.size), mode='bicubic') # bilinear, nearest
-        #         level = level.squeeze(0)
-        #         level = level.cpu().numpy().copy()
-        #         level = np.transpose(level, (1, 2, 0))
-        #         plt.imsave(os.path.join(save_dir, str(i) + '.png'), level[:,:,0])#, cmap='gray')
-
         # calculate TCB features
         p = None
         for k, v in enumerate(sources[::-1]):
@@ -271,6 +241,31 @@ class RefineDet(nn.Module):
             tcb_source.append(s)
         tcb_source.reverse()
 
+        # apply solo head
+        attention_sources = list()
+        attention_maps = list()
+        for (x, cate_conv_low, seg_num_grid) in zip(tcb_source, self.cate_convs_low, self.seg_num_grids):
+            oh, ow = x.shape[-2:]
+            cate_feat = cate_conv_low(x)
+            for cate_layer in self.cate_convs:
+                cate_feat = cate_layer(cate_feat)
+            cate_feat = self.solo_cate(cate_feat)
+            attention_maps.append(cate_feat)
+            cate_pred = self.sigmoid(cate_feat)
+            attention_sources.append(cate_pred)
+
+        # if self.phase == 'test':
+        #     save_dir = './eval/attention_maps'
+        #     if not os.path.exists(save_dir):
+        #         os.mkdir(save_dir)
+        #     for index, level in enumerate(attention_sources):
+        #         i = self.cfg[str(self.size)]['steps'][index]
+        #         level = F.interpolate(level, size=(self.size, self.size), mode='bicubic') # bilinear, nearest
+        #         level = level.squeeze(0)
+        #         level = level.cpu().numpy().copy()
+        #         level = np.transpose(level, (1, 2, 0))
+        #         plt.imsave(os.path.join(save_dir, str(i) + '.png'), level[:,:,0])#, cmap='gray')
+
         # apply attention
         tcb_source_new = list()
         for attention, tcbx in zip(attention_sources, tcb_source):
@@ -280,7 +275,7 @@ class RefineDet(nn.Module):
         # apply alignconv to source layers
         dcn_base_offset = self.dcn_base_offset.type_as(x)
         for (x, ponits, l1, l2, l3, c1, c2, c3) in zip(
-            tcb_source, adm_points, 
+            tcb_source_new, adm_points, 
             self.adm_loc1, self.adm_loc2, self.adm_loc3, 
             self.adm_conf1, self.adm_conf2, self.adm_conf3
             ):

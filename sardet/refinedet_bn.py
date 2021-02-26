@@ -230,8 +230,6 @@ class RefineDet(nn.Module):
         attention_maps = list()
         for (x, cate_conv_low, seg_num_grid) in zip(sources, self.cate_convs_low, self.seg_num_grids):
             oh, ow = x.shape[-2:]
-            if oh != seg_num_grid or ow != seg_num_grid:
-                x = F.interpolate(x, size=seg_num_grid, mode='bilinear')
             cate_feat = cate_conv_low(x)
             for cate_layer in self.cate_convs:
                 cate_feat = cate_layer(cate_feat)
@@ -239,8 +237,6 @@ class RefineDet(nn.Module):
             attention_maps.append(cate_feat)
 
             cate_pred = self.sigmoid(cate_feat)
-            if cate_pred.shape[-1] != ow:
-                cate_pred = F.interpolate(cate_pred, size=(oh, ow), mode='bilinear')
             attention_sources.append(cate_pred)
 
         # if self.phase == 'test':
