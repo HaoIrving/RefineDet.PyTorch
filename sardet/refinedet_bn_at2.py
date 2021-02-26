@@ -127,9 +127,8 @@ class RefineDet(nn.Module):
 
         # attention head
         self.seg_num_grids = seg_num_grids
-        self.in_channels = [512, 512, 1024, 512]
         self.seg_feat_channels = 256
-        self.stacked_convs = 3
+        self.stacked_convs = 4
         self._init_solo_layers()
 
         if phase == 'test':
@@ -139,20 +138,8 @@ class RefineDet(nn.Module):
     # modified from https://github.com/WXinlong/SOLO/blob/master/mmdet/models/anchor_heads/solo_head.py
     def _init_solo_layers(self):
         norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
-        head_num = len(self.in_channels)
-        self.cate_convs_low = nn.ModuleList()
-        for i in range(head_num):
-            self.cate_convs_low.append(
-                ConvModule(
-                    self.in_channels[i],
-                    self.seg_feat_channels,
-                    3,
-                    stride=1,
-                    padding=1,
-                    norm_cfg=norm_cfg,
-                    bias=norm_cfg is None))
         self.cate_convs = nn.ModuleList()
-        for i in range(self.stacked_convs - 1):
+        for i in range(self.stacked_convs):
             self.cate_convs.append(
                 ConvModule(
                     self.seg_feat_channels,
@@ -244,12 +231,10 @@ class RefineDet(nn.Module):
         # apply solo head
         attention_sources = list()
         attention_maps = list()
-        for (x, cate_conv_low, seg_num_grid) in zip(tcb_source, self.cate_convs_low, self.seg_num_grids):
-            oh, ow = x.shape[-2:]
-            cate_feat = cate_conv_low(x)
+        for x in tcb_source:
             for cate_layer in self.cate_convs:
-                cate_feat = cate_layer(cate_feat)
-            cate_feat = self.solo_cate(cate_feat)
+                x = cate_layer(x)
+            cate_feat = self.solo_cate(x)
             attention_maps.append(cate_feat)
             cate_pred = self.sigmoid(cate_feat)
             attention_sources.append(cate_pred)
