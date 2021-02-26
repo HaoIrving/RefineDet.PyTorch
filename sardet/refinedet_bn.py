@@ -14,7 +14,7 @@ from six.moves import map, zip
 from math import sqrt as sqrt
 # mmd
 from mmcv.ops import DeformConv2d
-from mmcv.cnn import normal_init, kaiming_init, constant_init, xavier_init
+from mmcv.cnn import normal_init, kaiming_init, constant_init, xavier_init, ConvModule
 
 class RefineDet(nn.Module):
     """Single Shot Multibox Architecture
@@ -34,7 +34,7 @@ class RefineDet(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, size, base, TCB, num_classes, bn=True, detector=None):
+    def __init__(self, phase, size, base, TCB, num_classes, seg_num_grids=[36, 24, 16, 12], bn=True, detector=None):
         super(RefineDet, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
@@ -125,9 +125,46 @@ class RefineDet(nn.Module):
         self.tcb1 = nn.ModuleList(TCB[1])
         self.tcb2 = nn.ModuleList(TCB[2])
 
+        # attention head
+        self.seg_num_grids = seg_num_grids
+        self.in_channels = [512, 512, 1024, 512]
+        self.seg_feat_channels = 256
+        self.stacked_convs = 3
+        self._init_solo_layers()
+
         if phase == 'test':
             self.softmax = nn.Softmax(dim=-1)
             self.detect = detector
+
+    # modified from https://github.com/WXinlong/SOLO/blob/master/mmdet/models/anchor_heads/solo_head.py
+    def _init_solo_layers(self):
+        norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
+        head_num = len(self.in_channels)
+        self.cate_convs_low = nn.ModuleList()
+        for i in range(head_num):
+            self.cate_convs_low.append(
+                ConvModule(
+                    self.in_channels[i],
+                    self.seg_feat_channels,
+                    3,
+                    stride=1,
+                    padding=1,
+                    norm_cfg=norm_cfg,
+                    bias=norm_cfg is None))
+        self.cate_convs = nn.ModuleList()
+        for i in range(self.stacked_convs - 1):
+            self.cate_convs.append(
+                ConvModule(
+                    self.seg_feat_channels,
+                    self.seg_feat_channels,
+                    3,
+                    stride=1,
+                    padding=1,
+                    norm_cfg=norm_cfg,
+                    bias=norm_cfg is None))
+        self.solo_cate = nn.Conv2d(
+            self.seg_feat_channels, self.num_classes - 1, 3, padding=1)
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         """Applies network layers and ops on input image(s) x.
@@ -188,6 +225,36 @@ class RefineDet(nn.Module):
         arm_loc = torch.cat([o.view(o.size(0), -1) for o in arm_loc], 1)
         arm_conf = torch.cat([o.view(o.size(0), -1) for o in arm_conf], 1)
 
+        # apply solo head
+        attention_sources = list()
+        attention_maps = list()
+        for (x, cate_conv_low, seg_num_grid) in zip(sources, self.cate_convs_low, self.seg_num_grids):
+            oh, ow = x.shape[-2:]
+            if oh != seg_num_grid or ow != seg_num_grid:
+                x = F.interpolate(x, size=seg_num_grid, mode='bilinear')
+            cate_feat = cate_conv_low(x)
+            for cate_layer in self.cate_convs:
+                cate_feat = cate_layer(cate_feat)
+            cate_feat = self.solo_cate(cate_feat)
+            attention_maps.append(cate_feat)
+
+            cate_pred = self.sigmoid(cate_feat)
+            if cate_pred.shape[-1] != ow:
+                cate_pred = F.interpolate(cate_pred, size=(oh, ow), mode='bilinear')
+            attention_sources.append(cate_pred)
+
+        # if self.phase == 'test':
+        #     save_dir = './eval/attention_maps'
+        #     if not os.path.exists(save_dir):
+        #         os.mkdir(save_dir)
+        #     for index, level in enumerate(attention_sources):
+        #         i = self.cfg[str(self.size)]['steps'][index]
+        #         level = F.interpolate(level, size=(self.size, self.size), mode='bicubic') # bilinear, nearest
+        #         level = level.squeeze(0)
+        #         level = level.cpu().numpy().copy()
+        #         level = np.transpose(level, (1, 2, 0))
+        #         plt.imsave(os.path.join(save_dir, str(i) + '.png'), level[:,:,0])#, cmap='gray')
+
         # calculate TCB features
         p = None
         for k, v in enumerate(sources[::-1]):
@@ -203,6 +270,12 @@ class RefineDet(nn.Module):
             p = s
             tcb_source.append(s)
         tcb_source.reverse()
+
+        # apply attention
+        tcb_source_new = list()
+        for attention, tcbx in zip(attention_sources, tcb_source):
+            feature = tcbx * torch.exp(attention)
+            tcb_source_new.append(feature)
 
         # apply alignconv to source layers
         dcn_base_offset = self.dcn_base_offset.type_as(x)
@@ -316,6 +389,13 @@ class RefineDet(nn.Module):
         for adm_conf in (self.adm_conf1, self.adm_conf2, self.adm_conf3):
             for m in adm_conf:
                 normal_init(m, std=0.01)
+        # initialize attention head
+        for m in self.cate_convs_low:
+            normal_init(m.conv, std=0.01)
+        for m in self.cate_convs:
+            normal_init(m.conv, std=0.01)
+        bias_cate = bias_init_with_prob(0.01)
+        normal_init(self.solo_cate, std=0.01, bias=bias_cate)
 
     def load_weights(self, base_file):
         other, ext = os.path.splitext(base_file)
@@ -472,7 +552,7 @@ tcb = {
 }
 
 
-def build_refinedet(phase, size=320, num_classes=21, detector=None):
+def build_refinedet(phase, size=320, num_classes=21, seg_num_grids=[36, 24, 16, 12], detector=None):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
@@ -486,4 +566,4 @@ def build_refinedet(phase, size=320, num_classes=21, detector=None):
     # ARM_ = arm_multibox(base_, extras_, mbox[str(size)])
     # ADM_ = adm_multibox(base_, extras_, mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
-    return RefineDet(phase, size, base_, TCB_, num_classes, bn, detector)
+    return RefineDet(phase, size, base_, TCB_, num_classes, seg_num_grids, bn, detector)
