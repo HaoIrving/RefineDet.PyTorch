@@ -371,8 +371,6 @@ class RefineDet(nn.Module):
             for m in adm_conf:
                 normal_init(m, std=0.01)
         # initialize attention head
-        for m in self.cate_convs_low:
-            normal_init(m.conv, std=0.01)
         for m in self.cate_convs:
             normal_init(m.conv, std=0.01)
         bias_cate = bias_init_with_prob(0.01)
