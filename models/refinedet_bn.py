@@ -179,7 +179,8 @@ class RefineDet(nn.Module):
         arm_loc_align = list()
         for (x, l, c) in zip(sources, self.arm_loc, self.arm_conf):
             loc_tensor = l(x)
-            arm_loc_align.append(loc_tensor.detach())
+            # arm_loc_align.append(loc_tensor.detach())
+            arm_loc_align.append(loc_tensor)
             arm_loc.append(loc_tensor.permute(0, 2, 3, 1).contiguous())
             arm_conf.append(c(x).permute(0, 2, 3, 1).contiguous())
         
