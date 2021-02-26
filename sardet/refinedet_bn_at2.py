@@ -237,7 +237,7 @@ class RefineDet(nn.Module):
             cate_feat = self.solo_cate(x)
             attention_maps.append(cate_feat)
             cate_pred = self.sigmoid(cate_feat)
-            attention_sources.append(cate_pred)
+            attention_sources.append(cate_pred.detach())
 
         # if self.phase == 'test':
         #     save_dir = './eval/attention_maps'
