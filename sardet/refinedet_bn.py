@@ -14,7 +14,7 @@ from six.moves import map, zip
 from math import sqrt as sqrt
 # mmd
 from mmcv.ops import DeformConv2d
-from mmcv.cnn import normal_init, kaiming_init, constant_init, xavier_init, ConvModule
+from mmcv.cnn import normal_init, kaiming_init, constant_init, xavier_init, bias_init_with_prob, ConvModule
 
 class RefineDet(nn.Module):
     """Single Shot Multibox Architecture
@@ -312,6 +312,7 @@ class RefineDet(nn.Module):
             )
         else:
             output = (
+                attention_maps,
                 arm_loc.view(arm_loc.size(0), -1, 4),
                 arm_conf.view(arm_conf.size(0), -1, 2),
                 adm_loc.view(adm_loc.size(0), -1, 4),

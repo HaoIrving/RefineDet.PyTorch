@@ -1,7 +1,7 @@
 from data import *
 from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss, AttentionFocalLoss
-from sardet.refinedet import build_refinedet
+from sardet.refinedet_bn import build_refinedet
 
 
 import os
@@ -19,15 +19,6 @@ from utils.logger import Logger
 import math
 import datetime
 
-from sardet.weights_init import kaiming_init, constant_init, normal_init
-
-def weights_init_relu(m):
-    if isinstance(m, nn.Conv2d):
-        kaiming_init(m)
-    elif isinstance(m, nn.BatchNorm2d):
-        constant_init(m, 1)
-    elif isinstance(m, nn.Linear):
-        normal_init(m, std=0.01)
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -157,17 +148,8 @@ def train():
         refinedet_net.load_weights(args.resume)
     else:
         print('Initializing weights...')
-        refinedet_net.init_solo_weights()
-        refinedet_net.vgg.apply(weights_init_relu)
-        refinedet_net.extras.apply(weights_init)
-        refinedet_net.arm_loc.apply(weights_init)
-        refinedet_net.arm_conf.apply(weights_init)
-        refinedet_net.odm_loc.apply(weights_init)
-        refinedet_net.odm_conf.apply(weights_init)
-        refinedet_net.tcb0.apply(weights_init)
-        refinedet_net.tcb1.apply(weights_init)
-        refinedet_net.tcb2.apply(weights_init)
-    
+        # refinedet_net.init_weights(pretrained=args.basenet)
+        refinedet_net.init_weights(pretrained=None)
 
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)

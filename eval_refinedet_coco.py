@@ -277,12 +277,9 @@ if __name__ == '__main__':
     # args.cuda = False
     # args.retest = True
     args.show_image = True
-    prefix = args.prefix
-    prefix = 'weights/solo_2e3' # no consistent sampling and solo grid
-    prefix = 'weights/solo_ncs_fcos_2e3'
+    # prefix = args.prefix
     # prefix = 'weights/tmp'
-    # prefix = 'weights/solo_g8_2e3'
-    # prefix = 'weights/solo_b32_2e3'
+    prefix = 'weights/at_2e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
@@ -313,11 +310,11 @@ if __name__ == '__main__':
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
 
     start_epoch = 10; step = 10
-    start_epoch = 200; step = 5
+    # start_epoch = 200; step = 5
     ToBeTested = []
-    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_295.pth') 
+    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_295.pth') 
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
@@ -354,13 +351,13 @@ if __name__ == '__main__':
     
     from plot_curve import plot_map, plot_loss
     fig_name = 'ap.png'
-    fig_name = 'ap_last10.png'
+    # fig_name = 'ap_last10.png'
     metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     plot_map(save_folder, ap_stats, metrics, legend, fig_name)
 
-    # txt_log = prefix + '/log.txt'
-    # plot_loss(save_folder, txt_log)
+    txt_log = prefix + '/log.txt'
+    plot_loss(save_folder, txt_log)
 """
 refinedet
 lr_2e3
