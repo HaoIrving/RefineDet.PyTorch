@@ -282,7 +282,7 @@ if __name__ == '__main__':
     # prefix = 'weights/tmp'
     prefix = 'weights/at_2e3'
     prefix = 'weights/at_4e3'
-    # prefix = 'weights/at2_4e3'
+    prefix = 'weights/at2_1e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
@@ -299,8 +299,8 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
