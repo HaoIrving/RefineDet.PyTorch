@@ -63,6 +63,8 @@ parser.add_argument('--resume_epoch', default=0,
 parser.add_argument('-max','--max_epoch', default=300,
                     type=int, help='max epoch for retraining')               
 parser.add_argument('--ngpu', default=4, type=int, help='gpus')
+parser.add_argument('-aw', '--at_weight', default=0.3, type=float,
+                    help='attention loss weight')
 args = parser.parse_args()
 
 
@@ -99,7 +101,7 @@ seg_num_grids = [64, 32, 16, 8]
 # anchor [32, 64, 128, 256]
 # scale_ranges = ((1, 96), (48, 192), (96, 384), (192, 768))
 scale_ranges = ((1, 64), (32, 128), (64, 256), (128, 512))
-att_loss_weight = 0.3
+att_loss_weight = args.at_weight
 
 negpos_ratio = 3
 initial_lr = args.lr

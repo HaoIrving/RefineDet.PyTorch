@@ -285,6 +285,7 @@ if __name__ == '__main__':
     prefix = 'weights/at1_4e3_01'
     prefix = 'weights/at1_4e3_05'
     prefix = 'weights/at2_4e3_03'
+    prefix = 'weights/at2_4e3_01'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
