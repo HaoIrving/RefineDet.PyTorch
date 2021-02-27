@@ -162,13 +162,13 @@ class RefineDet(nn.Module):
         for k, v in enumerate(sources[::-1]):
             s = v
             for i in range(3):
-                s = self.tcb0[(3-k)*3 + i](s)
+                s = self.tcb0[(self.step-k)*3 + i](s)
             if k != 0:
                 u = p
-                u = self.tcb1[3-k](u)
+                u = self.tcb1[self.step-k](u)
                 s += u
             for i in range(3):
-                s = self.tcb2[(3-k)*3 + i](s)
+                s = self.tcb2[(self.step-k)*3 + i](s)
             p = s
             tcb_source.append(s)
         tcb_source.reverse()
