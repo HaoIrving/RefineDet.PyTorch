@@ -386,32 +386,34 @@ def add_extras(cfg, size, i, batch_norm=False):
     for k, v in enumerate(cfg):
         if in_channels != 'S':
             if v == 'S':
-                conv2d = nn.Conv2d(in_channels, cfg[k + 1],
-                           kernel_size=(1, 3)[flag], stride=2, padding=1)
+                conv2d = nn.Conv2d(in_channels, cfg[k + 1], kernel_size=(1, 3)[flag], stride=2, padding=1)
+                if batch_norm:
+                    layers += [conv2d, nn.BatchNorm2d(cfg[k + 1]), nn.ReLU(inplace=True)]
+                else:
+                    layers += [conv2d, nn.ReLU(inplace=True)]
+            else:
+                conv2d = nn.Conv2d(in_channels, v, kernel_size=(1, 3)[flag])
                 if batch_norm:
                     layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
                 else:
                     layers += [conv2d, nn.ReLU(inplace=True)]
-            else:
-                layers += [nn.Conv2d(in_channels, v, kernel_size=(1, 3)[flag])]
             flag = not flag
         in_channels = v
     return layers
 
-def arm_multibox(vgg, extra_layers, cfg, bn):
+def arm_multibox(in_channels, cfg, bn):
     arm_loc_layers = []
     arm_conf_layers = []
-    vgg_source = [21, 28, -2]
+    if bn:
+        vgg_source = [20, 30, ]
+    else:
+        vgg_source = [21, 28, -2]
     for k, v in enumerate(vgg_source):
-        arm_loc_layers += [nn.Conv2d(vgg[v].out_channels,
-                                 cfg[k] * 4, kernel_size=3, padding=1)]
-        arm_conf_layers += [nn.Conv2d(vgg[v].out_channels,
-                        cfg[k] * 2, kernel_size=3, padding=1)]
+        arm_loc_layers += [nn.Conv2d(vgg[v].out_channels, cfg[k] * 4, kernel_size=3, padding=1)]
+        arm_conf_layers += [nn.Conv2d(vgg[v].out_channels, cfg[k] * 2, kernel_size=3, padding=1)]
     for k, v in enumerate(extra_layers[1::2], 3):
-        arm_loc_layers += [nn.Conv2d(v.out_channels, cfg[k]
-                                 * 4, kernel_size=3, padding=1)]
-        arm_conf_layers += [nn.Conv2d(v.out_channels, cfg[k]
-                                  * 2, kernel_size=3, padding=1)]
+        arm_loc_layers += [nn.Conv2d(v.out_channels, cfg[k] * 4, kernel_size=3, padding=1)]
+        arm_conf_layers += [nn.Conv2d(v.out_channels, cfg[k] * 2, kernel_size=3, padding=1)]
     return (arm_loc_layers, arm_conf_layers)
 
 def adm_multibox(vgg, extra_layers, cfg, num_classes, bn):
@@ -472,6 +474,7 @@ extras = {
 mbox = {
     '320': [3, 3, 3, 3],  # number of boxes per feature map location
     '512': [3, 3, 3, 3],  # number of boxes per feature map location
+    '896': [3, 3, 3, 3, 3],  # number of boxes per feature map location
 }
 
 tcb = {
@@ -480,6 +483,10 @@ tcb = {
     '896': [256, 512, 512, 1024, 512],
 }
 
+arm = {
+    '512': [512, 512, 1024, 512],
+    '896': [256, 512, 512, 1024, 512],
+}
 
 def build_refinedet(phase, size=320, num_classes=21, detector=None):
     if phase != "test" and phase != "train":
@@ -487,8 +494,8 @@ def build_refinedet(phase, size=320, num_classes=21, detector=None):
         return
     bn = True
     base_ = vgg(base[str(size)], 3, bn)
-    # extras_ = add_extras(extras[str(size)], size, 1024)
-    # ARM_ = arm_multibox(base_, extras_, mbox[str(size)])
-    # ADM_ = adm_multibox(base_, extras_, mbox[str(size)], num_classes)
+    extras_ = add_extras(extras[str(size)], size, 1024, bn)
+    ARM_ = arm_multibox(arm[str(size)], mbox[str(size)], bn)
+    ADM_ = adm_multibox(len(arm[str(size)]), mbox[str(size)], num_classes, bn)
     TCB_ = add_tcb(tcb[str(size)])
-    return RefineDet(phase, size, base_, TCB_, num_classes, bn, detector)
+    return RefineDet(phase, size, base_, extras_, TCB_, ARM_, ADM_, num_classes, bn, detector)
