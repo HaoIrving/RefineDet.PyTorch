@@ -276,7 +276,7 @@ class RefineDet(nn.Module):
         # apply alignconv to source layers
         dcn_base_offset = self.dcn_base_offset.type_as(x)
         for (x, ponits, l1, l2, l3, c1, c2, c3) in zip(
-            tcb_source, adm_points, 
+            tcb_source_new, adm_points, 
             self.adm_loc1, self.adm_loc2, self.adm_loc3, 
             self.adm_conf1, self.adm_conf2, self.adm_conf3
             ):

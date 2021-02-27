@@ -12,8 +12,8 @@ from torch.autograd import Variable
 from data import COCOroot, COCODetection
 import torch.utils.data as data
 
-# from sardet.refinedet_bn import build_refinedet
-from sardet.refinedet_bn_at2 import build_refinedet
+from sardet.refinedet_bn import build_refinedet
+# from sardet.refinedet_bn_at2 import build_refinedet
 
 from layers import Detect_RefineDet
 from utils.nms_wrapper import nms
@@ -283,7 +283,7 @@ if __name__ == '__main__':
     prefix = 'weights/at_2e3'
     prefix = 'weights/at_4e3'
     prefix = 'weights/at1_4e3'
-    prefix = 'weights/at2_1e3'
+    # prefix = 'weights/at2_1e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
@@ -453,11 +453,10 @@ Best ap50: 0.9801 at epoch 250
 ap: 0.6113, ap50: 0.9801, ap75: 0.7057, ap_s: 0.5639, ap_m: 0.6778, ap_l: 0.6822
 Best ap  : 0.6221 at epoch 280
 ap: 0.6221, ap50: 0.9734, ap75: 0.7235, ap_s: 0.5784, ap_m: 0.6831, ap_l: 0.7019
-
-at1 4e3 
-Best ap50: 0.9740 at epoch 290
-ap: 0.6291, ap50: 0.9740, ap75: 0.7438, ap_s: 0.5869, ap_m: 0.6914, ap_l: 0.6600
+Best ap50: 0.9741 at epoch 215
+ap: 0.6166, ap50: 0.9741, ap75: 0.7045, ap_s: 0.5813, ap_m: 0.6688, ap_l: 0.6718
 Best ap  : 0.6291 at epoch 290
 ap: 0.6291, ap50: 0.9740, ap75: 0.7438, ap_s: 0.5869, ap_m: 0.6914, ap_l: 0.6600
 
+at1 4e3 
 """
