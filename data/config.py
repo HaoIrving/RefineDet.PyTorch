@@ -115,5 +115,16 @@ coco_refinedet = {
         'variance': [0.1, 0.2],
         'clip': True,
         'name': 'RefineDet_COCO_512',
+    '896': {
+        'num_classes': 2,
+        'feature_maps': [224, 112, 56, 28, 14],
+        'min_dim': 896,
+        'steps': [4, 8, 16, 32, 64],
+        'min_sizes': [16, 32, 64, 128, 256],
+        'max_sizes': [],
+        'aspect_ratios': [[2], [2], [2], [2], [2]],
+        'variance': [0.1, 0.2],
+        'clip': True,
+        'name': 'RefineDet_COCO_832',
     }
 }

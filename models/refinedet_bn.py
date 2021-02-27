@@ -458,6 +458,8 @@ base = {
             512, 512, 512],
     '512': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
             512, 512, 512],
+    '896': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
+            512, 512, 512],
 }
 extras = {
     '320': [256, 'S', 512],
@@ -471,16 +473,13 @@ mbox = {
 tcb = {
     '320': [512, 512, 1024, 512],
     '512': [512, 512, 1024, 512],
+    '896': [256, 512, 512, 1024, 512],
 }
 
 
 def build_refinedet(phase, size=320, num_classes=21, detector=None):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
-        return
-    if size != 320 and size != 512:
-        print("ERROR: You specified size " + repr(size) + ". However, " +
-              "currently only RefineDet320 and RefineDet512 is supported!")
         return
     bn = True
     base_ = vgg(base[str(size)], 3, bn)

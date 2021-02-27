@@ -88,6 +88,7 @@ sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 # args.ngpu = 2
 # args.num_workers = 0
 args.input_size = str(512)
+args.input_size = str(896)
 # args.max_epoch = 300
 # args.max_epoch = 600
 
