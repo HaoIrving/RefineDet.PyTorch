@@ -14,8 +14,8 @@ import torch.utils.data as data
 
 # from sardet.refinedet_bn import build_refinedet
 # from sardet.refinedet_bn_at2 import build_refinedet
-# from sardet.refinedet_bn_at1_mh import build_refinedet
-from sardet.refinedet_bn_at2_mh import build_refinedet
+from sardet.refinedet_bn_at1_mh import build_refinedet
+# from sardet.refinedet_bn_at2_mh import build_refinedet
 
 from layers import Detect_RefineDet
 from utils.nms_wrapper import nms
@@ -289,7 +289,7 @@ if __name__ == '__main__':
     prefix = 'weights/at1_4e3_05'
     prefix = 'weights/at1_mh_4e3_1'
     # prefix = 'weights/at1_mh2_4e3_1'
-    prefix = 'weights/at2_mh_4e3_1'
+    # prefix = 'weights/at2_mh_4e3_1'
     # prefix = 'weights/at2_4e3_03'
     # prefix = 'weights/at2_4e3_01'
 
@@ -411,16 +411,16 @@ ap: 0.6105, ap50: 0.9721, ap75: 0.7028, ap_s: 0.5662, ap_m: 0.6729, ap_l: 0.6792
 at1 4e3 mh1
 at1 4e3 mh2
 
-at2 4e3 aw03
-Best ap50: 0.9733 at epoch 275
-ap: 0.6130, ap50: 0.9733, ap75: 0.7168, ap_s: 0.5652, ap_m: 0.6816, ap_l: 0.6637
-Best ap  : 0.6175 at epoch 235
-ap: 0.6175, ap50: 0.9728, ap75: 0.7037, ap_s: 0.5709, ap_m: 0.6862, ap_l: 0.6573
 at2 4e3 aw01
 Best ap50: 0.9756 at epoch 230
 ap: 0.6201, ap50: 0.9756, ap75: 0.7068, ap_s: 0.5725, ap_m: 0.6914, ap_l: 0.6551
 Best ap  : 0.6213 at epoch 255
 ap: 0.6213, ap50: 0.9750, ap75: 0.7192, ap_s: 0.5717, ap_m: 0.6898, ap_l: 0.6774
+at2 4e3 aw03
+Best ap50: 0.9733 at epoch 275
+ap: 0.6130, ap50: 0.9733, ap75: 0.7168, ap_s: 0.5652, ap_m: 0.6816, ap_l: 0.6637
+Best ap  : 0.6175 at epoch 235
+ap: 0.6175, ap50: 0.9728, ap75: 0.7037, ap_s: 0.5709, ap_m: 0.6862, ap_l: 0.6573
 
 at2 4e3 mh1
 
