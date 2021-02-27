@@ -282,7 +282,7 @@ if __name__ == '__main__':
     # prefix = 'weights/tmp'
     prefix = 'weights/at_2e3'
     prefix = 'weights/at_4e3'
-    prefix = 'weights/at1_4e3'
+    prefix = 'weights/at1_4e3_05'
     # prefix = 'weights/at2_1e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
@@ -458,5 +458,8 @@ ap: 0.6166, ap50: 0.9741, ap75: 0.7045, ap_s: 0.5813, ap_m: 0.6688, ap_l: 0.6718
 Best ap  : 0.6291 at epoch 290
 ap: 0.6291, ap50: 0.9740, ap75: 0.7438, ap_s: 0.5869, ap_m: 0.6914, ap_l: 0.6600
 
-at1 4e3 
+at1 4e3 aw01
+
+at1 4e3 aw05
+
 """
