@@ -45,11 +45,12 @@ class RefineDet(nn.Module):
             self.priors = self.priorbox.forward()
         self.size = size
         self.bn = bn
+        if size != '512' or size != '320':
+            self.conv3_3_layer = (16, 23)[self.bn]
         self.conv4_3_layer = (23, 33)[self.bn]
         self.conv5_3_layer = (30, 43)[self.bn]
 
         # for calc offset of ADM
-        self.lvl_num = len(self.cfg['feature_maps'])
         self.variance = self.cfg['variance']
         self.aspect_ratio = 2
         self.anchor_stride_ratio = 4
@@ -387,7 +388,10 @@ def add_extras(cfg, size, i, batch_norm=False):
             if v == 'S':
                 conv2d = nn.Conv2d(in_channels, cfg[k + 1],
                            kernel_size=(1, 3)[flag], stride=2, padding=1)
-                layers += []
+                if batch_norm:
+                    layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+                else:
+                    layers += [conv2d, nn.ReLU(inplace=True)]
             else:
                 layers += [nn.Conv2d(in_channels, v, kernel_size=(1, 3)[flag])]
             flag = not flag
