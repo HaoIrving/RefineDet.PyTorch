@@ -86,6 +86,7 @@ class RefineDet(nn.Module):
         self.tcb0 = nn.ModuleList(TCB[0])
         self.tcb1 = nn.ModuleList(TCB[1])
         self.tcb2 = nn.ModuleList(TCB[2])
+        self.step = len(self.cfg['feature_maps']) - 1
 
         if phase == 'test':
             self.softmax = nn.Softmax(dim=-1)
@@ -158,7 +159,6 @@ class RefineDet(nn.Module):
 
         # calculate TCB features
         p = None
-        
         for k, v in enumerate(sources[::-1]):
             s = v
             for i in range(3):
