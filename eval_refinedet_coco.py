@@ -281,11 +281,13 @@ if __name__ == '__main__':
     # args.cuda = False
     # args.retest = True
     # args.show_image = True
+    args.input_size = '896'
     args.vis_thres = 0.3
     prefix = args.prefix
     # prefix = 'weights/align_2e3_2x'
     # prefix = 'weights/align_4e3_2x'
     prefix = 'weights/align_4e3'
+    prefix = 'weights/align_4e3_5l'
     # prefix = 'weights/align_2e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 

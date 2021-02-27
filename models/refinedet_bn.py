@@ -35,7 +35,7 @@ class RefineDet(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, size, base, TCB, num_classes, bn=True, detector=None):
+    def __init__(self, phase, size, base, extras, ARM, ADM, TCB, num_classes, bn=True, detector=None):
         super(RefineDet, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
@@ -45,10 +45,11 @@ class RefineDet(nn.Module):
             self.priors = self.priorbox.forward()
         self.size = size
         self.bn = bn
-        if size != '512' or size != '320':
+        if size != '512' and size != '320':
             self.conv3_3_layer = (16, 23)[self.bn]
         self.conv4_3_layer = (23, 33)[self.bn]
         self.conv5_3_layer = (30, 43)[self.bn]
+        self.extra_1_layer = (4, 6)[self.bn]
 
         # for calc offset of ADM
         self.variance = self.cfg['variance']
@@ -66,62 +67,21 @@ class RefineDet(nn.Module):
         # SSD network
         self.vgg = nn.ModuleList(base)
         # Layer learns to scale the l2 normalized features from conv4_3
+        if size != '512' and size != '320':
+            self.conv3_3_L2Norm = L2Norm(256, 10)
         self.conv4_3_L2Norm = L2Norm(512, 10)
         self.conv5_3_L2Norm = L2Norm(512, 8)
+        self.extras = nn.ModuleList(extras)
 
-        self.def_groups = 1
-        c7_channel = 1024
-        num_box = 3
-        if self.bn:
-            self.extras = nn.Sequential(nn.Conv2d(c7_channel, 256, kernel_size=1, stride=1, padding=0),
-                                        nn.BatchNorm2d(256),
-                                        nn.ReLU(inplace=True),
-                                        nn.Conv2d(256, 512, kernel_size=3, stride=2, padding=1),
-                                        nn.BatchNorm2d(512),
-                                        nn.ReLU(inplace=True))
-        else:
-            self.extras = nn.Sequential(nn.Conv2d(c7_channel, 256, kernel_size=1, stride=1, padding=0), nn.ReLU(inplace=True),
-                                    nn.Conv2d(256, 512, kernel_size=3, stride=2, padding=1), nn.ReLU(inplace=True))
-        
-        self.arm_loc = nn.ModuleList([nn.Conv2d(512, num_box*4, kernel_size=3, stride=1, padding=1),
-                                      nn.Conv2d(512, num_box*4, kernel_size=3, stride=1, padding=1),
-                                      nn.Conv2d(c7_channel, num_box*4, kernel_size=3, stride=1, padding=1),
-                                      nn.Conv2d(512, num_box*4, kernel_size=3, stride=1, padding=1),])
-        self.arm_conf = nn.ModuleList([nn.Conv2d(512, num_box*2, kernel_size=3, stride=1, padding=1),
-                                      nn.Conv2d(512, num_box*2, kernel_size=3, stride=1, padding=1),
-                                      nn.Conv2d(c7_channel, num_box*2, kernel_size=3, stride=1, padding=1),
-                                      nn.Conv2d(512, num_box*2, kernel_size=3, stride=1, padding=1),])
+        self.arm_loc = nn.ModuleList(ARM[0])
+        self.arm_conf = nn.ModuleList(ARM[1])
+        self.adm_loc1 = nn.ModuleList(ADM[0][0])
+        self.adm_loc2 = nn.ModuleList(ADM[0][1])
+        self.adm_loc3 = nn.ModuleList(ADM[0][2])
+        self.adm_conf1 = nn.ModuleList(ADM[1][0])
+        self.adm_conf2 = nn.ModuleList(ADM[1][1])
+        self.adm_conf3 = nn.ModuleList(ADM[1][2])
 
-        self.adm_loc1 = nn.ModuleList([DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                      ])
-        self.adm_loc2 = nn.ModuleList([DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                      ])
-        self.adm_loc3 = nn.ModuleList([DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                      DeformConv2d(256, 4, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                      ])
-        self.adm_conf1 = nn.ModuleList([DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                       ])
-        self.adm_conf2 = nn.ModuleList([DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                       ])
-        self.adm_conf3 = nn.ModuleList([DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                       DeformConv2d(256, self.num_classes, kernel_size=3, stride=1, padding=1, deform_groups=self.def_groups),
-                                       ])
         #self.tcb = nn.ModuleList(TCB)
         self.tcb0 = nn.ModuleList(TCB[0])
         self.tcb1 = nn.ModuleList(TCB[1])
@@ -160,6 +120,9 @@ class RefineDet(nn.Module):
         # apply vgg up to conv4_3 relu and conv5_3 relu
         for k in range(self.conv5_3_layer):
             x = self.vgg[k](x)
+            if self.conv3_3_layer - 1 == k and self.size != '512' and self.size != '320':
+                s = self.conv3_3_L2Norm(x)
+                sources.append(s)
             if self.conv4_3_layer - 1 == k:
                 s = self.conv4_3_L2Norm(x)
                 sources.append(s)
@@ -173,8 +136,10 @@ class RefineDet(nn.Module):
         sources.append(x)
 
         # apply extra layers and cache source layer outputs
-        x = self.extras(x)
-        sources.append(x)
+        for k in range(len(self.extras)):
+            x = self.extras[k](x)
+            if self.extra_1_layer - 1 == k:
+                sources.append(x)
 
         # apply ARM and ADM to source layers
         arm_loc_align = list()
@@ -193,6 +158,7 @@ class RefineDet(nn.Module):
 
         # calculate TCB features
         p = None
+        
         for k, v in enumerate(sources[::-1]):
             s = v
             for i in range(3):
@@ -338,13 +304,6 @@ def init_method(m):
     elif isinstance(m, nn.BatchNorm2d):
         constant_init(m, 1)
 
-def get_lvl_mark(cfg, anchor_num=3):
-    lvl_mark = [0]
-    for i in range(len(cfg['feature_maps'])):
-        index = cfg['feature_maps'][i] ** 2 * anchor_num 
-        lvl_mark.append(index)
-    return np.array(lvl_mark).cumsum()
-
 def multi_apply(func, *args, **kwargs):
     pfunc = partial(func, **kwargs) if kwargs else func
     map_results = map(pfunc, *args)
@@ -401,45 +360,39 @@ def add_extras(cfg, size, i, batch_norm=False):
         in_channels = v
     return layers
 
-def arm_multibox(in_channels, cfg, bn):
+def arm_multibox(in_channels, anchor_nums):
     arm_loc_layers = []
     arm_conf_layers = []
-    if bn:
-        vgg_source = [20, 30, ]
-    else:
-        vgg_source = [21, 28, -2]
-    for k, v in enumerate(vgg_source):
-        arm_loc_layers += [nn.Conv2d(vgg[v].out_channels, cfg[k] * 4, kernel_size=3, padding=1)]
-        arm_conf_layers += [nn.Conv2d(vgg[v].out_channels, cfg[k] * 2, kernel_size=3, padding=1)]
-    for k, v in enumerate(extra_layers[1::2], 3):
-        arm_loc_layers += [nn.Conv2d(v.out_channels, cfg[k] * 4, kernel_size=3, padding=1)]
-        arm_conf_layers += [nn.Conv2d(v.out_channels, cfg[k] * 2, kernel_size=3, padding=1)]
+    for in_channel, anchor_num in zip(in_channels, anchor_nums):
+        arm_loc_layers += [nn.Conv2d(in_channel, anchor_num * 4, kernel_size=3, padding=1)]
+        arm_conf_layers += [nn.Conv2d(in_channel, anchor_num * 2, kernel_size=3, padding=1)]
     return (arm_loc_layers, arm_conf_layers)
 
-def adm_multibox(vgg, extra_layers, cfg, num_classes, bn):
-    adm_loc_layers = []
-    adm_conf_layers = []
-    vgg_source = [21, 28, -2]
-    for k, v in enumerate(vgg_source):
-        for _ in range(cfg[k]):
-            adm_loc_layers += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
-            adm_conf_layers += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
-    for k, v in enumerate(extra_layers[1::2], 3):
-        for _ in range(cfg[k]):
-            adm_loc_layers += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
-            adm_conf_layers += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
-    return (adm_loc_layers, adm_conf_layers)
+def adm_multibox(level_channels, anchor_nums, num_classes):
+    assert set(anchor_nums) == {3}
+    adm_loc_layers1 = []
+    adm_loc_layers2 = []
+    adm_loc_layers3 = []
+    adm_conf_layers1 = []
+    adm_conf_layers2 = []
+    adm_conf_layers3 = []
+    for _ in level_channels:
+            adm_loc_layers1 += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
+            adm_loc_layers2 += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
+            adm_loc_layers3 += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
+            adm_conf_layers1 += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
+            adm_conf_layers2 += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
+            adm_conf_layers3 += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
+    return (
+        (adm_loc_layers1, adm_loc_layers2, adm_loc_layers3), 
+        (adm_conf_layers1, adm_conf_layers2, adm_conf_layers3))
 
-def odm_multibox(vgg, extra_layers, cfg, num_classes, bn):
+def odm_multibox(anchor_nums, num_classes):
     odm_loc_layers = []
     odm_conf_layers = []
-    vgg_source = [21, 28, -2]
-    for k, v in enumerate(vgg_source):
-        odm_loc_layers += [nn.Conv2d(256, cfg[k] * 4, kernel_size=3, padding=1)]
-        odm_conf_layers += [nn.Conv2d(256, cfg[k] * num_classes, kernel_size=3, padding=1)]
-    for k, v in enumerate(extra_layers[1::2], 3):
-        odm_loc_layers += [nn.Conv2d(256, cfg[k] * 4, kernel_size=3, padding=1)]
-        odm_conf_layers += [nn.Conv2d(256, cfg[k] * num_classes, kernel_size=3, padding=1)]
+    for anchor_num in anchor_nums:
+        odm_loc_layers += [nn.Conv2d(256, anchor_num * 4, kernel_size=3, padding=1)]
+        odm_conf_layers += [nn.Conv2d(256, anchor_num * num_classes, kernel_size=3, padding=1)]
     return (odm_loc_layers, odm_conf_layers)
 
 def add_tcb(cfg):
@@ -470,6 +423,7 @@ base = {
 extras = {
     '320': [256, 'S', 512],
     '512': [256, 'S', 512],
+    '896': [256, 'S', 512],
 }
 mbox = {
     '320': [3, 3, 3, 3],  # number of boxes per feature map location
@@ -495,7 +449,7 @@ def build_refinedet(phase, size=320, num_classes=21, detector=None):
     bn = True
     base_ = vgg(base[str(size)], 3, bn)
     extras_ = add_extras(extras[str(size)], size, 1024, bn)
-    ARM_ = arm_multibox(arm[str(size)], mbox[str(size)], bn)
-    ADM_ = adm_multibox(len(arm[str(size)]), mbox[str(size)], num_classes, bn)
+    ARM_ = arm_multibox(arm[str(size)], mbox[str(size)])
+    ADM_ = adm_multibox(arm[str(size)], mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
-    return RefineDet(phase, size, base_, extras_, TCB_, ARM_, ADM_, num_classes, bn, detector)
+    return RefineDet(phase, size, base_, extras_, ARM_, ADM_, TCB_, num_classes, bn, detector)
