@@ -14,8 +14,8 @@ import torch.utils.data as data
 
 # from sardet.refinedet_bn import build_refinedet
 # from sardet.refinedet_bn_at2 import build_refinedet
-# from sardet.refinedet_bn_at1_mh import build_refinedet
-from sardet.refinedet_bn_at2_mh import build_refinedet
+from sardet.refinedet_bn_at1_mh import build_refinedet
+# from sardet.refinedet_bn_at2_mh import build_refinedet
 
 from layers import Detect_RefineDet
 from utils.nms_wrapper import nms
@@ -288,8 +288,8 @@ if __name__ == '__main__':
     prefix = 'weights/at1_4e3_01'
     prefix = 'weights/at1_4e3_05'
     prefix = 'weights/at1_mh_4e3_1'
-    prefix = 'weights/at1_mh2_4e3_1'
-    prefix = 'weights/at2_mh_4e3'
+    # prefix = 'weights/at1_mh2_4e3_1'
+    # prefix = 'weights/at2_mh_4e3'
     # prefix = 'weights/at2_4e3_03'
     # prefix = 'weights/at2_4e3_01'
 
@@ -417,6 +417,9 @@ ap: 0.6130, ap50: 0.9733, ap75: 0.7168, ap_s: 0.5652, ap_m: 0.6816, ap_l: 0.6637
 Best ap  : 0.6175 at epoch 235
 ap: 0.6175, ap50: 0.9728, ap75: 0.7037, ap_s: 0.5709, ap_m: 0.6862, ap_l: 0.6573
 at2 4e3 aw01
+at2 4e3 mh1
+
+
 
 1.0==cps solo 2e3 bs16 g12(cps, complementary sampling), solo has less grid number than fcos
 Best ap50: 0.9826 at epoch 265
