@@ -17,6 +17,7 @@ from sardet.refinedet_bn import build_refinedet
 
 from layers import Detect_RefineDet
 from utils.nms_wrapper import nms
+from data import coco_refinedet
 
 import sys
 import os
@@ -292,8 +293,7 @@ if __name__ == '__main__':
     nms_threshold = 0.49
     confidence_threshold = 0.01
     objectness_thre = 0.01
-    # 'feature_maps': [64, 32, 16, 8]
-    seg_num_grids = [64, 32, 16, 8]
+    seg_num_grids = coco_refinedet[args.input_size]['feature_maps']  # [64, 32, 16, 8]
 
     num_classes = 2 
     top_k = 1000
@@ -468,6 +468,7 @@ ap: 0.6220, ap50: 0.9744, ap75: 0.7126, ap_s: 0.5714, ap_m: 0.6980, ap_l: 0.6666
 at1 4e3 aw05
 
 at2 4e3 aw03
+
 at2 4e3 aw01
 
 """
