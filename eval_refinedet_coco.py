@@ -286,7 +286,8 @@ if __name__ == '__main__':
     prefix = 'weights/at_4e3'
     prefix = 'weights/at1_4e3_01'
     prefix = 'weights/at1_4e3_05'
-    prefix = 'weights/at1_mh2_4e3'
+    prefix = 'weights/at1_mh_4e3_1'
+    prefix = 'weights/at1_mh2_4e3_1'
     # prefix = 'weights/at2_4e3_03'
     # prefix = 'weights/at2_4e3_01'
 
@@ -384,6 +385,37 @@ ap: 0.6393, ap50: 0.9893, ap75: 0.7521, ap_s: 0.5869, ap_m: 0.7125, ap_l: 0.7697
 Best ap  : 0.6500 at epoch 275
 ap: 0.6500, ap50: 0.9888, ap75: 0.7740, ap_s: 0.6026, ap_m: 0.7166, ap_l: 0.7605
 
+at0 4e3 
+Best ap50: 0.9801 at epoch 250
+ap: 0.6113, ap50: 0.9801, ap75: 0.7057, ap_s: 0.5639, ap_m: 0.6778, ap_l: 0.6822
+Best ap  : 0.6221 at epoch 280
+ap: 0.6221, ap50: 0.9734, ap75: 0.7235, ap_s: 0.5784, ap_m: 0.6831, ap_l: 0.7019
+Best ap50: 0.9741 at epoch 215
+ap: 0.6166, ap50: 0.9741, ap75: 0.7045, ap_s: 0.5813, ap_m: 0.6688, ap_l: 0.6718
+Best ap  : 0.6291 at epoch 290
+ap: 0.6291, ap50: 0.9740, ap75: 0.7438, ap_s: 0.5869, ap_m: 0.6914, ap_l: 0.6600
+
+at1 4e3 aw01
+Best ap50: 0.9744 at epoch 295
+ap: 0.6220, ap50: 0.9744, ap75: 0.7126, ap_s: 0.5714, ap_m: 0.6980, ap_l: 0.6666
+Best ap  : 0.6220 at epoch 295
+ap: 0.6220, ap50: 0.9744, ap75: 0.7126, ap_s: 0.5714, ap_m: 0.6980, ap_l: 0.6666
+at1 4e3 aw05
+Best ap50: 0.9781 at epoch 240
+ap: 0.6091, ap50: 0.9781, ap75: 0.7172, ap_s: 0.5698, ap_m: 0.6647, ap_l: 0.6745
+Best ap  : 0.6105 at epoch 290
+ap: 0.6105, ap50: 0.9721, ap75: 0.7028, ap_s: 0.5662, ap_m: 0.6729, ap_l: 0.6792
+
+at1 4e3 mh1
+at1 4e3 mh2
+
+at2 4e3 aw03
+Best ap50: 0.9733 at epoch 275
+ap: 0.6130, ap50: 0.9733, ap75: 0.7168, ap_s: 0.5652, ap_m: 0.6816, ap_l: 0.6637
+Best ap  : 0.6175 at epoch 235
+ap: 0.6175, ap50: 0.9728, ap75: 0.7037, ap_s: 0.5709, ap_m: 0.6862, ap_l: 0.6573
+at2 4e3 aw01
+
 1.0==cps solo 2e3 bs16 g12(cps, complementary sampling), solo has less grid number than fcos
 Best ap50: 0.9826 at epoch 265
 ap: 0.6140, ap50: 0.9826, ap75: 0.7032, ap_s: 0.5641, ap_m: 0.6851, ap_l: 0.6542
@@ -452,29 +484,6 @@ ap: 0.6485, ap50: 0.9896, ap75: 0.7613, ap_s: 0.5956, ap_m: 0.7226, ap_l: 0.7752
 Best ap  : 0.6524 at epoch 290
 ap: 0.6524, ap50: 0.9893, ap75: 0.7766, ap_s: 0.5994, ap_m: 0.7228, ap_l: 0.7984
 
-at0 4e3 
-Best ap50: 0.9801 at epoch 250
-ap: 0.6113, ap50: 0.9801, ap75: 0.7057, ap_s: 0.5639, ap_m: 0.6778, ap_l: 0.6822
-Best ap  : 0.6221 at epoch 280
-ap: 0.6221, ap50: 0.9734, ap75: 0.7235, ap_s: 0.5784, ap_m: 0.6831, ap_l: 0.7019
-Best ap50: 0.9741 at epoch 215
-ap: 0.6166, ap50: 0.9741, ap75: 0.7045, ap_s: 0.5813, ap_m: 0.6688, ap_l: 0.6718
-Best ap  : 0.6291 at epoch 290
-ap: 0.6291, ap50: 0.9740, ap75: 0.7438, ap_s: 0.5869, ap_m: 0.6914, ap_l: 0.6600
 
-at1 4e3 aw01
-Best ap50: 0.9744 at epoch 295
-ap: 0.6220, ap50: 0.9744, ap75: 0.7126, ap_s: 0.5714, ap_m: 0.6980, ap_l: 0.6666
-Best ap  : 0.6220 at epoch 295
-ap: 0.6220, ap50: 0.9744, ap75: 0.7126, ap_s: 0.5714, ap_m: 0.6980, ap_l: 0.6666
-at1 4e3 aw05
-Best ap50: 0.9781 at epoch 240
-ap: 0.6091, ap50: 0.9781, ap75: 0.7172, ap_s: 0.5698, ap_m: 0.6647, ap_l: 0.6745
-Best ap  : 0.6105 at epoch 290
-ap: 0.6105, ap50: 0.9721, ap75: 0.7028, ap_s: 0.5662, ap_m: 0.6729, ap_l: 0.6792
-
-at2 4e3 aw03
-
-at2 4e3 aw01
 
 """
