@@ -14,7 +14,8 @@ import torch.utils.data as data
 
 # from sardet.refinedet_bn import build_refinedet
 # from sardet.refinedet_bn_at2 import build_refinedet
-from sardet.refinedet_bn_at1_mh import build_refinedet
+# from sardet.refinedet_bn_at1_mh import build_refinedet
+from sardet.refinedet_bn_at2_mh import build_refinedet
 
 from layers import Detect_RefineDet
 from utils.nms_wrapper import nms
@@ -288,6 +289,7 @@ if __name__ == '__main__':
     prefix = 'weights/at1_4e3_05'
     prefix = 'weights/at1_mh_4e3_1'
     prefix = 'weights/at1_mh2_4e3_1'
+    prefix = 'weights/at2_mh_4e3'
     # prefix = 'weights/at2_4e3_03'
     # prefix = 'weights/at2_4e3_01'
 

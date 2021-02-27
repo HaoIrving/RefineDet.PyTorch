@@ -4,6 +4,7 @@ from layers.modules import RefineDetMultiBoxLoss, AttentionFocalLoss
 # from sardet.refinedet_bn import build_refinedet
 # from sardet.refinedet_bn_at2 import build_refinedet
 from sardet.refinedet_bn_at1_mh import build_refinedet
+from sardet.refinedet_bn_at2_mh import build_refinedet
 
 
 import os

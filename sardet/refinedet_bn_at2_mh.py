@@ -127,7 +127,6 @@ class RefineDet(nn.Module):
 
         # attention head
         self.seg_num_grids = seg_num_grids
-        self.in_channels = [512, 512, 1024, 512]
         self.seg_feat_channels = 256
         self.stacked_convs = 1
         self._init_solo_layers()
@@ -135,7 +134,7 @@ class RefineDet(nn.Module):
         if phase == 'test':
             self.softmax = nn.Softmax(dim=-1)
             self.detect = detector
-    
+
     # modified from https://github.com/WXinlong/SOLO/blob/master/mmdet/models/anchor_heads/solo_head.py
     def _init_solo_layers(self):
         norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
@@ -226,30 +225,6 @@ class RefineDet(nn.Module):
         arm_loc = torch.cat([o.view(o.size(0), -1) for o in arm_loc], 1)
         arm_conf = torch.cat([o.view(o.size(0), -1) for o in arm_conf], 1)
 
-        # apply attention head
-        attention_sources = list()
-        attention_maps = list()
-        for (x, lvl, cate) in zip(sources, range(self.lvl_num), self.grid_cate):
-            for conv in self.cate_convs[lvl*self.stacked_convs: (lvl+1)*self.stacked_convs]:
-                x = conv(x)
-            cate_feat = cate(x)
-            attention_maps.append(cate_feat)
-
-            cate_pred = self.sigmoid(cate_feat)
-            attention_sources.append(cate_pred)
-
-        # if self.phase == 'test':
-        #     save_dir = './eval/attention_maps'
-        #     if not os.path.exists(save_dir):
-        #         os.mkdir(save_dir)
-        #     for index, level in enumerate(attention_sources):
-        #         i = self.cfg[str(self.size)]['steps'][index]
-        #         level = F.interpolate(level, size=(self.size, self.size), mode='bicubic') # bilinear, nearest
-        #         level = level.squeeze(0)
-        #         level = level.cpu().numpy().copy()
-        #         level = np.transpose(level, (1, 2, 0))
-        #         plt.imsave(os.path.join(save_dir, str(i) + '.png'), level[:,:,0])#, cmap='gray')
-
         # calculate TCB features
         p = None
         for k, v in enumerate(sources[::-1]):
@@ -265,6 +240,28 @@ class RefineDet(nn.Module):
             p = s
             tcb_source.append(s)
         tcb_source.reverse()
+
+        # apply attention head
+        attention_sources = list()
+        attention_maps = list()
+        for (x, lvl, cate) in zip(tcb_source, range(self.lvl_num), self.grid_cate):
+            for conv in self.cate_convs[lvl*self.stacked_convs: (lvl+1)*self.stacked_convs]:
+                x = conv(x)
+            cate_feat = cate(x)
+            attention_maps.append(cate_feat)
+            cate_pred = self.sigmoid(cate_feat)
+            attention_sources.append(cate_pred)
+        # if self.phase == 'test':
+        #     save_dir = './eval/attention_maps'
+        #     if not os.path.exists(save_dir):
+        #         os.mkdir(save_dir)
+        #     for index, level in enumerate(attention_sources):
+        #         i = self.cfg[str(self.size)]['steps'][index]
+        #         level = F.interpolate(level, size=(self.size, self.size), mode='bicubic') # bilinear, nearest
+        #         level = level.squeeze(0)
+        #         level = level.cpu().numpy().copy()
+        #         level = np.transpose(level, (1, 2, 0))
+        #         plt.imsave(os.path.join(save_dir, str(i) + '.png'), level[:,:,0])#, cmap='gray')
 
         # apply attention
         tcb_source_new = list()
@@ -355,7 +352,7 @@ class RefineDet(nn.Module):
         grid_yx = grid_yx.view(b, self.anchor_num, -1, h, w)
     
         return grid_yx
-
+    
     def init_weights(self, pretrained=None):
         if isinstance(pretrained, str):
             vgg_weights = torch.load(pretrained)
