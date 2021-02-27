@@ -12,8 +12,9 @@ from torch.autograd import Variable
 from data import COCOroot, COCODetection
 import torch.utils.data as data
 
-from sardet.refinedet_bn import build_refinedet
+# from sardet.refinedet_bn import build_refinedet
 # from sardet.refinedet_bn_at2 import build_refinedet
+from sardet.refinedet_bn_at1_mh import build_refinedet
 
 from layers import Detect_RefineDet
 from utils.nms_wrapper import nms
@@ -285,6 +286,7 @@ if __name__ == '__main__':
     prefix = 'weights/at_4e3'
     prefix = 'weights/at1_4e3_01'
     prefix = 'weights/at1_4e3_05'
+    prefix = 'weights/at1_mh2_4e3'
     # prefix = 'weights/at2_4e3_03'
     # prefix = 'weights/at2_4e3_01'
 
@@ -466,6 +468,10 @@ ap: 0.6220, ap50: 0.9744, ap75: 0.7126, ap_s: 0.5714, ap_m: 0.6980, ap_l: 0.6666
 Best ap  : 0.6220 at epoch 295
 ap: 0.6220, ap50: 0.9744, ap75: 0.7126, ap_s: 0.5714, ap_m: 0.6980, ap_l: 0.6666
 at1 4e3 aw05
+Best ap50: 0.9781 at epoch 240
+ap: 0.6091, ap50: 0.9781, ap75: 0.7172, ap_s: 0.5698, ap_m: 0.6647, ap_l: 0.6745
+Best ap  : 0.6105 at epoch 290
+ap: 0.6105, ap50: 0.9721, ap75: 0.7028, ap_s: 0.5662, ap_m: 0.6729, ap_l: 0.6792
 
 at2 4e3 aw03
 

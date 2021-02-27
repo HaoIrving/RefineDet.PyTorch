@@ -2,7 +2,8 @@ from data import *
 from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss, AttentionFocalLoss
 # from sardet.refinedet_bn import build_refinedet
-from sardet.refinedet_bn_at2 import build_refinedet
+# from sardet.refinedet_bn_at2 import build_refinedet
+from sardet.refinedet_bn_at1_mh import build_refinedet
 
 
 import os
@@ -63,7 +64,7 @@ parser.add_argument('--resume_epoch', default=0,
 parser.add_argument('-max','--max_epoch', default=300,
                     type=int, help='max epoch for retraining')               
 parser.add_argument('--ngpu', default=4, type=int, help='gpus')
-parser.add_argument('-aw', '--at_weight', default=0.3, type=float,
+parser.add_argument('-aw', '--at_weight', default=1.0, type=float,
                     help='attention loss weight')
 args = parser.parse_args()
 
