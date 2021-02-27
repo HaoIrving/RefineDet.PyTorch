@@ -1,8 +1,8 @@
 from data import *
 from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss, AttentionFocalLoss
-from sardet.refinedet_bn import build_refinedet
-# from sardet.refinedet_bn_at2 import build_refinedet
+# from sardet.refinedet_bn import build_refinedet
+from sardet.refinedet_bn_at2 import build_refinedet
 
 
 import os
