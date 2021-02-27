@@ -277,12 +277,13 @@ if __name__ == '__main__':
     # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
-    args.show_image = True
+    # args.show_image = True
     # prefix = args.prefix
     # prefix = 'weights/tmp'
     prefix = 'weights/at_2e3'
     prefix = 'weights/at_4e3'
-    # prefix = 'weights/at2_1e3'
+    prefix = 'weights/at1_4e3'
+    prefix = 'weights/at2_1e3'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
@@ -312,8 +313,8 @@ if __name__ == '__main__':
 
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
 
-    start_epoch = 10; step = 10
-    # start_epoch = 200; step = 5
+    # start_epoch = 10; step = 10
+    start_epoch = 200; step = 5
     ToBeTested = []
     ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
@@ -379,7 +380,7 @@ ap: 0.6393, ap50: 0.9893, ap75: 0.7521, ap_s: 0.5869, ap_m: 0.7125, ap_l: 0.7697
 Best ap  : 0.6500 at epoch 275
 ap: 0.6500, ap50: 0.9888, ap75: 0.7740, ap_s: 0.6026, ap_m: 0.7166, ap_l: 0.7605
 
-solo 2e3 bs16 g12
+1.0==cps solo 2e3 bs16 g12(cps, complementary sampling), solo has less grid number than fcos
 Best ap50: 0.9826 at epoch 265
 ap: 0.6140, ap50: 0.9826, ap75: 0.7032, ap_s: 0.5641, ap_m: 0.6851, ap_l: 0.6542
 Best ap  : 0.6212 at epoch 295
@@ -395,23 +396,27 @@ ap: 0.5956, ap50: 0.9895, ap75: 0.6853, ap_s: 0.5501, ap_m: 0.6572, ap_l: 0.7790
 Best ap  : 0.6562 at epoch 280
 ap: 0.6562, ap50: 0.9893, ap75: 0.7934, ap_s: 0.6000, ap_m: 0.7357, ap_l: 0.8126
 
-1.0 fcos
+1.0==cps fcos
 Best ap50: 0.9798 at epoch 300
 ap: 0.6238, ap50: 0.9798, ap75: 0.7139, ap_s: 0.5805, ap_m: 0.6876, ap_l: 0.6612
-Best ap  : 0.6246 at epoch 295
+Best ap : 0.6246 at epoch 295
 ap: 0.6246, ap50: 0.9796, ap75: 0.7154, ap_s: 0.5821, ap_m: 0.6862, ap_l: 0.6693
 inshore 
 Best ap50: 0.9345 at epoch 235
 ap: 0.5218, ap50: 0.9345, ap75: 0.5302, ap_s: 0.4627, ap_m: 0.6103, ap_l: 0.5061
-Best ap  : 0.5418 at epoch 295
+Best ap : 0.5418 at epoch 295
 ap: 0.5418, ap50: 0.9334, ap75: 0.5716, ap_s: 0.4998, ap_m: 0.6064, ap_l: 0.5539
 offshore
 Best ap50: 0.9897 at epoch 210
 ap: 0.6415, ap50: 0.9897, ap75: 0.7580, ap_s: 0.5853, ap_m: 0.7127, ap_l: 0.8235
-Best ap  : 0.6594 at epoch 240
+Best ap : 0.6594 at epoch 240
 ap: 0.6594, ap50: 0.9896, ap75: 0.7994, ap_s: 0.6058, ap_m: 0.7275, ap_l: 0.7844
 
-2.0cs
+in ap:   cps > cs, fcos > solo
+in ap50: cps > cs, fcos = solo
+best solution: cps + fcos grid number
+
+2.0==cs solo(consistent sampling)
 Best ap50: 0.9723 at epoch 250
 ap: 0.6037, ap50: 0.9723, ap75: 0.6872, ap_s: 0.5528, ap_m: 0.6759, ap_l: 0.6628
 Best ap  : 0.6109 at epoch 295
@@ -427,7 +432,7 @@ ap: 0.6308, ap50: 0.9894, ap75: 0.7157, ap_s: 0.5792, ap_m: 0.6993, ap_l: 0.7628
 Best ap  : 0.6491 at epoch 295
 ap: 0.6491, ap50: 0.9890, ap75: 0.7612, ap_s: 0.5980, ap_m: 0.7160, ap_l: 0.8113
 
-2.0cs fcos
+2.0==cs fcos
 Best ap50: 0.9790 at epoch 240
 ap: 0.6124, ap50: 0.9790, ap75: 0.7034, ap_s: 0.5725, ap_m: 0.6739, ap_l: 0.6302
 Best ap  : 0.6135 at epoch 290
@@ -443,6 +448,16 @@ ap: 0.6485, ap50: 0.9896, ap75: 0.7613, ap_s: 0.5956, ap_m: 0.7226, ap_l: 0.7752
 Best ap  : 0.6524 at epoch 290
 ap: 0.6524, ap50: 0.9893, ap75: 0.7766, ap_s: 0.5994, ap_m: 0.7228, ap_l: 0.7984
 
+at0 4e3 
+Best ap50: 0.9801 at epoch 250
+ap: 0.6113, ap50: 0.9801, ap75: 0.7057, ap_s: 0.5639, ap_m: 0.6778, ap_l: 0.6822
+Best ap  : 0.6221 at epoch 280
+ap: 0.6221, ap50: 0.9734, ap75: 0.7235, ap_s: 0.5784, ap_m: 0.6831, ap_l: 0.7019
 
+at1 4e3 
+Best ap50: 0.9740 at epoch 290
+ap: 0.6291, ap50: 0.9740, ap75: 0.7438, ap_s: 0.5869, ap_m: 0.6914, ap_l: 0.6600
+Best ap  : 0.6291 at epoch 290
+ap: 0.6291, ap50: 0.9740, ap75: 0.7438, ap_s: 0.5869, ap_m: 0.6914, ap_l: 0.6600
 
 """
