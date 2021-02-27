@@ -258,15 +258,13 @@ if __name__ == '__main__':
     prefix = args.prefix
     # prefix = 'weights/lr_5e4'
     # prefix = 'weights/lr_1e3'
-    # prefix = 'weights/lr_2e3'
-    prefix = 'weights/lr_3e3'
-    prefix = 'weights/lr_35e4'
-    prefix = 'weights/lr_375e5'
-    prefix = 'weights/lr_4e3'
+    prefix = 'weights/lr_2e3'
+    # prefix = 'weights/lr_3e3'
+    # prefix = 'weights/lr_4e3'
     # prefix = 'weights/srn_1e3'
     # prefix = 'weights/srn_2e3'
     # prefix = 'weights/srn_3e3'
-    prefix = 'weights/srn_4e3'
+    # prefix = 'weights/srn_4e3'
     # prefix = 'weights/srnv2_4e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
@@ -281,12 +279,14 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
-    # net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
-    net = build_s2rn('test', int(args.input_size), num_classes, detector=detect) 
+    net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
+    # net = build_s2rn('test', int(args.input_size), num_classes, detector=detect) 
     load_to_cpu = not args.cuda
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
@@ -295,8 +295,12 @@ if __name__ == '__main__':
 
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
-    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    ToBeTested = []
+    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_250.pth') 
+    # ToBeTested *= 5
+
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
@@ -336,17 +340,29 @@ if __name__ == '__main__':
     fig_name = 'ap_last10.png'
     metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    plot_map(save_folder, ap_stats, metrics, legend, fig_name)
+    # plot_map(save_folder, ap_stats, metrics, legend, fig_name)
 
-    txt_log = prefix + '/log.txt'
-    plot_loss(save_folder, txt_log)
+    # txt_log = prefix + '/log.txt'
+    # plot_loss(save_folder, txt_log)
 """
 refinedet
 lr_2e3
 Best ap50: 0.9802 at epoch 240
 ap: 0.6022, ap50: 0.9802, ap75: 0.6750, ap_s: 0.5550, ap_m: 0.6715, ap_l: 0.6515
-Best ap  : 0.6090 at epoch 290
-ap: 0.6090, ap50: 0.9783, ap75: 0.6921, ap_s: 0.5645, ap_m: 0.6710, ap_l: 0.6569
+Best ap  : 0.6091 at epoch 290
+ap: 0.6091, ap50: 0.9783, ap75: 0.6921, ap_s: 0.5646, ap_m: 0.6713, ap_l: 0.6569
+inshore 
+Best ap50: 0.9400 at epoch 270
+ap: 0.5124, ap50: 0.9400, ap75: 0.5157, ap_s: 0.4715, ap_m: 0.5679, ap_l: 0.5575
+Best ap  : 0.5171 at epoch 250
+ap: 0.5171, ap50: 0.9365, ap75: 0.5157, ap_s: 0.4693, ap_m: 0.5835, ap_l: 0.5242
+offshore 
+Best ap50: 0.9893 at epoch 225
+ap: 0.6393, ap50: 0.9893, ap75: 0.7521, ap_s: 0.5869, ap_m: 0.7125, ap_l: 0.7697
+Best ap  : 0.6500 at epoch 275
+ap: 0.6500, ap50: 0.9888, ap75: 0.7740, ap_s: 0.6026, ap_m: 0.7166, ap_l: 0.7605
+
+
 lr_3e3
 Best ap50: 0.9814 at epoch 240
 ap: 0.6055, ap50: 0.9814, ap75: 0.6981, ap_s: 0.5580, ap_m: 0.6792, ap_l: 0.6230

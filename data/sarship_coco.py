@@ -68,7 +68,7 @@ class COCODetection(data.Dataset):
                 coco_name = image_set
             else:
                 coco_name = dataset + '_' + image_set  # 'sarship_train'
-            data_name = image_set  # 'train'
+            data_name = image_set.split('_')[0]  # 'train'
             annofile = self._get_ann_file(coco_name)
             _COCO = COCO(annofile)
             self._COCO = _COCO
@@ -281,11 +281,11 @@ class COCODetection(data.Dataset):
         coco_eval.evaluate()
         coco_eval.accumulate()
         self._print_detection_eval_metrics(coco_eval)
+        eval_file = os.path.join(output_dir, 'detection_results.pkl')
+        with open(eval_file, 'wb') as fid:
+            pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
+        print('Wrote COCO eval results to: {}'.format(eval_file))
         return coco_eval.stats
-        # eval_file = os.path.join(output_dir, 'detection_results.pkl')
-        # with open(eval_file, 'wb') as fid:
-        #     pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
-        # print('Wrote COCO eval results to: {}'.format(eval_file))
 
     def _coco_results_one_category(self, boxes, cat_id):
         results = []
