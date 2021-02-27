@@ -127,7 +127,8 @@ class RefineDet(nn.Module):
 
         # attention head
         self.seg_num_grids = seg_num_grids
-        self.in_channels = [512, 512, 1024, 512]
+        # self.in_channels = [512, 512, 1024, 512]
+        self.in_channels = [256, 256, 256, 256]
         self.seg_feat_channels = 256
         self.stacked_convs = 1
         self._init_solo_layers()
