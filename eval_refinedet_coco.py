@@ -282,8 +282,9 @@ if __name__ == '__main__':
     # prefix = 'weights/tmp'
     prefix = 'weights/at_2e3'
     prefix = 'weights/at_4e3'
+    prefix = 'weights/at1_4e3_01'
     prefix = 'weights/at1_4e3_05'
-    prefix = 'weights/at2_4e3_05'
+    prefix = 'weights/at2_4e3_03'
 
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
