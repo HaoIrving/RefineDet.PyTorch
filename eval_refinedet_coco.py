@@ -407,8 +407,8 @@ Best ap50: 0.9781 at epoch 240
 ap: 0.6091, ap50: 0.9781, ap75: 0.7172, ap_s: 0.5698, ap_m: 0.6647, ap_l: 0.6745
 Best ap  : 0.6105 at epoch 290
 ap: 0.6105, ap50: 0.9721, ap75: 0.7028, ap_s: 0.5662, ap_m: 0.6729, ap_l: 0.6792
-
 at1 4e3 mh1
+
 at1 4e3 mh2
 
 at2 4e3 aw01
