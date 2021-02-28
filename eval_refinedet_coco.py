@@ -291,8 +291,9 @@ if __name__ == '__main__':
     prefix = 'weights/at1_4e3_05'
     prefix = 'weights/at1_mh_4e3_1'
     prefix = 'weights/at1_mh2_4e3_1'
-    prefix = 'weights/at2_mh_4e3_1'
-    prefix = 'weights/at2_mh_4e3_01'
+    prefix = 'weights/at2_mh_4e3_05'
+    prefix = 'weights/at2_mh_4e3_03'
+    # prefix = 'weights/at2_mh_4e3_01'
     # prefix = 'weights/at2_4e3_03'
     # prefix = 'weights/at2_4e3_01'
 
@@ -422,11 +423,10 @@ ap: 0.6201, ap50: 0.9756, ap75: 0.7068, ap_s: 0.5725, ap_m: 0.6914, ap_l: 0.6551
 Best ap  : 0.6213 at epoch 255
 ap: 0.6213, ap50: 0.9750, ap75: 0.7192, ap_s: 0.5717, ap_m: 0.6898, ap_l: 0.6774
 
-at2 4e3 mh1
-Best ap50: 0.5160 at epoch 200
-ap: 0.2534, ap50: 0.5160, ap75: 0.2137, ap_s: 0.2288, ap_m: 0.3532, ap_l: 0.2269
-Best ap  : 0.2534 at epoch 200
-ap: 0.2534, ap50: 0.5160, ap75: 0.2137, ap_s: 0.2288, ap_m: 0.3532, ap_l: 0.2269
+at2 4e3 mh aw01
+at2 4e3 mh aw03
+at2 4e3 mh aw05
+
 
 1.0==cps solo 2e3 bs16 g12(cps, complementary sampling), solo has less grid number than fcos
 Best ap50: 0.9826 at epoch 265
