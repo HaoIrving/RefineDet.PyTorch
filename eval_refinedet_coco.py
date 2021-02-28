@@ -439,7 +439,10 @@ Best ap50: 0.9730 at epoch 300
 ap: 0.6185, ap50: 0.9730, ap75: 0.7088, ap_s: 0.5649, ap_m: 0.6963, ap_l: 0.6784
 Best ap  : 0.6235 at epoch 280
 ap: 0.6235, ap50: 0.9656, ap75: 0.7284, ap_s: 0.5730, ap_m: 0.6984, ap_l: 0.6743
-
+Best ap50: 0.9806 at epoch 225
+ap: 0.6234, ap50: 0.9806, ap75: 0.7251, ap_s: 0.5744, ap_m: 0.6887, ap_l: 0.7107
+Best ap  : 0.6274 at epoch 275
+ap: 0.6274, ap50: 0.9719, ap75: 0.7242, ap_s: 0.5747, ap_m: 0.7016, ap_l: 0.7138
 
 1.0==cps solo 2e3 bs16 g12(cps, complementary sampling), solo has less grid number than fcos
 Best ap50: 0.9826 at epoch 265
