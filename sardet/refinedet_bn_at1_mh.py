@@ -129,7 +129,7 @@ class RefineDet(nn.Module):
         self.seg_num_grids = seg_num_grids
         self.in_channels = [512, 512, 1024, 512]
         self.seg_feat_channels = 256
-        self.stacked_convs = 2
+        self.stacked_convs = 1
         self._init_solo_layers()
 
         if phase == 'test':
