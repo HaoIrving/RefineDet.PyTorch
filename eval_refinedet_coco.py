@@ -288,7 +288,7 @@ if __name__ == '__main__':
     prefix = 'weights/at1_4e3_01'
     prefix = 'weights/at1_4e3_05'
     prefix = 'weights/at1_mh_4e3_1'
-    # prefix = 'weights/at1_mh2_4e3_1'
+    prefix = 'weights/at1_mh2_4e3_1'
     # prefix = 'weights/at2_mh_4e3_1'
     # prefix = 'weights/at2_4e3_03'
     # prefix = 'weights/at2_4e3_01'
@@ -402,28 +402,22 @@ Best ap50: 0.9744 at epoch 295
 ap: 0.6220, ap50: 0.9744, ap75: 0.7126, ap_s: 0.5714, ap_m: 0.6980, ap_l: 0.6666
 Best ap  : 0.6220 at epoch 295
 ap: 0.6220, ap50: 0.9744, ap75: 0.7126, ap_s: 0.5714, ap_m: 0.6980, ap_l: 0.6666
-at1 4e3 aw05
-Best ap50: 0.9781 at epoch 240
-ap: 0.6091, ap50: 0.9781, ap75: 0.7172, ap_s: 0.5698, ap_m: 0.6647, ap_l: 0.6745
-Best ap  : 0.6105 at epoch 290
-ap: 0.6105, ap50: 0.9721, ap75: 0.7028, ap_s: 0.5662, ap_m: 0.6729, ap_l: 0.6792
 at1 4e3 mh1
 Best ap50: 0.9771 at epoch 205
 ap: 0.6110, ap50: 0.9771, ap75: 0.6949, ap_s: 0.5689, ap_m: 0.6765, ap_l: 0.6506
 Best ap  : 0.6229 at epoch 245
 ap: 0.6229, ap50: 0.9695, ap75: 0.7137, ap_s: 0.5765, ap_m: 0.6881, ap_l: 0.6845
 at1 4e3 mh2
+Best ap50: 0.9781 at epoch 275
+ap: 0.6104, ap50: 0.9781, ap75: 0.7071, ap_s: 0.5590, ap_m: 0.6805, ap_l: 0.6920
+Best ap  : 0.6182 at epoch 250
+ap: 0.6182, ap50: 0.9779, ap75: 0.7257, ap_s: 0.5702, ap_m: 0.6827, ap_l: 0.6856
 
 at2 4e3 aw01
 Best ap50: 0.9756 at epoch 230
 ap: 0.6201, ap50: 0.9756, ap75: 0.7068, ap_s: 0.5725, ap_m: 0.6914, ap_l: 0.6551
 Best ap  : 0.6213 at epoch 255
 ap: 0.6213, ap50: 0.9750, ap75: 0.7192, ap_s: 0.5717, ap_m: 0.6898, ap_l: 0.6774
-at2 4e3 aw03
-Best ap50: 0.9733 at epoch 275
-ap: 0.6130, ap50: 0.9733, ap75: 0.7168, ap_s: 0.5652, ap_m: 0.6816, ap_l: 0.6637
-Best ap  : 0.6175 at epoch 235
-ap: 0.6175, ap50: 0.9728, ap75: 0.7037, ap_s: 0.5709, ap_m: 0.6862, ap_l: 0.6573
 
 at2 4e3 mh1
 
