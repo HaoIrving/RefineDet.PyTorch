@@ -280,8 +280,8 @@ if __name__ == '__main__':
 
     # from sardet.refinedet_bn import build_refinedet
     # from sardet.refinedet_bn_at2 import build_refinedet
-    from sardet.refinedet_bn_at1_mh import build_refinedet
-    # from sardet.refinedet_bn_at2_mh import build_refinedet
+    # from sardet.refinedet_bn_at1_mh import build_refinedet
+    from sardet.refinedet_bn_at2_mh import build_refinedet
 
     # prefix = args.prefix
     # prefix = 'weights/tmp'
@@ -293,7 +293,7 @@ if __name__ == '__main__':
     prefix = 'weights/at1_mh_4e3_01'
     # prefix = 'weights/at1_mh2_4e3_1'
     # prefix = 'weights/at2_mh_4e3_03'
-    # prefix = 'weights/at2_mh_4e3_01'
+    prefix = 'weights/at2_mh_4e3_01'
     # prefix = 'weights/at2_4e3_03'
     # prefix = 'weights/at2_4e3_01'
 
@@ -412,8 +412,10 @@ ap: 0.6110, ap50: 0.9771, ap75: 0.6949, ap_s: 0.5689, ap_m: 0.6765, ap_l: 0.6506
 Best ap  : 0.6229 at epoch 245
 ap: 0.6229, ap50: 0.9695, ap75: 0.7137, ap_s: 0.5765, ap_m: 0.6881, ap_l: 0.6845
 at1 4e3 mh aw 01
-
-
+Best ap50: 0.9747 at epoch 300
+ap: 0.6248, ap50: 0.9747, ap75: 0.7381, ap_s: 0.5703, ap_m: 0.6999, ap_l: 0.6892
+Best ap  : 0.6251 at epoch 280
+ap: 0.6251, ap50: 0.9744, ap75: 0.7130, ap_s: 0.5697, ap_m: 0.7006, ap_l: 0.6861
 at1 4e3 mh2
 Best ap50: 0.9781 at epoch 275
 ap: 0.6104, ap50: 0.9781, ap75: 0.7071, ap_s: 0.5590, ap_m: 0.6805, ap_l: 0.6920
@@ -425,8 +427,11 @@ Best ap50: 0.9756 at epoch 230
 ap: 0.6201, ap50: 0.9756, ap75: 0.7068, ap_s: 0.5725, ap_m: 0.6914, ap_l: 0.6551
 Best ap  : 0.6213 at epoch 255
 ap: 0.6213, ap50: 0.9750, ap75: 0.7192, ap_s: 0.5717, ap_m: 0.6898, ap_l: 0.6774
-
 at2 4e3 mh aw01
+Best ap50: 0.9730 at epoch 300
+ap: 0.6185, ap50: 0.9730, ap75: 0.7088, ap_s: 0.5649, ap_m: 0.6963, ap_l: 0.6784
+Best ap  : 0.6235 at epoch 280
+ap: 0.6235, ap50: 0.9656, ap75: 0.7284, ap_s: 0.5730, ap_m: 0.6984, ap_l: 0.6743
 
 
 1.0==cps solo 2e3 bs16 g12(cps, complementary sampling), solo has less grid number than fcos
