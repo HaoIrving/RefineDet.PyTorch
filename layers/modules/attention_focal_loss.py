@@ -41,7 +41,7 @@ class AttentionFocalLoss(nn.Module):
         See: https://arxiv.org/pdf/1512.02325.pdf for more details.
     """
 
-    def __init__(self, num_classes, input_size, loss_cate, seg_num_grids, scale_ranges):
+    def __init__(self, num_classes, input_size, loss_cate, seg_num_grids, scale_ranges, sigma=0.2, CE=False):
         super(AttentionFocalLoss, self).__init__()
         self.num_classes = num_classes
         self.cate_out_channels = num_classes - 1
@@ -49,7 +49,8 @@ class AttentionFocalLoss(nn.Module):
         self.loss_cate = build_loss(loss_cate)
         self.seg_num_grids = seg_num_grids
         self.scale_ranges = scale_ranges
-        self.sigma = 0.2
+        self.sigma = sigma  # sigma < 1 ==> center sampling
+        self.CE = CE
 
     def forward(self, cate_preds, targets):
         gt_bbox_list  = [targets[i][:, :-1] * self.input_size for i in range(len(targets))]
@@ -58,22 +59,35 @@ class AttentionFocalLoss(nn.Module):
             self.solo_target_single,
             gt_bbox_list,
             gt_label_list)
-        # cate
-        cate_labels = [
-            torch.cat([cate_labels_level_img.flatten()
-                       for cate_labels_level_img in cate_labels_level])
-            for cate_labels_level in zip(*cate_label_list)
-        ]
-        flatten_cate_labels = torch.cat(cate_labels)
-        num_pos = (flatten_cate_labels > 0).sum()
+        if not self.CE:
+            cate_labels = [
+                torch.cat([cate_labels_level_img.flatten()
+                        for cate_labels_level_img in cate_labels_level])
+                for cate_labels_level in zip(*cate_label_list)
+            ]
+            flatten_cate_labels = torch.cat(cate_labels)
+            num_pos = (flatten_cate_labels > 0).sum()
 
-        cate_preds = [
-            cate_pred.permute(0, 2, 3, 1).reshape(-1, self.cate_out_channels)
-            for cate_pred in cate_preds
-        ]
-        flatten_cate_preds = torch.cat(cate_preds)
+            cate_preds = [
+                cate_pred.permute(0, 2, 3, 1).reshape(-1, self.cate_out_channels)
+                for cate_pred in cate_preds
+            ]
+            flatten_cate_preds = torch.cat(cate_preds)
 
-        loss_cate = self.loss_cate(flatten_cate_preds, flatten_cate_labels, avg_factor=num_pos + 1)
+            loss_cate = self.loss_cate(flatten_cate_preds, flatten_cate_labels, avg_factor=num_pos + 1)
+        else:
+            mask_losses = []
+            batch_size = cate_preds[0].shape[0]
+            for lvl in range(len(cate_preds)):
+                mask_loss = []
+                for b in range(batch_size):
+                    attention_map = cate_preds[lvl][b, 0, :, :]
+                    mask_gt = cate_label_list[lvl][b]
+                    mask_gt = mask_gt[mask_gt >= 0]
+                    mask_predict = attention_map[attention_map >= 0]
+                    mask_loss.append(F.binary_cross_entropy(mask_predict, mask_gt))
+                mask_losses.append(torch.stack(mask_loss).mean())
+            loss_cate = torch.stack(mask_losses).mean(dim=0, keepdim=True)
         return loss_cate
 
     def solo_target_single(self, gt_bboxes_raw, gt_labels_raw):

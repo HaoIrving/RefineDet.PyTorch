@@ -3,8 +3,8 @@ from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss, AttentionFocalLoss
 # from sardet.refinedet_bn import build_refinedet
 # from sardet.refinedet_bn_at2 import build_refinedet
-# from sardet.refinedet_bn_at1_mh import build_refinedet
-from sardet.refinedet_bn_at2_mh import build_refinedet
+from sardet.refinedet_bn_at1_mh import build_refinedet
+# from sardet.refinedet_bn_at2_mh import build_refinedet
 
 
 import os
@@ -67,6 +67,9 @@ parser.add_argument('-max','--max_epoch', default=300,
 parser.add_argument('--ngpu', default=4, type=int, help='gpus')
 parser.add_argument('-aw', '--at_weight', default=1.0, type=float,
                     help='attention loss weight')
+parser.add_argument('-atsg', '--at_sigma', default=0.2, type=float,
+                    help='attention loss grid sampling ratio, <1 means center sampling')
+parser.add_argument('-atce', '--at_ce', action="store_true", default=False, help='set attention loss as cross entropy')
 args = parser.parse_args()
 
 
@@ -85,19 +88,8 @@ if not os.path.exists(args.save_folder):
 
 sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
-# os.environ['CUDA_VISIBLE_DEVICES'] = '2'
-# os.system('CUDA_VISIBLE__DEVICES = 2')
-
-# args.lr = 1e-5
-# args.batch_size = 4
-# args.ngpu = 2
-# args.num_workers = 0
 args.input_size = str(512)
 args.max_epoch = 300
-
-# 'feature_maps': [64, 32, 16, 8],
-# seg_num_grids = [36, 24, 16, 12]
-seg_num_grids = [64, 32, 16, 8]
 
 # ((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048)) for stride from 4
 # anchor [32, 64, 128, 256]
@@ -139,6 +131,7 @@ def train():
     print(args)
 
     device = torch.device('cuda:0' if args.cuda else 'cpu')
+    seg_num_grids = cfg['feature_maps']
     refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'], seg_num_grids)
     net = refinedet_net
     print(net)
@@ -169,7 +162,8 @@ def train():
                 gamma=2.0,
                 alpha=0.25,
                 loss_weight=1.0)
-    attention_criterion = AttentionFocalLoss(cfg['num_classes'], cfg['min_dim'], loss_cate, seg_num_grids, scale_ranges)
+    attention_criterion = AttentionFocalLoss(cfg['num_classes'], cfg['min_dim'], loss_cate, seg_num_grids, scale_ranges, \
+        simga=args.at_sigma, CE=args.at_ce)
 
     net.train()
     # loss counters
@@ -226,11 +220,11 @@ def train():
         images, targets = next(batch_iterator)
         images = images.to(device)
         targets = [ann.to(device) for ann in targets]
-        for an in targets:
-            for instance in an:
-                for cor in instance[:-1]:
-                    if cor < 0 or cor > 1:
-                        raise StopIteration
+        # for an in targets:
+        #     for instance in an:
+        #         for cor in instance[:-1]:
+        #             if cor < 0 or cor > 1:
+        #                 raise StopIteration
 
         # forward
         attention_maps, arm_loc, arm_conf, odm_loc, odm_conf, priors = net(images)
