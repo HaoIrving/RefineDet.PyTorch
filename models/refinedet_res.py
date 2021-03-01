@@ -35,7 +35,7 @@ class RefineDet(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, size, base, extras, ARM, ADM, TCB, num_classes, bn=True, detector=None):
+    def __init__(self, phase, size, base, extras, ARM, ADM, TCB, num_classes, detector=None):
         super(RefineDet, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
@@ -44,12 +44,6 @@ class RefineDet(nn.Module):
         with torch.no_grad():
             self.priors = self.priorbox.forward()
         self.size = size
-        self.bn = bn
-        if size != '512' and size != '320':
-            self.conv3_3_layer = (16, 23)[self.bn]
-        self.conv4_3_layer = (23, 33)[self.bn]
-        self.conv5_3_layer = (30, 43)[self.bn]
-        self.extra_1_layer = (4, 6)[self.bn]
 
         # for calc offset of ADM
         self.variance = self.cfg['variance']
@@ -65,13 +59,12 @@ class RefineDet(nn.Module):
         self.dcn_base_offset = torch.tensor(dcn_base_offset).view(1, -1, 1, 1)
 
         # SSD network
-        self.vgg = nn.ModuleList(base)
-        # Layer learns to scale the l2 normalized features from conv4_3
-        if size != '512' and size != '320':
-            self.conv3_3_L2Norm = L2Norm(256, 10)
-        self.conv4_3_L2Norm = L2Norm(512, 10)
-        self.conv5_3_L2Norm = L2Norm(512, 8)
-        self.extras = nn.ModuleList(extras)
+        self.res = base
+        if size == 1024: 
+            self.extras1 = extras[0]
+            self.extras2 = extras[1]
+        else:
+            self.extras = extras
 
         self.arm_loc = nn.ModuleList(ARM[0])
         self.arm_conf = nn.ModuleList(ARM[1])
@@ -118,29 +111,19 @@ class RefineDet(nn.Module):
         adm_loc = list()
         adm_conf = list()
 
-        # apply vgg up to conv4_3 relu and conv5_3 relu
-        for k in range(self.conv5_3_layer):
-            x = self.vgg[k](x)
-            if self.conv3_3_layer - 1 == k and self.size != '512' and self.size != '320':
-                s = self.conv3_3_L2Norm(x)
-                sources.append(s)
-            if self.conv4_3_layer - 1 == k:
-                s = self.conv4_3_L2Norm(x)
-                sources.append(s)
-            elif self.conv5_3_layer - 1 == k:
-                s = self.conv5_3_L2Norm(x)
-                sources.append(s)
-
-        # apply vgg up to fc7
-        for k in range(self.conv5_3_layer, len(self.vgg)):
-            x = self.vgg[k](x)
-        sources.append(x)
+        # apply resnet 
+        x = self.res(x)
+        sources = list(x)
 
         # apply extra layers and cache source layer outputs
-        for k in range(len(self.extras)):
-            x = self.extras[k](x)
-            if self.extra_1_layer - 1 == k:
-                sources.append(x)
+        if self.size == 1024:
+            x = self.extras1(x[-1])
+            sources.append(x)
+            x = self.extras2(x)
+            sources.append(x)
+        else:
+            x = self.extras(x[-1])
+            sources.append(x)
 
         # apply ARM and ADM to source layers
         arm_loc_align = list()
@@ -258,21 +241,21 @@ class RefineDet(nn.Module):
     
     def init_weights(self, pretrained=None):
         if isinstance(pretrained, str):
-            vgg_weights = torch.load(pretrained)
             print('Loading base network...')
-            self.vgg.load_state_dict(vgg_weights)
-        elif pretrained is None:
-            for m in self.vgg.modules():
+        self.res.init_weights(pretrained=pretrained)
+
+        from torch.nn.modules.batchnorm import _BatchNorm
+        if self.size == 1024:
+            extra_layers = [self.extras1, self.extras2]
+        else:
+            extra_layers = [self.extras]
+        for extra_layer in extra_layers:
+            for m in extra_layer.modules():
                 if isinstance(m, nn.Conv2d):
                     kaiming_init(m)
-                elif isinstance(m, nn.BatchNorm2d):
+                elif isinstance(m, (_BatchNorm, nn.GroupNorm)):
                     constant_init(m, 1)
-                elif isinstance(m, nn.Linear):
-                    normal_init(m, std=0.01)
-        else:
-            raise TypeError('pretrained must be a str or None')
         # initialize newly added layers' weights with xavier method
-        self.extras.apply(init_method)
         self.arm_loc.apply(init_method)
         self.arm_conf.apply(init_method)
         self.tcb0.apply(init_method)
@@ -309,56 +292,30 @@ def multi_apply(func, *args, **kwargs):
     map_results = map(pfunc, *args)
     return tuple(map_results)
 
-# This function is derived from torchvision VGG make_layers()
-# https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
-def vgg(cfg, i, batch_norm=False):
-    layers = []
-    in_channels = i
-    for v in cfg:
-        if v == 'M':
-            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
-        elif v == 'C':
-            layers += [nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)]
-        else:
-            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
-            if batch_norm:
-                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
-            else:
-                layers += [conv2d, nn.ReLU(inplace=True)]
-            in_channels = v
-    pool5 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-    conv6 = nn.Conv2d(512, 1024, kernel_size=3, padding=3, dilation=3)
-    conv7 = nn.Conv2d(1024, 1024, kernel_size=1)
-    if batch_norm:
-        layers += [pool5, conv6, nn.BatchNorm2d(conv6.out_channels),
-                   nn.ReLU(inplace=True), conv7, nn.BatchNorm2d(conv7.out_channels), nn.ReLU(inplace=True)]
-    else:
-        layers += [pool5, conv6, nn.ReLU(inplace=True), conv7, nn.ReLU(inplace=True)]
-    return layers
 
-
-def add_extras(cfg, size, i, batch_norm=False):
-    # Extra layers added to VGG for feature scaling
-    layers = []
-    in_channels = i
-    flag = False
-    for k, v in enumerate(cfg):
-        if in_channels != 'S':
-            if v == 'S':
-                conv2d = nn.Conv2d(in_channels, cfg[k + 1], kernel_size=(1, 3)[flag], stride=2, padding=1)
-                if batch_norm:
-                    layers += [conv2d, nn.BatchNorm2d(cfg[k + 1]), nn.ReLU(inplace=True)]
-                else:
-                    layers += [conv2d, nn.ReLU(inplace=True)]
-            else:
-                conv2d = nn.Conv2d(in_channels, v, kernel_size=(1, 3)[flag])
-                if batch_norm:
-                    layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
-                else:
-                    layers += [conv2d, nn.ReLU(inplace=True)]
-            flag = not flag
-        in_channels = v
-    return layers
+def add_extras(size, base_):
+    # Extra layers added to ResNet for feature scaling
+    from mmdet.models.backbones.resnet import Bottleneck
+    from mmdet.models.utils import ResLayer
+    res6 = ResLayer(
+        block=Bottleneck,
+        inplanes=base_.inplanes,
+        planes=256,
+        num_blocks=1,
+        stride=2,
+        dilation=1,
+        norm_cfg=base_.norm_cfg)
+    if size == 1024:
+        res7 = ResLayer(
+            block=Bottleneck,
+            inplanes=256 * Bottleneck.expansion,
+            planes=128,
+            num_blocks=1,
+            stride=2,
+            dilation=1,
+            norm_cfg=base_.norm_cfg)
+        return (res6, res7)
+    return res6
 
 def arm_multibox(in_channels, anchor_nums):
     arm_loc_layers = []
@@ -412,44 +369,52 @@ def add_tcb(cfg):
             feature_upsample_layers += [nn.ConvTranspose2d(256, 256, 2, 2)]
     return (feature_scale_layers, feature_upsample_layers, feature_pred_layers)
 
-base = {
-    '320': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512],
-    '512': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512],
-    '896': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512],
-}
 extras = {
-    '320': [256, 'S', 512],
-    '512': [256, 'S', 512],
-    '896': [256, 'S', 512],
+    '320': [256],
+    '512': [256],
+    '1024': [256, 128],
 }
 mbox = {
     '320': [3, 3, 3, 3],  # number of boxes per feature map location
     '512': [3, 3, 3, 3],  # number of boxes per feature map location
     '896': [3, 3, 3, 3, 3],  # number of boxes per feature map location
+    '1024': [3, 3, 3, 3, 3],  # number of boxes per feature map location
 }
 
 tcb = {
-    '320': [512, 512, 1024, 512],
-    '512': [512, 512, 1024, 512],
-    '896': [256, 512, 512, 1024, 512],
+    '320': [512, 1024, 2048, 1024],
+    '512': [512, 1024, 2048, 1024],
+    '896': [256, 512, 1024, 2048], # use res_layer1
+    '1024': [512, 1024, 2048, 1024, 512],
 }
 
 arm = {
-    '512': [512, 512, 1024, 512],
-    '896': [256, 512, 512, 1024, 512],
+    '320': [512, 1024, 2048, 1024],
+    '512': [512, 1024, 2048, 1024],
+    '896': [256, 512, 1024, 2048], # use res_layer1
+    '1024': [512, 1024, 2048, 1024, 512],
 }
 
-def build_refinedet(phase, size=320, num_classes=21, detector=None):
+def build_refinedet(phase, size=320, num_classes=21, type='ResNet', depth=101, detector=None):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
-    bn = True
-    base_ = vgg(base[str(size)], 3, bn)
-    extras_ = add_extras(extras[str(size)], size, 1024, bn)
+    # base_
+    from mmdet.models import build_backbone
+    # pretrained='torchvision://resnet101',
+    backbone=dict(
+        type='ResNet',
+        depth=101,
+        num_stages=4,
+        out_indices=(1, 2, 3),
+        # frozen_stages=1,
+        norm_cfg=dict(type='BN', requires_grad=True),
+        norm_eval=True,
+        style='pytorch')
+    base_ = build_backbone(backbone)
+    # extras_ 
+    extras_ = add_extras(size, base_)
     ARM_ = arm_multibox(arm[str(size)], mbox[str(size)])
     ADM_ = adm_multibox(arm[str(size)], mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
-    return RefineDet(phase, size, base_, extras_, ARM_, ADM_, TCB_, num_classes, bn, detector)
+    return RefineDet(phase, size, base_, extras_, ARM_, ADM_, TCB_, num_classes, detector)

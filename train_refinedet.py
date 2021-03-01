@@ -3,7 +3,8 @@ from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss
 #from ssd import build_ssd
 # from models.refinedet import build_refinedet
-from models.refinedet_bn import build_refinedet
+# from models.refinedet_bn import build_refinedet
+from models.refinedet_res import build_refinedet
 
 import os
 import sys
@@ -88,7 +89,7 @@ sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 # args.ngpu = 2
 # args.num_workers = 0
 args.input_size = str(512)
-args.input_size = str(896)
+# args.input_size = str(896)
 # args.max_epoch = 300
 # args.max_epoch = 600
 
