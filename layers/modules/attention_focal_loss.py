@@ -81,7 +81,7 @@ class AttentionFocalLoss(nn.Module):
             for lvl in range(len(cate_preds)):
                 mask_loss = []
                 for b in range(batch_size):
-                    attention_map = cate_preds[lvl][b, 0, :, :]
+                    attention_map = F.sigmoid(cate_preds[lvl][b, 0, :, :])
                     mask_gt = cate_label_list[lvl][b]
                     mask_gt = mask_gt[mask_gt >= 0]
                     mask_predict = attention_map[attention_map >= 0]
