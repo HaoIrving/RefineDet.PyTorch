@@ -3,8 +3,6 @@ from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss
 #from ssd import build_ssd
 # from models.refinedet import build_refinedet
-# from models.refinedet_bn import build_refinedet
-from models.refinedet_res import build_refinedet
 
 import os
 import sys
@@ -63,6 +61,8 @@ parser.add_argument('--resume_epoch', default=0,
 parser.add_argument('-max','--max_epoch', default=300,
                     type=int, help='max epoch for retraining')               
 parser.add_argument('--ngpu', default=4, type=int, help='gpus')
+parser.add_argument('--model', default='512_ResNet_101',
+                    type=str, help='model name')
 args = parser.parse_args()
 
 
@@ -88,13 +88,27 @@ sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 # args.batch_size = 4
 # args.ngpu = 2
 # args.num_workers = 0
-args.input_size = str(512)
 # args.input_size = str(896)
 # args.max_epoch = 300
 # args.max_epoch = 600
 
 negpos_ratio = 3
 initial_lr = args.lr
+model = args.model
+# model = '512_ResNet_101'
+# model = '1024_ResNet_101'
+# model = '1024_ResNeXt_152'
+# from models.refinedet_bn import build_refinedet
+from models.refinedet_res import build_refinedet
+if model == '512_ResNet_101':
+    args.input_size = str(512)
+    backbone_dict = dict(type='ResNet',depth=101, frozen_stages=-1)
+elif model == '1024_ResNet_101':
+    args.input_size = str(1024)
+    backbone_dict = dict(type='ResNet',depth=101, frozen_stages=-1)
+elif model == '1024_ResNeXt_152':
+    args.input_size = str(1024)
+    backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=-1)
 
 def train():
     if args.visdom:
@@ -127,11 +141,11 @@ def train():
     print('Using the specified args:')
     print(args)
 
-    device = torch.device('cuda:0' if args.cuda else 'cpu')
-    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'])
+    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'], backbone_dict)
     net = refinedet_net
     print(net)
 
+    device = torch.device('cuda:0' if args.cuda else 'cpu')
     if args.ngpu > 1 and args.cuda:
         net = torch.nn.DataParallel(refinedet_net, device_ids=list(range(args.ngpu)))
     cudnn.benchmark = True
@@ -142,6 +156,7 @@ def train():
         refinedet_net.load_weights(args.resume)
     else:
         print('Initializing weights...')
+        # pretrained='torchvision://resnet101',
         # refinedet_net.init_weights(pretrained=args.basenet)
         refinedet_net.init_weights(pretrained=None)
 

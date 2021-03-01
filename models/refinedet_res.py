@@ -292,30 +292,90 @@ def multi_apply(func, *args, **kwargs):
     map_results = map(pfunc, *args)
     return tuple(map_results)
 
+def resnet(backbone_dict):
+    _type = backbone_dict['type']
+    depth = backbone_dict['depth']
+    frozen_stages = backbone_dict['frozen_stages']
+    from mmdet.models import build_backbone
+    if _type == 'ResNet':
+        backbone=dict(
+            type='ResNet',
+            depth=depth,
+            num_stages=4,
+            out_indices=(1, 2, 3),
+            frozen_stages=frozen_stages,
+            norm_cfg=dict(type='BN', requires_grad=True),
+            norm_eval=True,
+            style='pytorch')
+    elif _type == 'ResNeXt':
+        backbone=dict(
+            type='ResNeXt',
+            depth=depth, # 152
+            groups=32,   # 32x4d
+            base_width=4,
+            num_stages=4,
+            out_indices=(1, 2, 3),
+            frozen_stages=frozen_stages,
+            norm_cfg=dict(type='BN', requires_grad=True),
+            style='pytorch')
+    resnet = build_backbone(backbone)
+    return resnet
 
-def add_extras(size, base_):
+
+def add_extras(size, base_, backbone_dict):
+    _type = backbone_dict['type']
     # Extra layers added to ResNet for feature scaling
-    from mmdet.models.backbones.resnet import Bottleneck
     from mmdet.models.utils import ResLayer
-    res6 = ResLayer(
-        block=Bottleneck,
-        inplanes=base_.inplanes,
-        planes=256,
-        num_blocks=1,
-        stride=2,
-        dilation=1,
-        norm_cfg=base_.norm_cfg)
-    if size == 1024:
-        res7 = ResLayer(
+    if _type == 'ResNet':
+        from mmdet.models.backbones.resnet import Bottleneck
+        res6 = ResLayer(
             block=Bottleneck,
-            inplanes=256 * Bottleneck.expansion,
-            planes=128,
+            inplanes=base_.inplanes,
+            planes=256,
             num_blocks=1,
             stride=2,
             dilation=1,
             norm_cfg=base_.norm_cfg)
-        return (res6, res7)
-    return res6
+        if size == 1024:
+            res7 = ResLayer(
+                block=Bottleneck,
+                inplanes=256 * Bottleneck.expansion,
+                planes=128,
+                num_blocks=1,
+                stride=2,
+                dilation=1,
+                norm_cfg=base_.norm_cfg)
+            return (res6, res7)
+        return res6
+    elif _type == 'ResNeXt':
+        from mmdet.models.backbones.resnext import Bottleneck
+        res6 = ResLayer(
+            groups=32,
+            base_width=4,
+            base_channels=64,
+            block=Bottleneck,
+            inplanes=base_.inplanes,
+            planes=256,
+            num_blocks=1,
+            stride=2,
+            dilation=1,
+            norm_cfg=base_.norm_cfg)
+        if size == 1024:
+            res7 = ResLayer(
+                groups=32,
+                base_width=4,
+                base_channels=64,
+                block=Bottleneck,
+                inplanes=256 * Bottleneck.expansion,
+                planes=128,
+                num_blocks=1,
+                stride=2,
+                dilation=1,
+                norm_cfg=base_.norm_cfg)
+            return (res6, res7)
+        return res6
+
+
 
 def arm_multibox(in_channels, anchor_nums):
     arm_loc_layers = []
@@ -395,25 +455,12 @@ arm = {
     '1024': [512, 1024, 2048, 1024, 512],
 }
 
-def build_refinedet(phase, size=320, num_classes=21, type='ResNet', depth=101, detector=None):
+def build_refinedet(phase, size=320, num_classes=21, backbone_dict=dict(type='ResNet',depth=101, frozen_stages=-1), detector=None):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
-    # base_
-    from mmdet.models import build_backbone
-    # pretrained='torchvision://resnet101',
-    backbone=dict(
-        type='ResNet',
-        depth=101,
-        num_stages=4,
-        out_indices=(1, 2, 3),
-        # frozen_stages=1,
-        norm_cfg=dict(type='BN', requires_grad=True),
-        norm_eval=True,
-        style='pytorch')
-    base_ = build_backbone(backbone)
-    # extras_ 
-    extras_ = add_extras(size, base_)
+    base_ = resnet(backbone_dict)
+    extras_ = add_extras(size, base_, backbone_dict)
     ARM_ = arm_multibox(arm[str(size)], mbox[str(size)])
     ADM_ = adm_multibox(arm[str(size)], mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
