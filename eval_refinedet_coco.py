@@ -433,6 +433,17 @@ Best ap50: 0.9758 at epoch 210
 ap: 0.6215, ap50: 0.9758, ap75: 0.7015, ap_s: 0.5809, ap_m: 0.6847, ap_l: 0.6423
 Best ap  : 0.6234 at epoch 215
 ap: 0.6234, ap50: 0.9724, ap75: 0.7107, ap_s: 0.5837, ap_m: 0.6824, ap_l: 0.6613
+at1 4e3 mh aw 01 sigma1
+Best ap50: 0.9824 at epoch 205
+ap: 0.6175, ap50: 0.9824, ap75: 0.7053, ap_s: 0.5722, ap_m: 0.6790, ap_l: 0.6811
+Best ap  : 0.6233 at epoch 300
+ap: 0.6233, ap50: 0.9735, ap75: 0.7259, ap_s: 0.5781, ap_m: 0.6857, ap_l: 0.6608
+
+at1_mh_4e3_aw1_ce_sigma1
+Best ap50: 0.9828 at epoch 255
+ap: 0.6265, ap50: 0.9828, ap75: 0.7237, ap_s: 0.5864, ap_m: 0.6886, ap_l: 0.6457
+Best ap  : 0.6265 at epoch 255
+ap: 0.6265, ap50: 0.9828, ap75: 0.7237, ap_s: 0.5864, ap_m: 0.6886, ap_l: 0.6457
 
 at1 4e3 mh2
 Best ap50: 0.9781 at epoch 275
