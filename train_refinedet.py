@@ -163,7 +163,7 @@ def train():
                 alpha=0.25,
                 loss_weight=1.0)
     attention_criterion = AttentionFocalLoss(cfg['num_classes'], cfg['min_dim'], loss_cate, seg_num_grids, scale_ranges, \
-        simga=args.at_sigma, CE=args.at_ce)
+        sigma=args.at_sigma, CE=args.at_ce)
 
     net.train()
     # loss counters
