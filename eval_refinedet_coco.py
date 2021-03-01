@@ -444,6 +444,11 @@ Best ap50: 0.9828 at epoch 255
 ap: 0.6265, ap50: 0.9828, ap75: 0.7237, ap_s: 0.5864, ap_m: 0.6886, ap_l: 0.6457
 Best ap  : 0.6265 at epoch 255
 ap: 0.6265, ap50: 0.9828, ap75: 0.7237, ap_s: 0.5864, ap_m: 0.6886, ap_l: 0.6457
+at1_mh_4e3_aw1_ce_sigma02
+Best ap50: 0.9749 at epoch 205
+ap: 0.6120, ap50: 0.9749, ap75: 0.6851, ap_s: 0.5603, ap_m: 0.6873, ap_l: 0.6589
+Best ap  : 0.6234 at epoch 275
+ap: 0.6234, ap50: 0.9634, ap75: 0.7250, ap_s: 0.5745, ap_m: 0.6935, ap_l: 0.6747
 
 at1 4e3 mh2
 Best ap50: 0.9781 at epoch 275
