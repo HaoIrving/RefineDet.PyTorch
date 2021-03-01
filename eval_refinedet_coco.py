@@ -291,7 +291,7 @@ if __name__ == '__main__':
     prefix = 'weights/at1_4e3_05'
     prefix = 'weights/at1_mh_4e3_1'
     prefix = 'weights/at1_mh_4e3_01_sigma1'
-    prefix = 'weights/at1_mh_4e3_01_ce_sigma1'
+    prefix = 'weights/at1_mh_4e3_1_ce_sigma1'
     # prefix = 'weights/at1_mh2_4e3_1'
     # prefix = 'weights/at2_mh_4e3_03'
     # prefix = 'weights/at2_mh_4e3_01'
