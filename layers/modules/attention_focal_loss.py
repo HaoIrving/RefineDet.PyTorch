@@ -82,7 +82,7 @@ class AttentionFocalLoss(nn.Module):
                 mask_loss = []
                 for b in range(batch_size):
                     attention_map = F.sigmoid(cate_preds[lvl][b, 0, :, :])
-                    mask_gt = cate_label_list[lvl][b]
+                    mask_gt = cate_label_list[lvl][b].float()
                     mask_gt = mask_gt[mask_gt >= 0]
                     mask_predict = attention_map[attention_map >= 0]
                     mask_loss.append(F.binary_cross_entropy(mask_predict, mask_gt))
