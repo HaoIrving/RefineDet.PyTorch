@@ -290,8 +290,10 @@ if __name__ == '__main__':
     prefix = 'weights/at1_4e3_01'
     prefix = 'weights/at1_4e3_05'
     prefix = 'weights/at1_mh_4e3_1'
+    prefix = 'weights/at1_mh_4e3_01'  # sigma 0.2
     prefix = 'weights/at1_mh_4e3_01_sigma1'
-    prefix = 'weights/at1_mh_4e3_1_ce_sigma1'
+    # prefix = 'weights/at1_mh_4e3_1_ce_sigma1'
+    prefix = 'weights/at1_mh_4e3_1_ce_sigma02'
     # prefix = 'weights/at1_mh2_4e3_1'
     # prefix = 'weights/at2_mh_4e3_03'
     # prefix = 'weights/at2_mh_4e3_01'
@@ -452,6 +454,10 @@ Best ap50: 0.9730 at epoch 300
 ap: 0.6185, ap50: 0.9730, ap75: 0.7088, ap_s: 0.5649, ap_m: 0.6963, ap_l: 0.6784
 Best ap  : 0.6235 at epoch 280
 ap: 0.6235, ap50: 0.9656, ap75: 0.7284, ap_s: 0.5730, ap_m: 0.6984, ap_l: 0.6743
+Best ap50: 0.9793 at epoch 210
+ap: 0.6042, ap50: 0.9793, ap75: 0.6967, ap_s: 0.5611, ap_m: 0.6702, ap_l: 0.6921
+Best ap  : 0.6233 at epoch 280
+ap: 0.6233, ap50: 0.9726, ap75: 0.7242, ap_s: 0.5766, ap_m: 0.6900, ap_l: 0.7055
 Best ap50: 0.9835 at epoch 205
 ap: 0.6115, ap50: 0.9835, ap75: 0.7005, ap_s: 0.5714, ap_m: 0.6764, ap_l: 0.6669
 Best ap  : 0.6201 at epoch 255
