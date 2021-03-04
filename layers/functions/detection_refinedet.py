@@ -1,7 +1,9 @@
 import torch
 from torch.autograd import Function
-from ..box_utils import decode, nms, center_size
+import numpy as np
+from ..box_utils import decode, center_size#, nms
 from data import coco_refinedet as cfg
+from utils.nms_wrapper import nms
 
 
 class Detect_RefineDet(Function):
@@ -10,21 +12,21 @@ class Detect_RefineDet(Function):
     scores and threshold to a top_k number of output predictions for both
     confidence score and locations.
     """
-    def __init__(self, num_classes, size, bkg_label, top_k, conf_thresh, nms_thresh, 
-                objectness_thre, keep_top_k):
+    def __init__(self, num_classes, size, bkg_label, objectness_threshold=0.01, 
+                confidence_threshold=0.01, nms_threshold=0.5, top_k=1000, keep_top_k=500):
         self.num_classes = num_classes
         self.background_label = bkg_label
+        self.objectness_threshold = objectness_threshold
+        self.variance = cfg[str(size)]['variance']
         self.top_k = top_k
         self.keep_top_k = keep_top_k
         # Parameters used in nms.
-        self.nms_thresh = nms_thresh
-        if nms_thresh <= 0:
+        self.nms_threshold = nms_threshold
+        if nms_threshold <= 0:
             raise ValueError('nms_threshold must be non negative.')
-        self.conf_thresh = conf_thresh
-        self.objectness_thre = objectness_thre
-        self.variance = cfg[str(size)]['variance']
+        self.confidence_threshold = confidence_threshold
 
-    def forward(self, arm_loc_data, arm_conf_data, odm_loc_data, odm_conf_data, prior_data):
+    def forward(self, arm_loc_data, arm_conf_data, odm_loc_data, odm_conf_data, prior_data, scale):
         """
         Args:
             loc_data: (tensor) Loc preds from loc layers
@@ -38,7 +40,7 @@ class Detect_RefineDet(Function):
         conf_data = odm_conf_data
 
         arm_object_conf = arm_conf_data.data[:, :, 1:]
-        no_object_index = arm_object_conf <= self.objectness_thre
+        no_object_index = arm_object_conf <= self.objectness_threshold
         conf_data[no_object_index.expand_as(conf_data)] = 0
 
         num = loc_data.size(0)  # batch size
@@ -62,9 +64,40 @@ class Detect_RefineDet(Function):
             self.boxes[i] = decoded_boxes
             self.scores[i] = conf_scores
 
-        return self.boxes, self.scores
+        # only support single image test now.
+        boxes = self.boxes[0]
+        scores= self.scores[0]
+        boxes *= scale
+        boxes = boxes.cpu().numpy()
+        scores = scores.cpu().numpy()
 
-    def forward_python_nms(self, arm_loc_data, arm_conf_data, odm_loc_data, odm_conf_data, prior_data):
+        for j in range(1, self.num_classes):
+            inds = np.where(scores[:, j] > self.confidence_threshold)[0]
+            if len(inds) == 0:
+                continue
+            c_bboxes = boxes[inds]
+            c_scores = scores[inds, j]
+            # keep top-K before NMS
+            order = c_scores.argsort()[::-1][:self.top_k]
+            c_bboxes = c_bboxes[order]
+            c_scores = c_scores[order]
+            # do NMS
+            c_dets = np.hstack((c_bboxes, c_scores[:, np.newaxis])).astype(np.float32, copy=False)
+            keep = nms(c_dets, self.nms_threshold, force_cpu=(not loc_data.is_cuda))
+            c_dets = c_dets[keep, :]
+            # keep top-K faster NMS
+            c_dets = c_dets[:self.keep_top_k, :]
+            # record labels
+            labels = np.ones(c_dets[:, [1]].shape, dtype=np.float32) * j
+            det_c = np.hstack((c_dets, labels))
+            try:
+                det = np.row_stack((det, det_c))
+            except:
+                det = det_c
+
+        return det
+
+    def forward_torch_nms(self, arm_loc_data, arm_conf_data, odm_loc_data, odm_conf_data, prior_data):
         """
         Deprecated.
         Args:
@@ -79,7 +112,7 @@ class Detect_RefineDet(Function):
         conf_data = odm_conf_data
 
         arm_object_conf = arm_conf_data.data[:, :, 1:]
-        no_object_index = arm_object_conf <= self.objectness_thre
+        no_object_index = arm_object_conf <= self.objectness_threshold
         conf_data[no_object_index.expand_as(conf_data)] = 0
 
         num = loc_data.size(0)  # batch size
@@ -96,14 +129,14 @@ class Detect_RefineDet(Function):
             # For each class, perform nms
             conf_scores = conf_preds[i].clone()
             for cl in range(1, self.num_classes):
-                c_mask = conf_scores[cl].gt(self.conf_thresh)
+                c_mask = conf_scores[cl].gt(self.confidence_threshold)
                 scores = conf_scores[cl][c_mask]
                 if scores.size(0) == 0:
                     continue
                 l_mask = c_mask.unsqueeze(1).expand_as(decoded_boxes)
                 boxes = decoded_boxes[l_mask].view(-1, 4)
                 # idx of highest scoring and non-overlapping boxes per class
-                ids, count = nms(boxes, scores, self.nms_thresh, self.top_k)
+                ids, count = nms(boxes, scores, self.nms_threshold, self.top_k)
                 output[i, cl, :count] = \
                     torch.cat((scores[ids[:count]].unsqueeze(1),
                                boxes[ids[:count]]), 1)

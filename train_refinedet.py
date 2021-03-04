@@ -1,6 +1,7 @@
 from data import *
 from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss
+from layers import PriorBox
 #from ssd import build_ssd
 # from models.refinedet import build_refinedet
 
@@ -166,6 +167,10 @@ def train():
                              False, args.cuda)
     odm_criterion = RefineDetMultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, negpos_ratio, 0.5,
                              False, args.cuda, use_ARM=True)
+    priorbox = PriorBox(cfg)
+    with torch.no_grad():
+        priors = priorbox.forward()
+        priors = priors.to(device)
 
     net.train()
     # loss counters
@@ -233,8 +238,8 @@ def train():
 
         # backprop
         optimizer.zero_grad()
-        arm_loss_l, arm_loss_c = arm_criterion(out, targets)
-        odm_loss_l, odm_loss_c = odm_criterion(out, targets)
+        arm_loss_l, arm_loss_c = arm_criterion(out, priors, targets)
+        odm_loss_l, odm_loss_c = odm_criterion(out, priors, targets)
         arm_loss = arm_loss_l + arm_loss_c
         odm_loss = odm_loss_l + odm_loss_c
         loss = arm_loss + odm_loss

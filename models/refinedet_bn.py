@@ -35,17 +35,17 @@ class RefineDet(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, size, base, extras, ARM, ADM, TCB, num_classes, bn=True, detector=None):
+    def __init__(self, phase, size, base, extras, ARM, ADM, TCB, num_classes, bn=True):
         super(RefineDet, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
         self.cfg = (coco_refinedet, voc_refinedet)[num_classes == 21][str(size)]
-        self.priorbox = PriorBox(self.cfg)
-        with torch.no_grad():
-            self.priors = self.priorbox.forward()
+        # self.priorbox = PriorBox(self.cfg)
+        # with torch.no_grad():
+        #     self.priors = self.priorbox.forward()
         self.size = size
         self.bn = bn
-        if size != '512' and size != '320':
+        if size != 512 and size != 320:
             self.conv3_3_layer = (16, 23)[self.bn]
         self.conv4_3_layer = (23, 33)[self.bn]
         self.conv5_3_layer = (30, 43)[self.bn]
@@ -67,7 +67,7 @@ class RefineDet(nn.Module):
         # SSD network
         self.vgg = nn.ModuleList(base)
         # Layer learns to scale the l2 normalized features from conv4_3
-        if size != '512' and size != '320':
+        if size != 512 and size != 320:
             self.conv3_3_L2Norm = L2Norm(256, 10)
         self.conv4_3_L2Norm = L2Norm(512, 10)
         self.conv5_3_L2Norm = L2Norm(512, 8)
@@ -90,7 +90,6 @@ class RefineDet(nn.Module):
 
         if phase == 'test':
             self.softmax = nn.Softmax(dim=-1)
-            self.detect = detector
 
     def forward(self, x):
         """Applies network layers and ops on input image(s) x.
@@ -117,30 +116,42 @@ class RefineDet(nn.Module):
         arm_conf = list()
         adm_loc = list()
         adm_conf = list()
+        if self.phase == 'test':
+            feat_sizes = list()
 
         # apply vgg up to conv4_3 relu and conv5_3 relu
         for k in range(self.conv5_3_layer):
             x = self.vgg[k](x)
-            if self.conv3_3_layer - 1 == k and self.size != '512' and self.size != '320':
+            if self.size != 512 and self.size != 320 and self.conv3_3_layer - 1 == k:
                 s = self.conv3_3_L2Norm(x)
                 sources.append(s)
+                if self.phase == 'test':
+                    feat_sizes.append(x.shape[2])
             if self.conv4_3_layer - 1 == k:
                 s = self.conv4_3_L2Norm(x)
                 sources.append(s)
+                if self.phase == 'test':
+                    feat_sizes.append(x.shape[2])
             elif self.conv5_3_layer - 1 == k:
                 s = self.conv5_3_L2Norm(x)
                 sources.append(s)
+                if self.phase == 'test':
+                    feat_sizes.append(x.shape[2])
 
         # apply vgg up to fc7
         for k in range(self.conv5_3_layer, len(self.vgg)):
             x = self.vgg[k](x)
         sources.append(x)
+        if self.phase == 'test':
+            feat_sizes.append(x.shape[2])
 
         # apply extra layers and cache source layer outputs
         for k in range(len(self.extras)):
             x = self.extras[k](x)
             if self.extra_1_layer - 1 == k:
                 sources.append(x)
+                if self.phase == 'test':
+                    feat_sizes.append(x.shape[2])
 
         # apply ARM and ADM to source layers
         arm_loc_align = list()
@@ -197,14 +208,14 @@ class RefineDet(nn.Module):
         adm_conf = torch.cat([o.view(o.size(0), -1) for o in adm_conf], 1)
 
         if self.phase == "test":
-            output = self.detect.forward(
+            output = (
                 arm_loc.view(arm_loc.size(0), -1, 4),           # arm loc preds
                 self.softmax(arm_conf.view(arm_conf.size(0), -1,
                              2)),                               # arm conf preds
                 adm_loc.view(adm_loc.size(0), -1, 4),           # adm loc preds
                 self.softmax(adm_conf.view(adm_conf.size(0), -1,
                              self.num_classes)),                # adm conf preds
-                self.priors.type(type(x.data))                  # default boxes
+                feat_sizes
             )
         else:
             output = (
@@ -212,15 +223,13 @@ class RefineDet(nn.Module):
                 arm_conf.view(arm_conf.size(0), -1, 2),
                 adm_loc.view(adm_loc.size(0), -1, 4),
                 adm_conf.view(adm_conf.size(0), -1, self.num_classes),
-                self.priors
             )
         return output
 
     def get_ponits(self, arm_loc):
         return multi_apply(self.get_ponits_single, arm_loc)
 
-    # This fuction is modified from 
-    # https://github.com/open-mmlab/mmdetection/blob/master/mmdet/models/dense_heads/reppoints_head.py
+    # modified from https://github.com/open-mmlab/mmdetection/blob/master/mmdet/models/dense_heads/reppoints_head.py
     def get_ponits_single(self, reg):
         scale = self.anchor_stride_ratio / 2
         anchors = [-scale, -scale, scale, scale]
@@ -442,7 +451,7 @@ arm = {
     '896': [256, 512, 512, 1024, 512],
 }
 
-def build_refinedet(phase, size=320, num_classes=21, detector=None):
+def build_refinedet(phase, size=320, num_classes=21, backbone_dict=None):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
@@ -452,4 +461,4 @@ def build_refinedet(phase, size=320, num_classes=21, detector=None):
     ARM_ = arm_multibox(arm[str(size)], mbox[str(size)])
     ADM_ = adm_multibox(arm[str(size)], mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
-    return RefineDet(phase, size, base_, extras_, ARM_, ADM_, TCB_, num_classes, bn, detector)
+    return RefineDet(phase, size, base_, extras_, ARM_, ADM_, TCB_, num_classes, bn)

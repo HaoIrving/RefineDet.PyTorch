@@ -47,7 +47,7 @@ class RefineDetMultiBoxLoss(nn.Module):
         self.theta = theta
         self.use_ARM = use_ARM
 
-    def forward(self, predictions, targets):
+    def forward(self, predictions, priors, targets):
         """Multibox Loss
         Args:
             predictions (tuple): A tuple containing loc preds, conf preds,
@@ -59,7 +59,7 @@ class RefineDetMultiBoxLoss(nn.Module):
             targets (tensor): Ground truth boxes and labels for a batch,
                 shape: [batch_size,num_objs,5] (last idx is the label).
         """
-        arm_loc_data, arm_conf_data, odm_loc_data, odm_conf_data, priors = predictions
+        arm_loc_data, arm_conf_data, odm_loc_data, odm_conf_data = predictions
         if self.use_ARM:
             loc_data, conf_data = odm_loc_data, odm_conf_data
         else:

@@ -9,14 +9,12 @@ import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
-from data import COCOroot, COCODetection
+from data import COCOroot, MEANS, COCODetection
 import torch.utils.data as data
 
-# from models.refinedet import build_refinedet
-from models.refinedet_bn import build_refinedet
-
 from layers import Detect_RefineDet
-from utils.nms_wrapper import nms
+from utils.nms_wrapper import nms, soft_nms
+from layers import PriorBox
 
 import sys
 import os
@@ -38,10 +36,6 @@ parser.add_argument('--trained_model',
                     help='Trained state_dict file path to open')
 parser.add_argument('--save_folder', default='eval/', type=str,
                     help='File path to save results')
-parser.add_argument('--confidence_threshold', default=0.01, type=float,
-                    help='Detection confidence threshold')
-parser.add_argument('--top_k', default=5, type=int,
-                    help='Further restrict the number of predictions to parse')
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use cuda to train model')
 # parser.add_argument('--voc_root', default=VOC_ROOT,
@@ -55,11 +49,20 @@ parser.add_argument('--retest', default=False, type=bool,
 parser.add_argument('--show_image', action="store_true", default=False, help='show detection results')
 parser.add_argument('--vis_thres', default=0.5, type=float, help='visualization_threshold')
 parser.add_argument('--prefix', default='weights/lr_5e4', type=str, help='File path to save results')
-
+parser.add_argument('--confidence_threshold', default=0.05, type=float, help='confidence_threshold')
+parser.add_argument('--top_k', default=5000, type=int, help='top_k')
+parser.add_argument('--nms_threshold', default=0.3, type=float, help='nms_threshold')
+parser.add_argument('--keep_top_k', default=750, type=int, help='keep_top_k')
 args = parser.parse_args()
+
+args.nms_threshold = 0.49
+args.confidence_threshold = 0.01
+args.top_k = 1000
+args.keep_top_k = 500
 
 if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
+
 
 def check_keys(model, pretrained_state_dict):
     ckpt_keys = set(pretrained_state_dict.keys())
@@ -121,38 +124,51 @@ class Timer(object):
         else:
             return self.diff
 
-class BaseTransform(object):
-    """Defines the transformations that should be applied to test PIL image
-        for input into the network
 
-    dimension -> tensorize -> color adj
-
-    Arguments:
-        resize (int): input dimension to SSD
-        rgb_means ((int,int,int)): average RGB of the dataset
-            (104,117,123)
-        swap ((int,int,int)): final order of channels
-    Returns:
-        transform (transform) : callable transform to be applied to test/val
-        data
-    """
-    def __init__(self, resize, rgb_means, swap=(2, 0, 1)):
-        self.means = rgb_means
-        self.resize = resize
-        self.swap = swap
-
-    # assume input is cv2 img for now
-    def __call__(self, img):
-
-        interp_methods = [cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_NEAREST, cv2.INTER_LANCZOS4]
-        interp_method = interp_methods[0]
-        img = cv2.resize(np.float32(img), (self.resize, self.resize),interpolation = interp_method).astype(np.float32)
-        img -= self.means
-        img = img.transpose(self.swap)
-        return torch.from_numpy(img)
+def draw_gt(img, target, target_size, h, w):
+    xr = target_size / w
+    yr = target_size / h
+    img_gt = img.astype(np.uint8)
+    for b in target:
+        b[0] *= xr
+        b[2] *= xr
+        b[1] *= yr
+        b[3] *= yr
+        b = list(map(int, b))
+        cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 2)
+        # cx = b[2]
+        # cy = b[1]
+        # text = "ship"
+        # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
+    return img_gt
 
 
-def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, max_per_image=300, confidence_threshold=0.005, nms_threshold=0.4, AP_stats=None):
+def vis_detection(img_gt, all_boxes, save_folder, target_size, h, w, i):
+    xr = target_size / w
+    yr = target_size / h
+    boxes = all_boxes[1][i].copy()
+    for b in boxes:
+        b[0] *= xr
+        b[2] *= xr
+        b[1] *= yr
+        b[3] *= yr
+        if b[4] < args.vis_thres:
+            continue
+        b = list(map(int, b))
+        cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
+        cx = b[2]
+        cy = b[1] + 12
+        # text = "{:.2f}".format(b[4])
+        # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
+    # cv2.imshow('res', img_gt)
+    # cv2.waitKey(0)
+    save_gt_dir = os.path.join(save_folder, 'gt_img')
+    if not os.path.exists(save_gt_dir):
+        os.mkdir(save_gt_dir)
+    cv2.imwrite(save_gt_dir + f'/{i}.png',img_gt, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+
+
+def test_net(save_folder, net, device, num_classes, dataset, detect, AP_stats=None):
     num_images = len(dataset)
     all_boxes = [[[] for _ in range(num_images)]
                  for _ in range(num_classes)]
@@ -172,86 +188,41 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
 
     for i in range(num_images):
         img, target = dataset.pull_image(i)
+        target_size = net.size
+        h, w, _ = img.shape
         scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
-        x = transform(img).unsqueeze(0)
+        img = cv2.resize(np.float32(img), (target_size, target_size), interpolation=cv2.INTER_LINEAR).astype(np.float32)
+        x = (img - MEANS).astype(np.float32)
+        # x -= MEANS
+        x = x.transpose(2, 0, 1)
+        x = torch.from_numpy(x).unsqueeze(0)
         x = x.to(device)
         scale = scale.to(device)
 
+        _t['im_detect'].tic()
         if args.show_image:
-            h, w, _ = img.shape
-            xr = net.size / w
-            yr = net.size / h
-            img_gt = img.astype(np.uint8)
-            img_gt = cv2.resize(img_gt, (net.size, net.size),interpolation=cv2.INTER_LINEAR)
-            for b in target:
-                b[0] *= xr
-                b[2] *= xr
-                b[1] *= yr
-                b[3] *= yr
-                b = list(map(int, b))
-                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 2)
-                # cx = b[2]
-                # cy = b[1]
-                # text = "ship"
-                # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
-            _t['im_detect'].tic()
-            # boxes, scores = net(x, i, img_gt)
-            boxes, scores = net(x)
+            img_gt = draw_gt(img, target, net.size, h, w)
+            # arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x, i, img_gt)
+            arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x)
         else:
-            _t['im_detect'].tic()
-            boxes, scores = net(x)
-        boxes = boxes[0]
-        scores=scores[0]
-
-        # scale each detection back up to the image
-        boxes *= scale
-        boxes = boxes.cpu().numpy()
-        scores = scores.cpu().numpy()
+            arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x)
+        priorbox = PriorBox(net.cfg, feat_sizes, img.shape[0], phase='test')
+        priors = priorbox.forward()
+        priors = priors.to(device)
+        det = detect.forward(arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
 
         for j in range(1, num_classes):
-            inds = np.where(scores[:, j] > confidence_threshold)[0]
-            if len(inds) == 0:
-                all_boxes[j][i] = np.empty([0, 5], dtype=np.float32)
-                continue
-            c_bboxes = boxes[inds]
-            c_scores = scores[inds, j]
-
-            # keep top-K before NMS
-            order = c_scores.argsort()[::-1][:top_k]
-            c_bboxes = c_bboxes[order]
-            c_scores = c_scores[order]
-
-            c_dets = np.hstack((c_bboxes, c_scores[:, np.newaxis])).astype(
-                np.float32, copy=False)
-
-            keep = nms(c_dets, nms_threshold, force_cpu=(not args.cuda))
-            c_dets = c_dets[keep, :]
-            c_dets = c_dets[:max_per_image, :]
-            all_boxes[j][i] = c_dets
+            inds = np.where(det[:, -1] == j)[0]
+            if inds.shape[0] > 0:
+                cls_dets = det[inds, :-1].astype(np.float32)
+                # keep = soft_nms(cls_dets, sigma=0.5, Nt=0.30, threshold=args.confidence_threshold, method=1)
+                # cls_dets = cls_dets[keep, :]
+                all_boxes[j][i] = cls_dets
         _t['im_detect'].toc()
 
         # print('im_detect: {:d}/{:d} forward_nms_time{:.4f}s'.format(i + 1, num_images, _t['im_detect'].average_time))
         if args.show_image:
-            boxes = all_boxes[1][i][:]
-            for b in boxes:
-                b[0] *= xr
-                b[2] *= xr
-                b[1] *= yr
-                b[3] *= yr
-                if b[4] < args.vis_thres:
-                    continue
-                b = list(map(int, b))
-                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
-                cx = b[2]
-                cy = b[1] + 12
-                # text = "{:.2f}".format(b[4])
-                # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
-            # cv2.imshow('res', img_gt)
-            # cv2.waitKey(0)
-            save_gt_dir = os.path.join(save_folder, 'gt_img')
-            if not os.path.exists(save_gt_dir):
-                os.mkdir(save_gt_dir)
-            cv2.imwrite(save_gt_dir + f'/{i}.png',img_gt, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            vis_detection(img_gt, all_boxes, save_folder, net.size, h, w, i)
 
     # with open(det_file, 'wb') as f:
     #     pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
@@ -278,37 +249,53 @@ if __name__ == '__main__':
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
     
+    model = '512_ResNet_101'
+    model = '512_vggbn'
+    # model = '1024_ResNet_101'
+    # model = '1024_ResNeXt_152'
+    if model == '512_ResNet_101':
+        from models.refinedet_res import build_refinedet
+        args.input_size = str(512)
+        backbone_dict = dict(type='ResNet',depth=101, frozen_stages=-1)
+    elif model == '1024_ResNet_101':
+        from models.refinedet_res import build_refinedet
+        args.input_size = str(1024)
+        backbone_dict = dict(type='ResNet',depth=101, frozen_stages=-1)
+    elif model == '1024_ResNeXt_152':
+        from models.refinedet_res import build_refinedet
+        args.input_size = str(1024)
+        backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=-1)
+    elif model == '512_vggbn':
+        from models.refinedet_bn import build_refinedet
+        args.input_size = str(512)
+        backbone_dict = dict()
+
     # args.cuda = False
     # args.retest = True
     # args.show_image = True
-    args.input_size = '896'
     args.vis_thres = 0.3
     prefix = args.prefix
     # prefix = 'weights/align_2e3_2x'
     # prefix = 'weights/align_4e3_2x'
     prefix = 'weights/align_4e3'
-    prefix = 'weights/align_4e3_5l'
+    # prefix = 'weights/align_4e3_5l'
     # prefix = 'weights/align_2e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
-    nms_threshold = 0.49
-    confidence_threshold = 0.01
-    objectness_thre = 0.01
-
     num_classes = 2 
-    top_k = 1000
-    keep_top_k = 500
+    objectness_thre = 0.01
     torch.set_grad_enabled(False)
 
     # load data
-    rgb_means = (98.13131, 98.13131, 98.13131)
     dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
-    detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
-    net = build_refinedet('test', int(args.input_size), num_classes, detector=detect) 
+    detect = Detect_RefineDet(
+        num_classes, int(args.input_size), 0, objectness_thre, 
+        confidence_threshold=args.confidence_threshold, nms_threshold=args.nms_threshold, top_k=args.top_k, keep_top_k=args.keep_top_k)
+    net = build_refinedet('test', int(args.input_size), num_classes, backbone_dict) 
     load_to_cpu = not args.cuda
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
@@ -318,9 +305,9 @@ if __name__ == '__main__':
     # start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_250.pth') 
+    # ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
+    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
     # ToBeTested *= 5
 
     for index, model_path in enumerate(ToBeTested):
@@ -334,9 +321,7 @@ if __name__ == '__main__':
         # evaluation
         ap_stats['epoch'].append(start_epoch + index * step)
         print("evaluating epoch: {}".format(ap_stats['epoch'][-1]))
-        test_net(save_folder, net, device, num_classes, dataset, 
-                BaseTransform(net.size, rgb_means, (2, 0, 1)), top_k, 
-                keep_top_k, confidence_threshold=confidence_threshold, nms_threshold=nms_threshold, AP_stats=ap_stats)
+        test_net(save_folder, net, device, num_classes, dataset, detect, AP_stats=ap_stats)
 
     print(ap_stats)
     res_file = os.path.join(save_folder, 'ap_stats.json')

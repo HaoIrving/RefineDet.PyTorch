@@ -35,14 +35,14 @@ class RefineDet(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, size, base, extras, ARM, ADM, TCB, num_classes, detector=None):
+    def __init__(self, phase, size, base, extras, ARM, ADM, TCB, num_classes):
         super(RefineDet, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
         self.cfg = (coco_refinedet, voc_refinedet)[num_classes == 21][str(size)]
-        self.priorbox = PriorBox(self.cfg)
-        with torch.no_grad():
-            self.priors = self.priorbox.forward()
+        # self.priorbox = PriorBox(self.cfg)
+        # with torch.no_grad():
+        #     self.priors = self.priorbox.forward()
         self.size = size
 
         # for calc offset of ADM
@@ -83,7 +83,6 @@ class RefineDet(nn.Module):
 
         if phase == 'test':
             self.softmax = nn.Softmax(dim=-1)
-            self.detect = detector
 
     def forward(self, x):
         """Applies network layers and ops on input image(s) x.
@@ -110,20 +109,31 @@ class RefineDet(nn.Module):
         arm_conf = list()
         adm_loc = list()
         adm_conf = list()
+        if self.phase == 'test':
+            feat_sizes = list()
 
         # apply resnet 
         x = self.res(x)
         sources = list(x)
+        if self.phase == 'test':
+            for feat in x:
+                feat_sizes.append(feat.shape[2])
 
         # apply extra layers and cache source layer outputs
         if self.size == 1024:
             x = self.extras1(x[-1])
             sources.append(x)
+            if self.phase == 'test':
+                feat_sizes.append(x.shape[2])
             x = self.extras2(x)
             sources.append(x)
+            if self.phase == 'test':
+                feat_sizes.append(x.shape[2])
         else:
             x = self.extras(x[-1])
             sources.append(x)
+            if self.phase == 'test':
+                feat_sizes.append(x.shape[2])
 
         # apply ARM and ADM to source layers
         arm_loc_align = list()
@@ -180,14 +190,14 @@ class RefineDet(nn.Module):
         adm_conf = torch.cat([o.view(o.size(0), -1) for o in adm_conf], 1)
 
         if self.phase == "test":
-            output = self.detect.forward(
+            output = (
                 arm_loc.view(arm_loc.size(0), -1, 4),           # arm loc preds
                 self.softmax(arm_conf.view(arm_conf.size(0), -1,
                              2)),                               # arm conf preds
                 adm_loc.view(adm_loc.size(0), -1, 4),           # adm loc preds
                 self.softmax(adm_conf.view(adm_conf.size(0), -1,
                              self.num_classes)),                # adm conf preds
-                self.priors.type(type(x.data))                  # default boxes
+                feat_sizes
             )
         else:
             output = (
@@ -195,7 +205,6 @@ class RefineDet(nn.Module):
                 arm_conf.view(arm_conf.size(0), -1, 2),
                 adm_loc.view(adm_loc.size(0), -1, 4),
                 adm_conf.view(adm_conf.size(0), -1, self.num_classes),
-                self.priors
             )
         return output
 
@@ -331,7 +340,7 @@ def add_extras(size, base_, backbone_dict):
         res6 = ResLayer(
             block=Bottleneck,
             inplanes=base_.inplanes,
-            planes=256,
+            planes=128,
             num_blocks=1,
             stride=2,
             dilation=1,
@@ -339,8 +348,8 @@ def add_extras(size, base_, backbone_dict):
         if size == 1024:
             res7 = ResLayer(
                 block=Bottleneck,
-                inplanes=256 * Bottleneck.expansion,
-                planes=128,
+                inplanes=128 * Bottleneck.expansion,
+                planes=64,
                 num_blocks=1,
                 stride=2,
                 dilation=1,
@@ -355,7 +364,7 @@ def add_extras(size, base_, backbone_dict):
             base_channels=64,
             block=Bottleneck,
             inplanes=base_.inplanes,
-            planes=256,
+            planes=128,
             num_blocks=1,
             stride=2,
             dilation=1,
@@ -366,16 +375,14 @@ def add_extras(size, base_, backbone_dict):
                 base_width=4,
                 base_channels=64,
                 block=Bottleneck,
-                inplanes=256 * Bottleneck.expansion,
-                planes=128,
+                inplanes=128 * Bottleneck.expansion,
+                planes=64,
                 num_blocks=1,
                 stride=2,
                 dilation=1,
                 norm_cfg=base_.norm_cfg)
             return (res6, res7)
         return res6
-
-
 
 def arm_multibox(in_channels, anchor_nums):
     arm_loc_layers = []
@@ -430,9 +437,9 @@ def add_tcb(cfg):
     return (feature_scale_layers, feature_upsample_layers, feature_pred_layers)
 
 extras = {
-    '320': [256],
-    '512': [256],
-    '1024': [256, 128],
+    '320': [128],
+    '512': [128],
+    '1024': [128, 64],
 }
 mbox = {
     '320': [3, 3, 3, 3],  # number of boxes per feature map location
@@ -442,20 +449,20 @@ mbox = {
 }
 
 tcb = {
-    '320': [512, 1024, 2048, 1024],
-    '512': [512, 1024, 2048, 1024],
+    '320': [512, 1024, 2048, 512],
+    '512': [512, 1024, 2048, 512],
     '896': [256, 512, 1024, 2048], # use res_layer1
-    '1024': [512, 1024, 2048, 1024, 512],
+    '1024': [512, 1024, 2048, 512, 256],
 }
 
 arm = {
-    '320': [512, 1024, 2048, 1024],
-    '512': [512, 1024, 2048, 1024],
+    '320': [512, 1024, 2048, 512],
+    '512': [512, 1024, 2048, 512],
     '896': [256, 512, 1024, 2048], # use res_layer1
-    '1024': [512, 1024, 2048, 1024, 512],
+    '1024': [512, 1024, 2048, 512, 256],
 }
 
-def build_refinedet(phase, size=320, num_classes=21, backbone_dict=dict(type='ResNet',depth=101, frozen_stages=-1), detector=None):
+def build_refinedet(phase, size=320, num_classes=21, backbone_dict=dict(type='ResNet',depth=101, frozen_stages=-1)):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
@@ -464,4 +471,4 @@ def build_refinedet(phase, size=320, num_classes=21, backbone_dict=dict(type='Re
     ARM_ = arm_multibox(arm[str(size)], mbox[str(size)])
     ADM_ = adm_multibox(arm[str(size)], mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
-    return RefineDet(phase, size, base_, extras_, ARM_, ADM_, TCB_, num_classes, detector)
+    return RefineDet(phase, size, base_, extras_, ARM_, ADM_, TCB_, num_classes)
