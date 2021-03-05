@@ -21,6 +21,8 @@ from utils.logger import Logger
 import math
 import datetime
 
+from mmdet.models import build_loss
+
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
