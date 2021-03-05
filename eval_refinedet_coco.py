@@ -488,8 +488,8 @@ if __name__ == '__main__':
         torch.set_default_tensor_type('torch.FloatTensor')
     
     model = '512_vggbn'
-    # model = '512_ResNet_101'
-    model = '1024_ResNet_101'
+    model = '512_ResNet_101'
+    # model = '1024_ResNet_101'
     # model = '1024_ResNeXt_152'
     if model == '512_ResNet_101':
         from models.refinedet_res import build_refinedet
@@ -522,8 +522,8 @@ if __name__ == '__main__':
     # args.show_image = True
     args.vis_thres = 0.3
     prefix = args.prefix
-    # prefix = 'weights/align_1e3_512res101'
-    prefix = 'weights/align_1e3_1024res101'
+    prefix = 'weights/align_1e3_512res101'
+    # prefix = 'weights/align_1e3_1024res101'
     # prefix = 'weights/align_4e3'
     
     # prefix = 'weights/align_4e3_5l'
