@@ -20,7 +20,7 @@ class PriorBox(object):
         self.version = cfg['name']
         if phase == 'train':
             self.image_size = (cfg['min_dim'], cfg['min_dim'])
-            self.feature_maps = (cfg['feature_maps'], cfg['feature_maps'])
+            self.feature_maps = list(zip(cfg['feature_maps'], cfg['feature_maps']))
         elif phase == 'test':
             self.image_size = image_size
             self.feature_maps = box_dimension

@@ -47,6 +47,7 @@ parser.add_argument('--top_k', default=5000, type=int, help='top_k')
 parser.add_argument('--nms_threshold', default=0.3, type=float, help='nms_threshold')
 parser.add_argument('--keep_top_k', default=750, type=int, help='keep_top_k')
 parser.add_argument('-mstest', '--multi_scale_test', default=False, type=str2bool, help='multi scale test')
+parser.add_argument('--model', default='512_ResNet_101', type=str, help='model name')
 args = parser.parse_args()
 
 
@@ -487,10 +488,15 @@ if __name__ == '__main__':
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
     
-    model = '512_vggbn'
-    model = '512_ResNet_101'
+    model = args.model
+    # model = '512_vggbn'
+    # model = '512_ResNet_101'
     # model = '1024_ResNet_101'
     # model = '1024_ResNeXt_152'
+    if model == '512_ResNet_50':
+        from models.refinedet_res import build_refinedet
+        args.input_size = str(512)
+        backbone_dict = dict(type='ResNet',depth=50, frozen_stages=-1)
     if model == '512_ResNet_101':
         from models.refinedet_res import build_refinedet
         args.input_size = str(512)

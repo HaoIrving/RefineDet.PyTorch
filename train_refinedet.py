@@ -96,20 +96,31 @@ sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 negpos_ratio = 3
 initial_lr = args.lr
 model = args.model
+# model = '512_ResNet_50'
+# model = '512_vggbn'
 # model = '512_ResNet_101'
 # model = '1024_ResNet_101'
 # model = '1024_ResNeXt_152'
-# from models.refinedet_bn import build_refinedet
-from models.refinedet_res import build_refinedet
+if model == '512_ResNet_50':
+    from models.refinedet_res import build_refinedet
+    args.input_size = str(512)
+    backbone_dict = dict(type='ResNet',depth=50, frozen_stages=-1)
 if model == '512_ResNet_101':
+    from models.refinedet_res import build_refinedet
     args.input_size = str(512)
     backbone_dict = dict(type='ResNet',depth=101, frozen_stages=-1)
 elif model == '1024_ResNet_101':
+    from models.refinedet_res import build_refinedet
     args.input_size = str(1024)
     backbone_dict = dict(type='ResNet',depth=101, frozen_stages=-1)
 elif model == '1024_ResNeXt_152':
+    from models.refinedet_res import build_refinedet
     args.input_size = str(1024)
     backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=-1)
+elif model == '512_vggbn':
+    from models.refinedet_bn import build_refinedet
+    args.input_size = str(512)
+    backbone_dict = dict()
 
 def train():
     if args.visdom:
