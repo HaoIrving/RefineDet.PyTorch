@@ -376,7 +376,7 @@ def multi_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stat
         det4 = det4[index, :]
 
         # More scales make coco get better performance
-        if 'coco2017' in dataset.name:
+        if 'coco' in dataset.name:
             det5 = im_detect(net, im, int(1.25*target_size))
             det5_f = flip_im_detect(net, im, int(1.25*target_size))
             det5 = np.row_stack((det5, det5_f))
@@ -403,7 +403,7 @@ def multi_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stat
             inds = np.where(det[:, -1] == j)[0]
             if inds.shape[0] > 0:
                 cls_dets = det[inds, :-1].astype(np.float32)
-                if 'coco2017' in dataset.name:
+                if 'coco' in dataset.name:
                     cls_dets = soft_bbox_vote(cls_dets)
                 elif 'sar' in dataset.name:
                     cls_dets = soft_bbox_vote(cls_dets)
@@ -489,7 +489,7 @@ if __name__ == '__main__':
     
     model = '512_vggbn'
     # model = '512_ResNet_101'
-    # model = '1024_ResNet_101'
+    model = '1024_ResNet_101'
     # model = '1024_ResNeXt_152'
     if model == '512_ResNet_101':
         from models.refinedet_res import build_refinedet
@@ -515,16 +515,17 @@ if __name__ == '__main__':
     args.confidence_threshold = 0.01
     args.top_k = 1000
     args.keep_top_k = 500
-    args.multi_scale_test = True
+    # args.multi_scale_test = True
 
     # args.cuda = False
     # args.retest = True
     # args.show_image = True
     args.vis_thres = 0.3
     prefix = args.prefix
-    # prefix = 'weights/align_2e3_2x'
-    # prefix = 'weights/align_4e3_2x'
-    prefix = 'weights/align_4e3'
+    # prefix = 'weights/align_1e3_512res101'
+    prefix = 'weights/align_1e3_1024res101'
+    # prefix = 'weights/align_4e3'
+    
     # prefix = 'weights/align_4e3_5l'
     # prefix = 'weights/align_2e3'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
@@ -548,9 +549,9 @@ if __name__ == '__main__':
     # start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    # ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
+    ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
     # ToBeTested *= 5
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
