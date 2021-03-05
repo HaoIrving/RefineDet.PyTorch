@@ -6,7 +6,6 @@ from layers import *
 from data import voc_refinedet, coco_refinedet
 import os
 
-from layers.box_utils import decode
 import numpy as np
 from itertools import product as product
 from functools import partial
@@ -117,23 +116,23 @@ class RefineDet(nn.Module):
         sources = list(x)
         if self.phase == 'test':
             for feat in x:
-                feat_sizes.append(feat.shape[2])
+                feat_sizes.append(feat.shape[2:])
 
         # apply extra layers and cache source layer outputs
         if self.size == 1024:
             x = self.extras1(x[-1])
             sources.append(x)
             if self.phase == 'test':
-                feat_sizes.append(x.shape[2])
+                feat_sizes.append(x.shape[2:])
             x = self.extras2(x)
             sources.append(x)
             if self.phase == 'test':
-                feat_sizes.append(x.shape[2])
+                feat_sizes.append(x.shape[2:])
         else:
             x = self.extras(x[-1])
             sources.append(x)
             if self.phase == 'test':
-                feat_sizes.append(x.shape[2])
+                feat_sizes.append(x.shape[2:])
 
         # apply ARM and ADM to source layers
         arm_loc_align = list()

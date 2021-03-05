@@ -115,22 +115,22 @@ class Timer(object):
             return self.diff
 
 
-def vis_detection(img, target, cls_dets, save_folder, target_size, i):
-    h, w, _ = img.shape
+def vis_detection(im, target, cls_dets, save_folder, target_size, i):
+    h, w, _ = im.shape
     xr = target_size / w
     yr = target_size / h
-    img_gt = cv2.resize(img, (target_size, target_size), interpolation=cv2.INTER_LINEAR).astype(np.uint8)
+    im_gt = cv2.resize(im, (target_size, target_size), interpolation=cv2.INTER_LINEAR).astype(np.uint8)
     for b in target:
         b[0] *= xr
         b[2] *= xr
         b[1] *= yr
         b[3] *= yr
         b = list(map(int, b))
-        cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 2)
+        cv2.rectangle(im_gt, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 2)
         # cx = b[2]
         # cy = b[1]
         # text = "ship"
-        # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
+        # cv2.putText(im_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
     boxes = cls_dets.copy()
     for b in boxes:
         b[0] *= xr
@@ -140,96 +140,188 @@ def vis_detection(img, target, cls_dets, save_folder, target_size, i):
         if b[4] < args.vis_thres:
             continue
         b = list(map(int, b))
-        cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
+        cv2.rectangle(im_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
         cx = b[2]
         cy = b[1] + 12
         # text = "{:.2f}".format(b[4])
-        # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
-    # cv2.imshow('res', img_gt)
+        # cv2.putText(im_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
+    # cv2.imshow('res', im_gt)
     # cv2.waitKey(0)
-    save_gt_dir = os.path.join(save_folder, 'gt_img')
+    save_gt_dir = os.path.join(save_folder, 'gt_im')
     if not os.path.exists(save_gt_dir):
         os.mkdir(save_gt_dir)
-    cv2.imwrite(save_gt_dir + f'/{i}.png',img_gt, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+    cv2.imwrite(save_gt_dir + f'/{i}.png',im_gt, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
 
 
-def im_detect(net, img, target_size):
+def im_detect(net, im, target_size):
     device = net.arm_conf[0].weight.device
-    h, w, _ = img.shape
+    h, w, _ = im.shape
     scale = torch.Tensor([w, h, w, h])
     scale = scale.to(device)
-    im_orig = img.astype(np.float32, copy=True)
-    im_orig = cv2.resize(im_orig, (target_size, target_size), interpolation=cv2.INTER_LINEAR)
-    x = (im_orig - MEANS).astype(np.float32)
+    im_orig = im.astype(np.float32, copy=True)
+    im = cv2.resize(im_orig, (target_size, target_size), interpolation=cv2.INTER_LINEAR)
+    x = (im - MEANS).astype(np.float32)
     x = x.transpose(2, 0, 1)
     x = torch.from_numpy(x).unsqueeze(0)
     x = x.to(device)
 
     arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x)
-    priorbox = PriorBox(net.cfg, feat_sizes, target_size, phase='test')
+    priorbox = PriorBox(net.cfg, feat_sizes, (target_size, target_size), phase='test')
     priors = priorbox.forward()
     priors = priors.to(device)
     det = detect.forward(arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
     return det
 
 
-def im_detect_ratio(net, im, targe_size1, targe_size2):
+def im_detect_ratio(net, im, target_size1, target_size2):
+    device = net.arm_conf[0].weight.device
+    h, w, _ = im.shape
+    scale = torch.Tensor([w, h, w, h])
+    scale = scale.to(device)
     im_orig = im.astype(np.float32, copy=True)
-    im_orig -= cfg.PIXEL_MEANS
     if im_orig.shape[0] < im_orig.shape[1]:
-        tmp = targe_size1
-        targe_size1 = targe_size2
-        targe_size2 = tmp
-    im = cv2.resize(im_orig, None, None, fx=float(targe_size2)/float(im.shape[1]), fy=float(targe_size1)/float(im.shape[0]), interpolation=cv2.INTER_LINEAR)
-    blob = np.zeros((1, int(targe_size1), int(targe_size2), 3), dtype=np.float32)
-    blob[0, :, :, :] = im
-    channel_swap = (0, 3, 1, 2)
-    blob = blob.transpose(channel_swap)
-    net.blobs['data'].reshape(1, 3, im.shape[0], im.shape[1])
-    net.blobs['data'].data[...] = blob
-    detections = net.forward()['detection_out']
+        target_size1, target_size2 = target_size2, target_size1
+    im = cv2.resize(im_orig, None, None, fx=float(target_size2)/float(w), fy=float(target_size1)/float(h), interpolation=cv2.INTER_LINEAR)
+    x = (im - MEANS).astype(np.float32)
+    x = x.transpose(2, 0, 1)
+    x = torch.from_numpy(x).unsqueeze(0)
+    x = x.to(device)
 
-    det_label = detections[0, 0, :, 1]
-    det_conf = detections[0, 0, :, 2]
-    det_xmin = np.minimum(np.maximum(detections[0, 0, :, 3] * im_orig.shape[1], 0), im_orig.shape[1] - 1)
-    det_ymin = np.minimum(np.maximum(detections[0, 0, :, 4] * im_orig.shape[0], 0), im_orig.shape[0] - 1)
-    det_xmax = np.minimum(np.maximum(detections[0, 0, :, 5] * im_orig.shape[1], 0), im_orig.shape[1] - 1)
-    det_ymax = np.minimum(np.maximum(detections[0, 0, :, 6] * im_orig.shape[0], 0), im_orig.shape[0] - 1)
-    dets = np.column_stack((det_xmin, det_ymin, det_xmax, det_ymax, det_conf, det_label))
+    arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x)
+    priorbox = PriorBox(net.cfg, feat_sizes, (target_size1, target_size2), phase='test')
+    priors = priorbox.forward()
+    priors = priors.to(device)
+    det = detect.forward(arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
+    return det
+    
 
-    keep_index = np.where(dets[:, 4] >= 0)[0]
-    dets = dets[keep_index, :]
+def flip_im_detect(net, im, target_size):
+    im_f = cv2.flip(im, 1)
+    det_f = im_detect(net, im_f, target_size)
+
+    det_t = np.zeros(det_f.shape)
+    det_t[:, 0] = im.shape[1] - det_f[:, 2]
+    det_t[:, 1] = det_f[:, 1]
+    det_t[:, 2] = im.shape[1] - det_f[:, 0]
+    det_t[:, 3] = det_f[:, 3]
+    det_t[:, 4] = det_f[:, 4]
+    det_t[:, 5] = det_f[:, 5]
+
+    return det_t
+
+
+def flip_im_detect_ratio(net, im, target_size1, target_size2):
+    im_f = cv2.flip(im, 1)
+    det_f = im_detect_ratio(net, im_f, target_size1, target_size2)
+
+    det_t = np.zeros(det_f.shape)
+    det_t[:, 0] = im.shape[1] - det_f[:, 2]
+    det_t[:, 1] = det_f[:, 1]
+    det_t[:, 2] = im.shape[1] - det_f[:, 0]
+    det_t[:, 3] = det_f[:, 3]
+    det_t[:, 4] = det_f[:, 4]
+    det_t[:, 5] = det_f[:, 5]
+
+    return det_t
+
+
+def bbox_vote(det):
+    if det.shape[0] <= 1:
+        return det
+    order = det[:, 4].ravel().argsort()[::-1]
+    det = det[order, :]
+    # det = det[np.where(det[:, 4] > 0.2)[0], :]
+    dets = []
+    while det.shape[0] > 0:
+        # IOU
+        area = (det[:, 2] - det[:, 0] + 1) * (det[:, 3] - det[:, 1] + 1)
+        xx1 = np.maximum(det[0, 0], det[:, 0])
+        yy1 = np.maximum(det[0, 1], det[:, 1])
+        xx2 = np.minimum(det[0, 2], det[:, 2])
+        yy2 = np.minimum(det[0, 3], det[:, 3])
+        w = np.maximum(0.0, xx2 - xx1 + 1)
+        h = np.maximum(0.0, yy2 - yy1 + 1)
+        inter = w * h
+        o = inter / (area[0] + area[:] - inter)
+
+        # get needed merge det and delete these  det
+        merge_index = np.where(o >= 0.45)[0]
+        det_accu = det[merge_index, :]
+        det = np.delete(det, merge_index, 0)
+
+        if merge_index.shape[0] <= 1:
+            try:
+                dets = np.row_stack((dets, det_accu))
+            except:
+                dets = det_accu
+            continue
+        else:
+            det_accu[:, 0:4] = det_accu[:, 0:4] * np.tile(det_accu[:, -1:], (1, 4))
+            max_score = np.max(det_accu[:, 4])
+            det_accu_sum = np.zeros((1, 5))
+            det_accu_sum[:, 0:4] = np.sum(det_accu[:, 0:4], axis=0) / np.sum(det_accu[:, -1:])
+            det_accu_sum[:, 4] = max_score
+            try:
+                dets = np.row_stack((dets, det_accu_sum))
+            except:
+                dets = det_accu_sum
+
     return dets
 
 
-def flip_im_detect(net, im, targe_size):
-    im_f = cv2.flip(im, 1)
-    det_f = im_detect(net, im_f, targe_size)
+def soft_bbox_vote(det):
+    if det.shape[0] <= 1:
+        return det
+    order = det[:, 4].ravel().argsort()[::-1]
+    det = det[order, :]
+    dets = []
+    while det.shape[0] > 0:
+        # IOU
+        area = (det[:, 2] - det[:, 0] + 1) * (det[:, 3] - det[:, 1] + 1)
+        xx1 = np.maximum(det[0, 0], det[:, 0])
+        yy1 = np.maximum(det[0, 1], det[:, 1])
+        xx2 = np.minimum(det[0, 2], det[:, 2])
+        yy2 = np.minimum(det[0, 3], det[:, 3])
+        w = np.maximum(0.0, xx2 - xx1 + 1)
+        h = np.maximum(0.0, yy2 - yy1 + 1)
+        inter = w * h
+        o = inter / (area[0] + area[:] - inter)
 
-    det_t = np.zeros(det_f.shape)
-    det_t[:, 0] = im.shape[1] - det_f[:, 2]
-    det_t[:, 1] = det_f[:, 1]
-    det_t[:, 2] = im.shape[1] - det_f[:, 0]
-    det_t[:, 3] = det_f[:, 3]
-    det_t[:, 4] = det_f[:, 4]
-    det_t[:, 5] = det_f[:, 5]
+        # get needed merge det and delete these  det
+        merge_index = np.where(o >= 0.45)[0]
+        det_accu = det[merge_index, :]
+        det_accu_iou = o[merge_index]
+        det = np.delete(det, merge_index, 0)
 
-    return det_t
+        if merge_index.shape[0] <= 1:
+            try:
+                dets = np.row_stack((dets, det_accu))
+            except:
+                dets = det_accu
+            continue
+        else:
+            soft_det_accu = det_accu.copy()
+            soft_det_accu[:, 4] = soft_det_accu[:, 4] * (1 - det_accu_iou)
+            soft_index = np.where(soft_det_accu[:, 4] >= args.confidence_threshold)[0]
+            soft_det_accu = soft_det_accu[soft_index, :]
 
+            det_accu[:, 0:4] = det_accu[:, 0:4] * np.tile(det_accu[:, -1:], (1, 4))
+            max_score = np.max(det_accu[:, 4])
+            det_accu_sum = np.zeros((1, 5))
+            det_accu_sum[:, 0:4] = np.sum(det_accu[:, 0:4], axis=0) / np.sum(det_accu[:, -1:])
+            det_accu_sum[:, 4] = max_score
 
-def flip_im_detect_ratio(net, im, targe_size1, targe_size2):
-    im_f = cv2.flip(im, 1)
-    det_f = im_detect_ratio(net, im_f, targe_size1, targe_size2)
+            if soft_det_accu.shape[0] > 0:
+                det_accu_sum = np.row_stack((soft_det_accu, det_accu_sum))
 
-    det_t = np.zeros(det_f.shape)
-    det_t[:, 0] = im.shape[1] - det_f[:, 2]
-    det_t[:, 1] = det_f[:, 1]
-    det_t[:, 2] = im.shape[1] - det_f[:, 0]
-    det_t[:, 3] = det_f[:, 3]
-    det_t[:, 4] = det_f[:, 4]
-    det_t[:, 5] = det_f[:, 5]
+            try:
+                dets = np.row_stack((dets, det_accu_sum))
+            except:
+                dets = det_accu_sum
 
-    return det_t
+    order = dets[:, 4].ravel().argsort()[::-1]
+    dets = dets[order, :]
+    return dets
 
 
 def multi_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stats=None):
@@ -250,57 +342,55 @@ def multi_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stat
     _t = {'im_detect': Timer(), 'misc': Timer()}
     
     for i in range(num_images):
-        img, target = dataset.pull_image(i)
+        im, target = dataset.pull_image(i)
         _t['im_detect'].tic()
-        det = im_detect(net, img, target_size)
-
         # ori and flip
-        det0 = im_detect(net, img, target_size)
-        det0_f = flip_im_detect(net, img, target_size)
+        det0 = im_detect(net, im, target_size)
+        det0_f = flip_im_detect(net, im, target_size)
         det0 = np.row_stack((det0, det0_f))
 
-        det_r = im_detect_ratio(net, im, targe_size, int(0.75*targe_size))
-        det_r_f = flip_im_detect_ratio(net, im, targe_size, int(0.75*targe_size))
+        det_r = im_detect_ratio(net, im, target_size, int(0.75*target_size))
+        det_r_f = flip_im_detect_ratio(net, im, target_size, int(0.75*target_size))
         det_r = np.row_stack((det_r, det_r_f))
 
         # shrink: only detect big object
-        det_s1 = im_detect(net, im, int(0.5*targe_size))
-        det_s1_f = flip_im_detect(net, im, int(0.5*targe_size))
+        det_s1 = im_detect(net, im, int(0.5*target_size))
+        det_s1_f = flip_im_detect(net, im, int(0.5*target_size))
         det_s1 = np.row_stack((det_s1, det_s1_f))
 
-        det_s2 = im_detect(net, im, int(0.75*targe_size))
-        det_s2_f = flip_im_detect(net, im, int(0.75*targe_size))
+        det_s2 = im_detect(net, im, int(0.75*target_size))
+        det_s2_f = flip_im_detect(net, im, int(0.75*target_size))
         det_s2 = np.row_stack((det_s2, det_s2_f))
 
         # #enlarge: only detect small object
-        det3 = im_detect(net, im, int(1.75*targe_size))
-        det3_f = flip_im_detect(net, im, int(1.75*targe_size))
+        det3 = im_detect(net, im, int(1.75*target_size))
+        det3_f = flip_im_detect(net, im, int(1.75*target_size))
         det3 = np.row_stack((det3, det3_f))
         index = np.where(np.minimum(det3[:, 2] - det3[:, 0] + 1, det3[:, 3] - det3[:, 1] + 1) < 128)[0]
         det3 = det3[index, :]
 
-        det4 = im_detect(net, im, int(1.5*targe_size))
-        det4_f = flip_im_detect(net, im, int(1.5*targe_size))
+        det4 = im_detect(net, im, int(1.5*target_size))
+        det4_f = flip_im_detect(net, im, int(1.5*target_size))
         det4 = np.row_stack((det4, det4_f))
         index = np.where(np.minimum(det4[:, 2] - det4[:, 0] + 1, det4[:, 3] - det4[:, 1] + 1) < 192)[0]
         det4 = det4[index, :]
 
         # More scales make coco get better performance
-        if 'coco' in imdb.name:
-            det5 = im_detect(net, im, int(1.25*targe_size))
-            det5_f = flip_im_detect(net, im, int(1.25*targe_size))
+        if 'coco2017' in dataset.name:
+            det5 = im_detect(net, im, int(1.25*target_size))
+            det5_f = flip_im_detect(net, im, int(1.25*target_size))
             det5 = np.row_stack((det5, det5_f))
             index = np.where(np.minimum(det5[:, 2] - det5[:, 0] + 1, det5[:, 3] - det5[:, 1] + 1) < 224)[0]
             det5 = det5[index, :]
 
-            det6 = im_detect(net, im, int(2*targe_size))
-            det6_f = flip_im_detect(net, im, int(2*targe_size))
+            det6 = im_detect(net, im, int(2*target_size))
+            det6_f = flip_im_detect(net, im, int(2*target_size))
             det6 = np.row_stack((det6, det6_f))
             index = np.where(np.minimum(det6[:, 2] - det6[:, 0] + 1, det6[:, 3] - det6[:, 1] + 1) < 96)[0]
             det6 = det6[index, :]
 
-            det7 = im_detect(net, im, int(2.25*targe_size))
-            det7_f = flip_im_detect(net, im, int(2.25*targe_size))
+            det7 = im_detect(net, im, int(2.25*target_size))
+            det7_f = flip_im_detect(net, im, int(2.25*target_size))
             det7 = np.row_stack((det7, det7_f))
             index = np.where(np.minimum(det7[:, 2] - det7[:, 0] + 1, det7[:, 3] - det7[:, 1] + 1) < 64)[0]
             det7 = det7[index, :]
@@ -313,13 +403,15 @@ def multi_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stat
             inds = np.where(det[:, -1] == j)[0]
             if inds.shape[0] > 0:
                 cls_dets = det[inds, :-1].astype(np.float32)
-                if dataset.name == 'coco2017':
+                if 'coco2017' in dataset.name:
+                    cls_dets = soft_bbox_vote(cls_dets)
+                elif 'sar' in dataset.name:
                     cls_dets = soft_bbox_vote(cls_dets)
                 else:
                     cls_dets = bbox_vote(cls_dets)
                 all_boxes[j][i] = cls_dets
                 if args.show_image:
-                    vis_detection(img, target, cls_dets, save_folder, target_size, i)
+                    vis_detection(im, target, cls_dets, save_folder, target_size, i)
 
     # with open(det_file, 'wb') as f:
     #     pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
@@ -353,9 +445,10 @@ def single_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_sta
     _t = {'im_detect': Timer(), 'misc': Timer()}
     
     for i in range(num_images):
-        img, target = dataset.pull_image(i)
+        im, target = dataset.pull_image(i)
         _t['im_detect'].tic()
-        det = im_detect(net, img, target_size)
+        # det = im_detect(net, im, target_size)
+        det = im_detect_ratio(net, im, target_size, int(0.75*target_size))
         _t['im_detect'].toc()
 
         for j in range(1, num_classes):
@@ -367,7 +460,7 @@ def single_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_sta
                     cls_dets = cls_dets[keep, :]
                 all_boxes[j][i] = cls_dets
                 if args.show_image:
-                    vis_detection(img, target, cls_dets, save_folder, target_size, i)
+                    vis_detection(im, target, cls_dets, save_folder, target_size, i)
 
     # with open(det_file, 'wb') as f:
     #     pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
@@ -422,7 +515,7 @@ if __name__ == '__main__':
     args.confidence_threshold = 0.01
     args.top_k = 1000
     args.keep_top_k = 500
-    # args.multi_scale_test = True
+    args.multi_scale_test = True
 
     # args.cuda = False
     # args.retest = True
@@ -439,7 +532,7 @@ if __name__ == '__main__':
         os.mkdir(save_folder)
 
     # load data
-    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sarship')
     # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
@@ -531,16 +624,57 @@ Best ap50: 0.9825 at epoch 230
 ap: 0.6206, ap50: 0.9825, ap75: 0.7117, ap_s: 0.5782, ap_m: 0.6782, ap_l: 0.6902
 Best ap  : 0.6294 at epoch 280
 ap: 0.6294, ap50: 0.9735, ap75: 0.7296, ap_s: 0.5840, ap_m: 0.6960, ap_l: 0.6728
-
 Best ap50: 0.9725 at epoch 230
 ap: 0.6147, ap50: 0.9725, ap75: 0.6975, ap_s: 0.5665, ap_m: 0.6831, ap_l: 0.6665
 Best ap  : 0.6225 at epoch 255
 ap: 0.6225, ap50: 0.9714, ap75: 0.7194, ap_s: 0.5729, ap_m: 0.6922, ap_l: 0.6703
-softnms
+
+mstest less
+Best ap50: 0.9764 at epoch 200
+ap: 0.6455, ap50: 0.9764, ap75: 0.7564, ap_s: 0.6041, ap_m: 0.7067, ap_l: 0.7016
+Best ap  : 0.6455 at epoch 200
+ap: 0.6455, ap50: 0.9764, ap75: 0.7564, ap_s: 0.6041, ap_m: 0.7067, ap_l: 0.7016
+mstest more 
+Best ap50: 0.9755 at epoch 200
+ap: 0.6458, ap50: 0.9755, ap75: 0.7565, ap_s: 0.6068, ap_m: 0.7031, ap_l: 0.6890
+Best ap  : 0.6458 at epoch 200
+ap: 0.6458, ap50: 0.9755, ap75: 0.7565, ap_s: 0.6068, ap_m: 0.7031, ap_l: 0.6890
+mstest less softbv
+Best ap50: 0.9757 at epoch 200
+ap: 0.6621, ap50: 0.9757, ap75: 0.7898, ap_s: 0.6200, ap_m: 0.7240, ap_l: 0.7251
+Best ap  : 0.6621 at epoch 200
+ap: 0.6621, ap50: 0.9757, ap75: 0.7898, ap_s: 0.6200, ap_m: 0.7240, ap_l: 0.7251
+mstest more softbv
+Best ap50: 0.9785 at epoch 200
+ap: 0.6609, ap50: 0.9785, ap75: 0.7901, ap_s: 0.6210, ap_m: 0.7211, ap_l: 0.7103
+Best ap  : 0.6609 at epoch 200
+ap: 0.6609, ap50: 0.9785, ap75: 0.7901, ap_s: 0.6210, ap_m: 0.7211, ap_l: 0.7103
+
+softnms is suitable when single scale test.
 Best ap50: 0.9791 at epoch 285
 ap: 0.6464, ap50: 0.9791, ap75: 0.7664, ap_s: 0.6016, ap_m: 0.7116, ap_l: 0.6871
 Best ap  : 0.6478 at epoch 280
 ap: 0.6478, ap50: 0.9762, ap75: 0.7676, ap_s: 0.6036, ap_m: 0.7114, ap_l: 0.6815
+mstest less snms 
+Best ap50: 0.9755 at epoch 200
+ap: 0.6427, ap50: 0.9755, ap75: 0.7499, ap_s: 0.6014, ap_m: 0.7041, ap_l: 0.6864
+Best ap  : 0.6427 at epoch 200
+ap: 0.6427, ap50: 0.9755, ap75: 0.7499, ap_s: 0.6014, ap_m: 0.7041, ap_l: 0.6864
+mstest more snms
+Best ap50: 0.9757 at epoch 200
+ap: 0.6451, ap50: 0.9757, ap75: 0.7565, ap_s: 0.6068, ap_m: 0.7002, ap_l: 0.7059
+Best ap  : 0.6451 at epoch 200
+ap: 0.6451, ap50: 0.9757, ap75: 0.7565, ap_s: 0.6068, ap_m: 0.7002, ap_l: 0.7059
+mstest less snms softbv
+Best ap50: 0.9748 at epoch 200
+ap: 0.6597, ap50: 0.9748, ap75: 0.7841, ap_s: 0.6184, ap_m: 0.7225, ap_l: 0.7086
+Best ap  : 0.6597 at epoch 200
+ap: 0.6597, ap50: 0.9748, ap75: 0.7841, ap_s: 0.6184, ap_m: 0.7225, ap_l: 0.7086
+mstest more snms softbv
+Best ap50: 0.9770 at epoch 200
+ap: 0.6600, ap50: 0.9770, ap75: 0.7912, ap_s: 0.6206, ap_m: 0.7189, ap_l: 0.7233
+Best ap  : 0.6600 at epoch 200
+ap: 0.6600, ap50: 0.9770, ap75: 0.7912, ap_s: 0.6206, ap_m: 0.7189, ap_l: 0.7233
 
 896 5l
 Best ap50: 0.9745 at epoch 225

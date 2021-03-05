@@ -6,7 +6,6 @@ from layers import *
 from data import voc_refinedet, coco_refinedet
 import os
 
-from layers.box_utils import decode
 import numpy as np
 from itertools import product as product
 from functools import partial
@@ -126,24 +125,24 @@ class RefineDet(nn.Module):
                 s = self.conv3_3_L2Norm(x)
                 sources.append(s)
                 if self.phase == 'test':
-                    feat_sizes.append(x.shape[2])
+                    feat_sizes.append(x.shape[2:])
             if self.conv4_3_layer - 1 == k:
                 s = self.conv4_3_L2Norm(x)
                 sources.append(s)
                 if self.phase == 'test':
-                    feat_sizes.append(x.shape[2])
+                    feat_sizes.append(x.shape[2:])
             elif self.conv5_3_layer - 1 == k:
                 s = self.conv5_3_L2Norm(x)
                 sources.append(s)
                 if self.phase == 'test':
-                    feat_sizes.append(x.shape[2])
+                    feat_sizes.append(x.shape[2:])
 
         # apply vgg up to fc7
         for k in range(self.conv5_3_layer, len(self.vgg)):
             x = self.vgg[k](x)
         sources.append(x)
         if self.phase == 'test':
-            feat_sizes.append(x.shape[2])
+            feat_sizes.append(x.shape[2:])
 
         # apply extra layers and cache source layer outputs
         for k in range(len(self.extras)):
@@ -151,7 +150,7 @@ class RefineDet(nn.Module):
             if self.extra_1_layer - 1 == k:
                 sources.append(x)
                 if self.phase == 'test':
-                    feat_sizes.append(x.shape[2])
+                    feat_sizes.append(x.shape[2:])
 
         # apply ARM and ADM to source layers
         arm_loc_align = list()
