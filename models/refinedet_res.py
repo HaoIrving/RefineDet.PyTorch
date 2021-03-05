@@ -471,7 +471,7 @@ def build_refinedet(phase, size=320, num_classes=21, backbone_dict=dict(type='Re
         print("ERROR: Phase: " + phase + " not recognized")
         return
     base_ = resnet(backbone_dict)
-    extras_ = add_extras(size, extras[str(size)], sbase_, backbone_dict)
+    extras_ = add_extras(size, extras[str(size)], base_, backbone_dict)
     ARM_ = arm_multibox(arm[str(size)], mbox[str(size)])
     ADM_ = adm_multibox(arm[str(size)], mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
