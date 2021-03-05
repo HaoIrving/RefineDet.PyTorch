@@ -3,7 +3,7 @@ from torch.autograd import Function
 import numpy as np
 from ..box_utils import decode, center_size#, nms
 from data import coco_refinedet as cfg
-from utils.nms_wrapper import nms
+from utils.nms_wrapper import nms, soft_nms
 
 
 class Detect_RefineDet(Function):
@@ -84,8 +84,9 @@ class Detect_RefineDet(Function):
             # do NMS
             c_dets = np.hstack((c_bboxes, c_scores[:, np.newaxis])).astype(np.float32, copy=False)
             keep = nms(c_dets, self.nms_threshold, force_cpu=(not loc_data.is_cuda))
-            c_dets = c_dets[keep, :]
-            # keep top-K faster NMS
+            # keep = soft_nms(c_dets, sigma=0.5, Nt=self.nms_threshold, threshold=self.confidence_threshold, method=1)  # higher performance
+            c_dets = c_dets[keep, :]  
+            # keep top-K after NMS
             c_dets = c_dets[:self.keep_top_k, :]
             # record labels
             labels = np.ones(c_dets[:, [1]].shape, dtype=np.float32) * j
