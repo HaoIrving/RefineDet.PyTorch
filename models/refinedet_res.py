@@ -329,8 +329,7 @@ def resnet(backbone_dict):
     resnet = build_backbone(backbone)
     return resnet
 
-
-def add_extras(size, base_, backbone_dict):
+def add_extras(size, in_channels, base_, backbone_dict):
     _type = backbone_dict['type']
     # Extra layers added to ResNet for feature scaling
     from mmdet.models.utils import ResLayer
@@ -339,7 +338,7 @@ def add_extras(size, base_, backbone_dict):
         res6 = ResLayer(
             block=Bottleneck,
             inplanes=base_.inplanes,
-            planes=128,
+            planes=in_channels[0],
             num_blocks=1,
             stride=2,
             dilation=1,
@@ -347,8 +346,8 @@ def add_extras(size, base_, backbone_dict):
         if size == 1024:
             res7 = ResLayer(
                 block=Bottleneck,
-                inplanes=128 * Bottleneck.expansion,
-                planes=64,
+                inplanes=in_channels[0] * Bottleneck.expansion,
+                planes=in_channels[1],
                 num_blocks=1,
                 stride=2,
                 dilation=1,
@@ -363,7 +362,7 @@ def add_extras(size, base_, backbone_dict):
             base_channels=64,
             block=Bottleneck,
             inplanes=base_.inplanes,
-            planes=128,
+            planes=in_channels[0],
             num_blocks=1,
             stride=2,
             dilation=1,
@@ -374,8 +373,8 @@ def add_extras(size, base_, backbone_dict):
                 base_width=4,
                 base_channels=64,
                 block=Bottleneck,
-                inplanes=128 * Bottleneck.expansion,
-                planes=64,
+                inplanes=in_channels[0] * Bottleneck.expansion,
+                planes=in_channels[1],
                 num_blocks=1,
                 stride=2,
                 dilation=1,
@@ -438,7 +437,8 @@ def add_tcb(cfg):
 extras = {
     '320': [128],
     '512': [128],
-    '1024': [128, 64],
+    # '1024': [128, 64],
+    '1024': [256, 128],
 }
 mbox = {
     '320': [3, 3, 3, 3],  # number of boxes per feature map location
@@ -451,14 +451,16 @@ tcb = {
     '320': [512, 1024, 2048, 512],
     '512': [512, 1024, 2048, 512],
     '896': [256, 512, 1024, 2048], # use res_layer1
-    '1024': [512, 1024, 2048, 512, 256],
+    # '1024': [512, 1024, 2048, 512, 256],
+    '1024': [512, 1024, 2048, 1024, 512],
 }
 
 arm = {
     '320': [512, 1024, 2048, 512],
     '512': [512, 1024, 2048, 512],
     '896': [256, 512, 1024, 2048], # use res_layer1
-    '1024': [512, 1024, 2048, 512, 256],
+    # '1024': [512, 1024, 2048, 512, 256],
+    '1024': [512, 1024, 2048, 1024, 512],
 }
 
 def build_refinedet(phase, size=320, num_classes=21, backbone_dict=dict(type='ResNet',depth=101, frozen_stages=-1)):
@@ -466,7 +468,7 @@ def build_refinedet(phase, size=320, num_classes=21, backbone_dict=dict(type='Re
         print("ERROR: Phase: " + phase + " not recognized")
         return
     base_ = resnet(backbone_dict)
-    extras_ = add_extras(size, base_, backbone_dict)
+    extras_ = add_extras(size, extra[str(size)], sbase_, backbone_dict)
     ARM_ = arm_multibox(arm[str(size)], mbox[str(size)])
     ADM_ = adm_multibox(arm[str(size)], mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
