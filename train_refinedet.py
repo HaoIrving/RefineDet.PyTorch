@@ -101,6 +101,8 @@ model = args.model
 # model = '512_ResNet_101'
 # model = '1024_ResNet_101'
 # model = '1024_ResNeXt_152'
+pretrained='torchvision://resnet50'
+# pretrained=args.basenet
 if model == '512_ResNet_50':
     from models.refinedet_res import build_refinedet
     args.input_size = str(512)
@@ -168,9 +170,7 @@ def train():
         refinedet_net.load_weights(args.resume)
     else:
         print('Initializing weights...')
-        # pretrained='torchvision://resnet101',
-        # refinedet_net.init_weights(pretrained=args.basenet)
-        refinedet_net.init_weights(pretrained=None)
+        refinedet_net.init_weights(pretrained=pretrained)
 
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
