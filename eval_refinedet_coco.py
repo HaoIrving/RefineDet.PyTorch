@@ -491,6 +491,7 @@ if __name__ == '__main__':
     model = args.model
     # model = '512_vggbn'
     # model = '512_ResNet_101'
+    # model = '512_ResNet_50'
     # model = '1024_ResNet_101'
     # model = '1024_ResNeXt_152'
     if model == '512_ResNet_50':
@@ -528,7 +529,7 @@ if __name__ == '__main__':
     # args.show_image = True
     args.vis_thres = 0.3
     prefix = args.prefix
-    prefix = 'weights/align_1e3_512res101'
+    # prefix = 'weights/align_2e3_512res50'
     # prefix = 'weights/align_1e3_1024res101'
     # prefix = 'weights/align_4e3'
     
@@ -552,7 +553,7 @@ if __name__ == '__main__':
     net = build_refinedet('test', int(args.input_size), num_classes, backbone_dict) 
 
     # test multi models, to filter out the best model.
-    # start_epoch = 10; step = 10
+    start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
     ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
@@ -593,9 +594,9 @@ if __name__ == '__main__':
     fig_name = 'ap.png'
     metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    # plot_map(save_folder, ap_stats, metrics, legend, fig_name)
-    # txt_log = prefix + '/log.txt'
-    # plot_loss(save_folder, txt_log)
+    plot_map(save_folder, ap_stats, metrics, legend, fig_name)
+    txt_log = prefix + '/log.txt'
+    plot_loss(save_folder, txt_log)
 """
 refinedet
 lr_2e3
@@ -689,5 +690,10 @@ ap: 0.6259, ap50: 0.9745, ap75: 0.7196, ap_s: 0.5832, ap_m: 0.6835, ap_l: 0.6831
 Best ap  : 0.6290 at epoch 290
 ap: 0.6290, ap50: 0.9720, ap75: 0.7116, ap_s: 0.5918, ap_m: 0.6769, ap_l: 0.6896
 
+res50 2e3 pt
+Best ap50: 0.9646 at epoch 270
+ap: 0.6016, ap50: 0.9646, ap75: 0.6886, ap_s: 0.5532, ap_m: 0.6803, ap_l: 0.7029
+Best ap  : 0.6046 at epoch 265
+ap: 0.6046, ap50: 0.9610, ap75: 0.6924, ap_s: 0.5603, ap_m: 0.6772, ap_l: 0.6758
 
 """

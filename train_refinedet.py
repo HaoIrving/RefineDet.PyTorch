@@ -64,6 +64,8 @@ parser.add_argument('-max','--max_epoch', default=300,
 parser.add_argument('--ngpu', default=4, type=int, help='gpus')
 parser.add_argument('--model', default='512_ResNet_101',
                     type=str, help='model name')
+parser.add_argument('--pretrained', action="store_true", default=False, 
+                    help='Use pretrained backbone')
 args = parser.parse_args()
 
 
@@ -101,28 +103,37 @@ model = args.model
 # model = '512_ResNet_101'
 # model = '1024_ResNet_101'
 # model = '1024_ResNeXt_152'
-pretrained='torchvision://resnet50'
-# pretrained=args.basenet
+pretrained = args.pretrained 
 if model == '512_ResNet_50':
     from models.refinedet_res import build_refinedet
     args.input_size = str(512)
     backbone_dict = dict(type='ResNet',depth=50, frozen_stages=-1)
+    if pretrained:
+        pretrained='torchvision://resnet50'
 if model == '512_ResNet_101':
     from models.refinedet_res import build_refinedet
     args.input_size = str(512)
     backbone_dict = dict(type='ResNet',depth=101, frozen_stages=-1)
+    if pretrained:
+        pretrained='torchvision://resnet101'
 elif model == '1024_ResNet_101':
     from models.refinedet_res import build_refinedet
     args.input_size = str(1024)
     backbone_dict = dict(type='ResNet',depth=101, frozen_stages=-1)
+    if pretrained:
+        pretrained='torchvision://resnet101'
 elif model == '1024_ResNeXt_152':
     from models.refinedet_res import build_refinedet
     args.input_size = str(1024)
     backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=-1)
+    if pretrained:
+        pretrained='open-mmlab://resnext152_32x4d'
 elif model == '512_vggbn':
     from models.refinedet_bn import build_refinedet
     args.input_size = str(512)
     backbone_dict = dict()
+    if pretrained:
+        pretrained=args.basenet
 
 def train():
     if args.visdom:
