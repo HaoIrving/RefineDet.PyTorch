@@ -513,7 +513,7 @@ if __name__ == '__main__':
     elif model == '512_vggbn':
         from models.refinedet_bn import build_refinedet
         args.input_size = str(512)
-        backbone_dict = dict()
+        backbone_dict = dict(bn=True)
     
     num_classes = 2 
     objectness_threshold = 0.01
@@ -695,5 +695,6 @@ Best ap50: 0.9646 at epoch 270
 ap: 0.6016, ap50: 0.9646, ap75: 0.6886, ap_s: 0.5532, ap_m: 0.6803, ap_l: 0.7029
 Best ap  : 0.6046 at epoch 265
 ap: 0.6046, ap50: 0.9610, ap75: 0.6924, ap_s: 0.5603, ap_m: 0.6772, ap_l: 0.6758
+res101 1e3 pt
 
 """
