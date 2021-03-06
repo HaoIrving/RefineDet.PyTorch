@@ -342,7 +342,7 @@ def vgg(cfg, i, batch_norm=False):
     return layers
 
 
-def add_extras(cfg, size, i, batch_norm=False):
+def add_extras(cfg, i, batch_norm=False):
     # Extra layers added to VGG for feature scaling
     layers = []
     in_channels = i
@@ -453,7 +453,7 @@ def build_refinedet(phase, size=320, num_classes=21, backbone_dict=dict(bn=True)
         return
     bn = backbone_dict['bn']
     base_ = vgg(base[str(size)], 3, bn)
-    extras_ = add_extras(extras[str(size)], size, 1024, bn)
+    extras_ = add_extras(extras[str(size)], 1024, bn)
     ARM_ = arm_multibox(arm[str(size)], mbox[str(size)])
     ADM_ = adm_multibox(arm[str(size)], mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])

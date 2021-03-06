@@ -448,8 +448,8 @@ def single_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_sta
     for i in range(num_images):
         im, target = dataset.pull_image(i)
         _t['im_detect'].tic()
-        # det = im_detect(net, im, target_size)
-        det = im_detect_ratio(net, im, target_size, int(0.75*target_size))
+        det = im_detect(net, im, target_size)
+        # det = im_detect_ratio(net, im, target_size, int(0.75*target_size))
         _t['im_detect'].toc()
 
         for j in range(1, num_classes):
@@ -530,7 +530,7 @@ if __name__ == '__main__':
     args.vis_thres = 0.3
     prefix = args.prefix
     # prefix = 'weights/align_2e3_512res50'
-    # prefix = 'weights/align_1e3_1024res101'
+    prefix = 'weights/align_1e3_512res101'
     # prefix = 'weights/align_4e3'
     
     # prefix = 'weights/align_4e3_5l'
@@ -554,7 +554,7 @@ if __name__ == '__main__':
 
     # test multi models, to filter out the best model.
     start_epoch = 10; step = 10
-    start_epoch = 200; step = 5
+    # start_epoch = 200; step = 5
     ToBeTested = []
     ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
@@ -696,5 +696,9 @@ ap: 0.6016, ap50: 0.9646, ap75: 0.6886, ap_s: 0.5532, ap_m: 0.6803, ap_l: 0.7029
 Best ap  : 0.6046 at epoch 265
 ap: 0.6046, ap50: 0.9610, ap75: 0.6924, ap_s: 0.5603, ap_m: 0.6772, ap_l: 0.6758
 res101 1e3 pt
+Best ap50: 0.9770 at epoch 255
+ap: 0.6044, ap50: 0.9770, ap75: 0.6731, ap_s: 0.5508, ap_m: 0.6880, ap_l: 0.7622
+Best ap  : 0.6111 at epoch 220
+ap: 0.6111, ap50: 0.9693, ap75: 0.7196, ap_s: 0.5610, ap_m: 0.6879, ap_l: 0.7283
 
 """
