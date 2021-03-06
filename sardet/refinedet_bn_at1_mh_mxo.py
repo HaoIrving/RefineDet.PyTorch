@@ -256,22 +256,44 @@ class RefineDet(nn.Module):
 
         # apply alignconv to source layers
         dcn_base_offset = self.dcn_base_offset.type_as(x)
-        for (x, ponits, l1, l2, l3, c1, c2, c3) in zip(
+        for (lvl, x, ponits, l1, l2, l3, c1, c2, c3) in zip(
+            range(self.lvl_num), 
             tcb_source_new, adm_points, 
             self.adm_loc1, self.adm_loc2, self.adm_loc3, 
             self.adm_conf1, self.adm_conf2, self.adm_conf3
             ):
             loc = []
             conf = []
-            dcn_offset1 = ponits[:, 0, ...].contiguous() - dcn_base_offset
-            dcn_offset2 = ponits[:, 1, ...].contiguous() - dcn_base_offset
-            dcn_offset3 = ponits[:, 2, ...].contiguous() - dcn_base_offset
-            loc.append(l1(x, dcn_offset1))
-            loc.append(l2(x, dcn_offset2))
-            loc.append(l3(x, dcn_offset3))
-            conf.append(c1(x, dcn_offset1))
-            conf.append(c2(x, dcn_offset2))
-            conf.append(c3(x, dcn_offset3))
+            if lvl == 0:
+                dcn_offset1 = ponits[:, 0, ...].contiguous() - dcn_base_offset
+                dcn_offset2 = ponits[:, 1, ...].contiguous() - dcn_base_offset
+                dcn_offset3 = ponits[:, 2, ...].contiguous() - dcn_base_offset
+                loc.append(l1(x, dcn_offset1))
+                loc.append(l2(x, dcn_offset2))
+                loc.append(l3(x, dcn_offset3))
+                conf_1 = c1(x, dcn_offset1)
+                conf_2 = c2(x, dcn_offset2)
+                conf_3 = c3(x, dcn_offset3)
+                max_bconf_1, _ = conf_1[:, 0:3, :, :].max(1, keepdim=True)
+                max_bconf_2, _ = conf_2[:, 0:3, :, :].max(1, keepdim=True)
+                max_bconf_3, _ = conf_3[:, 0:3, :, :].max(1, keepdim=True)
+                fconf_1 = conf_1[:, 3:, :, :]
+                fconf_2 = conf_2[:, 3:, :, :]
+                fconf_3 = conf_3[:, 3:, :, :]
+                conf.append(torch.cat([max_bconf_1, fconf_1], 1))
+                conf.append(torch.cat([max_bconf_2, fconf_2], 1))
+                conf.append(torch.cat([max_bconf_3, fconf_3], 1))
+            else:
+                dcn_offset1 = ponits[:, 0, ...].contiguous() - dcn_base_offset
+                dcn_offset2 = ponits[:, 1, ...].contiguous() - dcn_base_offset
+                dcn_offset3 = ponits[:, 2, ...].contiguous() - dcn_base_offset
+                loc.append(l1(x, dcn_offset1))
+                loc.append(l2(x, dcn_offset2))
+                loc.append(l3(x, dcn_offset3))
+                conf.append(c1(x, dcn_offset1))
+                conf.append(c2(x, dcn_offset2))
+                conf.append(c3(x, dcn_offset3))
+            
             adm_loc.append(torch.cat(loc, 1).permute(0, 2, 3, 1).contiguous())
             adm_conf.append(torch.cat(conf, 1).permute(0, 2, 3, 1).contiguous())
         adm_loc = torch.cat([o.view(o.size(0), -1) for o in adm_loc], 1)
@@ -463,13 +485,18 @@ def adm_multibox(level_channels, anchor_nums, num_classes):
     adm_conf_layers1 = []
     adm_conf_layers2 = []
     adm_conf_layers3 = []
-    for _ in level_channels:
+    for i in range(len(level_channels)):
             adm_loc_layers1 += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
             adm_loc_layers2 += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
             adm_loc_layers3 += [DeformConv2d(256, 4, kernel_size=3, padding=1)]
-            adm_conf_layers1 += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
-            adm_conf_layers2 += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
-            adm_conf_layers3 += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
+            if i == 0:  # maxout with align_conv
+                adm_conf_layers1 += [DeformConv2d(256, (3 + num_classes - 1), kernel_size=3, padding=1)]
+                adm_conf_layers2 += [DeformConv2d(256, (3 + num_classes - 1), kernel_size=3, padding=1)]
+                adm_conf_layers3 += [DeformConv2d(256, (3 + num_classes - 1), kernel_size=3, padding=1)]
+            else:
+                adm_conf_layers1 += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
+                adm_conf_layers2 += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
+                adm_conf_layers3 += [DeformConv2d(256, num_classes, kernel_size=3, padding=1)]
     return (
         (adm_loc_layers1, adm_loc_layers2, adm_loc_layers3), 
         (adm_conf_layers1, adm_conf_layers2, adm_conf_layers3))

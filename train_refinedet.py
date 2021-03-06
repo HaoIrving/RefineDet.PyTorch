@@ -70,6 +70,7 @@ parser.add_argument('-aw', '--at_weight', default=0.1, type=float,
 parser.add_argument('-atsg', '--at_sigma', default=0.2, type=float,
                     help='attention loss grid sampling ratio, <1 means center sampling')
 parser.add_argument('-atce', '--at_ce', action="store_true", default=False, help='set attention loss as cross entropy')
+parser.add_argument('-mo', '--maxout', action="store_true", default=False, help='use maxout for the first detection layer')
 args = parser.parse_args()
 
 
@@ -88,6 +89,8 @@ if not os.path.exists(args.save_folder):
 
 sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
+maxout = args.maxout
+# maxout = True
 att_loss_weight = args.at_weight
 negpos_ratio = 3
 initial_lr = args.lr
@@ -145,7 +148,10 @@ elif model == '5125_vggbn':
         pretrained=args.basenet
         backbone_dict = dict(bn=False)
 elif model == '640_vggbn':
-    from sardet.refinedet_bn_at1_mh import build_refinedet
+    if maxout:
+        from sardet.refinedet_bn_at1_mh_mxo import build_refinedet
+    else:
+        from sardet.refinedet_bn_at1_mh import build_refinedet
     args.input_size = str(640)
     backbone_dict = dict(bn=True)
     if pretrained:
