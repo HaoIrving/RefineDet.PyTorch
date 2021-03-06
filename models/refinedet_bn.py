@@ -450,11 +450,11 @@ arm = {
     '896': [256, 512, 512, 1024, 512],
 }
 
-def build_refinedet(phase, size=320, num_classes=21, backbone_dict=None):
+def build_refinedet(phase, size=320, num_classes=21, backbone_dict=dict(bn=True)):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
-    bn = True
+    bn = backbone_dict['bn']
     base_ = vgg(base[str(size)], 3, bn)
     extras_ = add_extras(extras[str(size)], size, 1024, bn)
     ARM_ = arm_multibox(arm[str(size)], mbox[str(size)])

@@ -103,37 +103,44 @@ model = args.model
 # model = '512_ResNet_101'
 # model = '1024_ResNet_101'
 # model = '1024_ResNeXt_152'
-pretrained = args.pretrained 
+pretrained = args.pretrained if args.pretrained else None
+frozen_stages=-1
+fs = -1
 if model == '512_ResNet_50':
     from models.refinedet_res import build_refinedet
     args.input_size = str(512)
-    backbone_dict = dict(type='ResNet',depth=50, frozen_stages=-1)
     if pretrained:
         pretrained='torchvision://resnet50'
+        frozen_stages = fs
+    backbone_dict = dict(type='ResNet',depth=50, frozen_stages=frozen_stages)
 if model == '512_ResNet_101':
     from models.refinedet_res import build_refinedet
     args.input_size = str(512)
-    backbone_dict = dict(type='ResNet',depth=101, frozen_stages=-1)
     if pretrained:
         pretrained='torchvision://resnet101'
+        frozen_stages = fs
+    backbone_dict = dict(type='ResNet',depth=101, frozen_stages=frozen_stages)
 elif model == '1024_ResNet_101':
     from models.refinedet_res import build_refinedet
     args.input_size = str(1024)
-    backbone_dict = dict(type='ResNet',depth=101, frozen_stages=-1)
     if pretrained:
         pretrained='torchvision://resnet101'
+        frozen_stages = fs
+    backbone_dict = dict(type='ResNet',depth=101, frozen_stages=frozen_stages)
 elif model == '1024_ResNeXt_152':
     from models.refinedet_res import build_refinedet
     args.input_size = str(1024)
-    backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=-1)
     if pretrained:
         pretrained='open-mmlab://resnext152_32x4d'
+        frozen_stages = fs
+    backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=frozen_stages)
 elif model == '512_vggbn':
     from models.refinedet_bn import build_refinedet
     args.input_size = str(512)
-    backbone_dict = dict()
+    backbone_dict = dict(bn=True)
     if pretrained:
         pretrained=args.basenet
+        backbone_dict = dict(bn=False)
 
 def train():
     if args.visdom:
@@ -249,11 +256,11 @@ def train():
         images, targets = next(batch_iterator)
         images = images.to(device)
         targets = [ann.to(device) for ann in targets]
-        for an in targets:
-            for instance in an:
-                for cor in instance[:-1]:
-                    if cor < 0 or cor > 1:
-                        raise StopIteration
+        # for an in targets:
+        #     for instance in an:
+        #         for cor in instance[:-1]:
+        #             if cor < 0 or cor > 1:
+        #                 raise StopIteration
 
         # forward
         out = net(images)
