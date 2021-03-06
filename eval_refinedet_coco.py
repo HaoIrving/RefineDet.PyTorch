@@ -489,8 +489,31 @@ if __name__ == '__main__':
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
     
+    prefix = args.prefix
+    # prefix = 'weights/tmp'
+    # prefix = 'weights/at_2e3'
+    # prefix = 'weights/at_4e3'
+    # prefix = 'weights/at1_4e3_01'
+    # prefix = 'weights/at1_4e3_05'
+    # prefix = 'weights/at1_mh_4e3_1'
+    prefix = 'weights/at1_mh_4e3_01'  # sigma 0.2
+    prefix = 'weights/at1_mh_4e3_01_5125vggbn'  # sigma 0.2
+    # prefix = 'weights/at1_mh_4e3_01_sigma1'
+    # prefix = 'weights/at1_mh_4e3_1_ce_sigma1'
+    # prefix = 'weights/at1_mh_4e3_1_ce_sigma02'
+    # prefix = 'weights/at1_mh2_4e3_1'
+    # prefix = 'weights/at2_mh_4e3_03'
+    # prefix = 'weights/at2_mh_4e3_01'
+    # prefix = 'weights/at2_4e3_03'
+    # prefix = 'weights/at2_4e3_01'
+    save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
+    if not os.path.exists(save_folder):
+        os.mkdir(save_folder)
+    
     model = args.model
     model = '512_vggbn'
+    model = '5125_vggbn'
+    model = '640_vggbn'
     # model = '512_ResNet_101'
     # model = '512_ResNet_50'
     # model = '1024_ResNet_101'
@@ -512,46 +535,30 @@ if __name__ == '__main__':
         args.input_size = str(1024)
         backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=-1)
     elif model == '512_vggbn':
-        # from sardet.refinedet_bn import build_refinedet
-        # from sardet.refinedet_bn_at2 import build_refinedet
         from sardet.refinedet_bn_at1_mh import build_refinedet
-        # from sardet.refinedet_bn_at2_mh import build_refinedet
         args.input_size = str(512)
         backbone_dict = dict(bn=True)
-    
-    seg_num_grids = coco_refinedet[args.input_size]['feature_maps']  # [64, 32, 16, 8]
-    num_classes = 2 
+    elif model == '5125_vggbn':
+        from sardet.refinedet_bn_at1_mh import build_refinedet
+        args.input_size = str(5125)
+        backbone_dict = dict(bn=True)
+    elif model == '640_vggbn':
+        from sardet.refinedet_bn_at1_mh import build_refinedet
+        args.input_size = str(640)
+        backbone_dict = dict(bn=True)
+
+    cfg = coco_refinedet[args.input_size]
+    seg_num_grids = cfg['feature_maps']  # [64, 32, 16, 8]
+    num_classes = cfg['num_classes']
     objectness_threshold = 0.01
     args.nms_threshold = 0.49  # nms
     # args.nms_threshold = 0.45  # softnms
     args.confidence_threshold = 0.01
     args.top_k = 1000
     args.keep_top_k = 500
-    # args.multi_scale_test = True
-
-    # args.cuda = False
-    # args.retest = True
-    # args.show_image = True
     args.vis_thres = 0.3
-    prefix = args.prefix
-    # prefix = 'weights/tmp'
-    prefix = 'weights/at_2e3'
-    prefix = 'weights/at_4e3'
-    prefix = 'weights/at1_4e3_01'
-    prefix = 'weights/at1_4e3_05'
-    prefix = 'weights/at1_mh_4e3_1'
-    # prefix = 'weights/at1_mh_4e3_01'  # sigma 0.2
-    # prefix = 'weights/at1_mh_4e3_01_sigma1'
-    # prefix = 'weights/at1_mh_4e3_1_ce_sigma1'
-    # prefix = 'weights/at1_mh_4e3_1_ce_sigma02'
-    # prefix = 'weights/at1_mh2_4e3_1'
-    # prefix = 'weights/at2_mh_4e3_03'
-    # prefix = 'weights/at2_mh_4e3_01'
-    # prefix = 'weights/at2_4e3_03'
-    # prefix = 'weights/at2_4e3_01'
-    save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
-    if not os.path.exists(save_folder):
-        os.mkdir(save_folder)
+    # args.multi_scale_test = True
+    # args.show_image = True
 
     # load data
     dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
@@ -567,7 +574,7 @@ if __name__ == '__main__':
     net = build_refinedet('test', int(args.input_size), num_classes, seg_num_grids, backbone_dict) 
 
     # test multi models, to filter out the best model.
-    start_epoch = 10; step = 10
+    # start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
     # ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
@@ -656,7 +663,7 @@ ap: 0.6110, ap50: 0.9771, ap75: 0.6949, ap_s: 0.5689, ap_m: 0.6765, ap_l: 0.6506
 Best ap  : 0.6229 at epoch 245
 ap: 0.6229, ap50: 0.9695, ap75: 0.7137, ap_s: 0.5765, ap_m: 0.6881, ap_l: 0.6845
 
-at1 4e3 mh aw 01
+################### at1 4e3 mh aw 01 #############
 Best ap50: 0.9797 at epoch 235
 ap: 0.6160, ap50: 0.9797, ap75: 0.6952, ap_s: 0.5645, ap_m: 0.6962, ap_l: 0.6520
 Best ap  : 0.6278 at epoch 285

@@ -45,6 +45,9 @@ class RefineDet(nn.Module):
         self.conv4_3_layer = (23, 33)[self.bn]
         self.conv5_3_layer = (30, 43)[self.bn]
         self.extra_1_layer = (4, 6)[self.bn]
+        if size == 640:
+            self.extra_2_layer = (8, 12)[self.bn]
+
 
         # for calc offset of ADM
         self.lvl_num = len(self.cfg['feature_maps'])
@@ -183,6 +186,10 @@ class RefineDet(nn.Module):
         for k in range(len(self.extras)):
             x = self.extras[k](x)
             if self.extra_1_layer - 1 == k:
+                sources.append(x)
+                if self.phase == 'test':
+                    feat_sizes.append(x.shape[2:])
+            if self.size == 640 and self.extra_2_layer - 1 == k:
                 sources.append(x)
                 if self.phase == 'test':
                     feat_sizes.append(x.shape[2:])
@@ -417,7 +424,7 @@ def vgg(cfg, i, batch_norm=False):
     return layers
 
 
-def add_extras(cfg, size, i, batch_norm=False):
+def add_extras(cfg, i, batch_norm=False):
     # Extra layers added to VGG for feature scaling
     layers = []
     in_channels = i
@@ -497,29 +504,35 @@ base = {
             512, 512, 512],
     '512': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
             512, 512, 512],
-    '896': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
+    '5125': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
+            512, 512, 512],
+    '640': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
             512, 512, 512],
 }
 extras = {
     '320': [256, 'S', 512],
     '512': [256, 'S', 512],
-    '896': [256, 'S', 512],
+    '5125': [256, 'S', 512],
+    '640': [256, 'S', 512, 128, 'S', 256],
 }
 mbox = {
     '320': [3, 3, 3, 3],  # number of boxes per feature map location
     '512': [3, 3, 3, 3],  # number of boxes per feature map location
-    '896': [3, 3, 3, 3, 3],  # number of boxes per feature map location
+    '5125': [3, 3, 3, 3, 3],  # number of boxes per feature map location
+    '640': [3, 3, 3, 3, 3, 3],  # number of boxes per feature map location
 }
 
 tcb = {
     '320': [512, 512, 1024, 512],
     '512': [512, 512, 1024, 512],
-    '896': [256, 512, 512, 1024, 512],
+    '5125': [256, 512, 512, 1024, 512],
+    '640': [256, 512, 512, 1024, 512, 256],
 }
 
 arm = {
     '512': [512, 512, 1024, 512],
-    '896': [256, 512, 512, 1024, 512],
+    '5125': [256, 512, 512, 1024, 512],
+    '640': [256, 512, 512, 1024, 512, 256],
 }
 
 def build_refinedet(phase, size=320, num_classes=21, seg_num_grids=[36, 24, 16, 12], backbone_dict=dict(bn=True)):
@@ -528,7 +541,7 @@ def build_refinedet(phase, size=320, num_classes=21, seg_num_grids=[36, 24, 16, 
         return
     bn = backbone_dict['bn']
     base_ = vgg(base[str(size)], 3, bn)
-    extras_ = add_extras(extras[str(size)], size, 1024, bn)
+    extras_ = add_extras(extras[str(size)], 1024, bn)
     ARM_ = arm_multibox(arm[str(size)], mbox[str(size)])
     ADM_ = adm_multibox(arm[str(size)], mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])

@@ -1,6 +1,7 @@
 from data import *
 from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss, AttentionFocalLoss
+from layers import PriorBox
 
 import os
 import sys
@@ -64,8 +65,8 @@ parser.add_argument('--model', default='512_ResNet_101',
                     type=str, help='model name')
 parser.add_argument('--pretrained', action="store_true", default=False, 
                     help='Use pretrained backbone')
-parser.add_argument('-aw', '--at_weight', default=1.0, type=float,
-                    help='attention loss weight')
+parser.add_argument('-aw', '--at_weight', default=0.1, type=float,
+                    help='attention loss weight, 0.1 for focal loss, 1 for cross entropy loss')
 parser.add_argument('-atsg', '--at_sigma', default=0.2, type=float,
                     help='attention loss grid sampling ratio, <1 means center sampling')
 parser.add_argument('-atce', '--at_ce', action="store_true", default=False, help='set attention loss as cross entropy')
@@ -87,14 +88,14 @@ if not os.path.exists(args.save_folder):
 
 sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
-# anchor [32, 64, 128, 256]
-scale_ranges = ((1, 64), (32, 128), (64, 256), (128, 512))
 att_loss_weight = args.at_weight
 negpos_ratio = 3
 initial_lr = args.lr
 model = args.model
 # model = '512_ResNet_50'
 # model = '512_vggbn'
+# model = '5125_vggbn'
+# model = '640_vggbn'
 # model = '512_ResNet_101'
 # model = '1024_ResNet_101'
 # model = '1024_ResNeXt_152'
@@ -130,11 +131,22 @@ elif model == '1024_ResNeXt_152':
         frozen_stages = fs
     backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=frozen_stages)
 elif model == '512_vggbn':
-    # from sardet.refinedet_bn import build_refinedet
-    # from sardet.refinedet_bn_at2 import build_refinedet
     from sardet.refinedet_bn_at1_mh import build_refinedet
-    # from sardet.refinedet_bn_at2_mh import build_refinedet
     args.input_size = str(512)
+    backbone_dict = dict(bn=True)
+    if pretrained:
+        pretrained=args.basenet
+        backbone_dict = dict(bn=False)
+elif model == '5125_vggbn':
+    from sardet.refinedet_bn_at1_mh import build_refinedet
+    args.input_size = str(5125)
+    backbone_dict = dict(bn=True)
+    if pretrained:
+        pretrained=args.basenet
+        backbone_dict = dict(bn=False)
+elif model == '640_vggbn':
+    from sardet.refinedet_bn_at1_mh import build_refinedet
+    args.input_size = str(640)
     backbone_dict = dict(bn=True)
     if pretrained:
         pretrained=args.basenet
@@ -154,9 +166,6 @@ def train():
                   "--dataset_root was not specified.")
             args.dataset_root = COCOroot
         cfg = coco_refinedet[args.input_size]
-        # dataset = COCODetection(root=args.dataset_root, image_set='train',
-        #                         transform=SSDAugmentation(cfg['min_dim'],
-        #                                                   MEANS))
         train_sets = [('sarship', 'train')]
         dataset = COCODetection(COCOroot, train_sets, SSDAugmentation(cfg['min_dim'], MEANS))
     elif args.dataset == 'VOC':
@@ -171,7 +180,10 @@ def train():
     print(args)
 
     seg_num_grids = cfg['feature_maps']
-    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'], seg_num_grids, backbone_dict)
+    # anchor [32, 64, 128, 256]
+    scale_ranges = cfg['scale_ranges']
+    # refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'], seg_num_grids, backbone_dict)
+    refinedet_net = build_refinedet('train', int(args.input_size), cfg['num_classes'], seg_num_grids, backbone_dict)
     net = refinedet_net
     print(net)
     
@@ -266,7 +278,7 @@ def train():
 
         # forward
         attention_maps, arm_loc, arm_conf, odm_loc, odm_conf = net(images)
-        out = (arm_loc, arm_conf, odm_loc, odm_conf, priors)
+        out = (arm_loc, arm_conf, odm_loc, odm_conf)
 
         # backprop
         optimizer.zero_grad()
