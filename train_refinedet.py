@@ -282,7 +282,7 @@ def adjust_learning_rate(optimizer, gamma, epoch, step_index, iteration, epoch_s
     # Adapted from PyTorch Imagenet example:
     # https://github.com/pytorch/examples/blob/master/imagenet/main.py
     """
-    warmup_epoch = 5
+    warmup_epoch = 10
     if epoch <= warmup_epoch:
         lr = 1e-6 + (initial_lr-1e-6) * iteration / (epoch_size * warmup_epoch)
     else:
