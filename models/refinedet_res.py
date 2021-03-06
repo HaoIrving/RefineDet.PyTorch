@@ -175,13 +175,13 @@ class RefineDet(nn.Module):
             loc = []
             conf = []
             dcn_offset1 = ponits[:, 0, ...].contiguous() - dcn_base_offset
-            loc.append(l1(x, dcn_offset1))
-            conf.append(c1(x, dcn_offset1))
             dcn_offset2 = ponits[:, 1, ...].contiguous() - dcn_base_offset
-            loc.append(l2(x, dcn_offset2))
-            conf.append(c2(x, dcn_offset2))
             dcn_offset3 = ponits[:, 2, ...].contiguous() - dcn_base_offset
+            loc.append(l1(x, dcn_offset1))
+            loc.append(l2(x, dcn_offset2))
             loc.append(l3(x, dcn_offset3))
+            conf.append(c1(x, dcn_offset1))
+            conf.append(c2(x, dcn_offset2))
             conf.append(c3(x, dcn_offset3))
             adm_loc.append(torch.cat(loc, 1).permute(0, 2, 3, 1).contiguous())
             adm_conf.append(torch.cat(conf, 1).permute(0, 2, 3, 1).contiguous())
