@@ -1,11 +1,6 @@
 from data import *
 from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss, AttentionFocalLoss
-# from sardet.refinedet_bn import build_refinedet
-# from sardet.refinedet_bn_at2 import build_refinedet
-from sardet.refinedet_bn_at1_mh import build_refinedet
-# from sardet.refinedet_bn_at2_mh import build_refinedet
-
 
 import os
 import sys
@@ -65,6 +60,10 @@ parser.add_argument('--resume_epoch', default=0,
 parser.add_argument('-max','--max_epoch', default=300,
                     type=int, help='max epoch for retraining')               
 parser.add_argument('--ngpu', default=4, type=int, help='gpus')
+parser.add_argument('--model', default='512_ResNet_101',
+                    type=str, help='model name')
+parser.add_argument('--pretrained', action="store_true", default=False, 
+                    help='Use pretrained backbone')
 parser.add_argument('-aw', '--at_weight', default=1.0, type=float,
                     help='attention loss weight')
 parser.add_argument('-atsg', '--at_sigma', default=0.2, type=float,
@@ -88,17 +87,58 @@ if not os.path.exists(args.save_folder):
 
 sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
-args.input_size = str(512)
-args.max_epoch = 300
-
-# ((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048)) for stride from 4
 # anchor [32, 64, 128, 256]
-# scale_ranges = ((1, 96), (48, 192), (96, 384), (192, 768))
 scale_ranges = ((1, 64), (32, 128), (64, 256), (128, 512))
 att_loss_weight = args.at_weight
-
 negpos_ratio = 3
 initial_lr = args.lr
+model = args.model
+# model = '512_ResNet_50'
+# model = '512_vggbn'
+# model = '512_ResNet_101'
+# model = '1024_ResNet_101'
+# model = '1024_ResNeXt_152'
+pretrained = args.pretrained if args.pretrained else None
+frozen_stages=-1
+fs = -1
+if model == '512_ResNet_50':
+    from sardet.refinedet_res import build_refinedet
+    args.input_size = str(512)
+    if pretrained:
+        pretrained='torchvision://resnet50'
+        frozen_stages = fs
+    backbone_dict = dict(type='ResNet',depth=50, frozen_stages=frozen_stages)
+if model == '512_ResNet_101':
+    from sardet.refinedet_res import build_refinedet
+    args.input_size = str(512)
+    if pretrained:
+        pretrained='torchvision://resnet101'
+        frozen_stages = fs
+    backbone_dict = dict(type='ResNet',depth=101, frozen_stages=frozen_stages)
+elif model == '1024_ResNet_101':
+    from sardet.refinedet_res import build_refinedet
+    args.input_size = str(1024)
+    if pretrained:
+        pretrained='torchvision://resnet101'
+        frozen_stages = fs
+    backbone_dict = dict(type='ResNet',depth=101, frozen_stages=frozen_stages)
+elif model == '1024_ResNeXt_152':
+    from sardet.refinedet_res import build_refinedet
+    args.input_size = str(1024)
+    if pretrained:
+        pretrained='open-mmlab://resnext152_32x4d'
+        frozen_stages = fs
+    backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=frozen_stages)
+elif model == '512_vggbn':
+    # from sardet.refinedet_bn import build_refinedet
+    # from sardet.refinedet_bn_at2 import build_refinedet
+    from sardet.refinedet_bn_at1_mh import build_refinedet
+    # from sardet.refinedet_bn_at2_mh import build_refinedet
+    args.input_size = str(512)
+    backbone_dict = dict(bn=True)
+    if pretrained:
+        pretrained=args.basenet
+        backbone_dict = dict(bn=False)
 
 def train():
     if args.visdom:
@@ -130,12 +170,12 @@ def train():
     print('Using the specified args:')
     print(args)
 
-    device = torch.device('cuda:0' if args.cuda else 'cpu')
     seg_num_grids = cfg['feature_maps']
-    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'], seg_num_grids)
+    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'], seg_num_grids, backbone_dict)
     net = refinedet_net
     print(net)
-
+    
+    device = torch.device('cuda:0' if args.cuda else 'cpu')
     if args.ngpu > 1 and args.cuda:
         net = torch.nn.DataParallel(refinedet_net, device_ids=list(range(args.ngpu)))
     cudnn.benchmark = True
@@ -146,8 +186,7 @@ def train():
         refinedet_net.load_weights(args.resume)
     else:
         print('Initializing weights...')
-        # refinedet_net.init_weights(pretrained=args.basenet)
-        refinedet_net.init_weights(pretrained=None)
+        refinedet_net.init_weights(pretrained=pretrained)
 
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
@@ -156,14 +195,13 @@ def train():
     odm_criterion = RefineDetMultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, negpos_ratio, 0.5,
                              False, args.cuda, use_ARM=True)
     # attention criterion 
-    loss_cate = dict(
-                type='FocalLoss',
-                use_sigmoid=True,
-                gamma=2.0,
-                alpha=0.25,
-                loss_weight=1.0)
-    attention_criterion = AttentionFocalLoss(cfg['num_classes'], cfg['min_dim'], loss_cate, seg_num_grids, scale_ranges, \
-        sigma=args.at_sigma, CE=args.at_ce)
+    loss_cate = dict(type='FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=1.0)
+    attention_criterion = AttentionFocalLoss(cfg['num_classes'], cfg['min_dim'], loss_cate, seg_num_grids, scale_ranges, 
+                             sigma=args.at_sigma, CE=args.at_ce)
+    priorbox = PriorBox(cfg)
+    with torch.no_grad():
+        priors = priorbox.forward()
+        priors = priors.to(device)
 
     net.train()
     # loss counters
@@ -227,13 +265,13 @@ def train():
         #                 raise StopIteration
 
         # forward
-        attention_maps, arm_loc, arm_conf, odm_loc, odm_conf, priors = net(images)
+        attention_maps, arm_loc, arm_conf, odm_loc, odm_conf = net(images)
         out = (arm_loc, arm_conf, odm_loc, odm_conf, priors)
 
         # backprop
         optimizer.zero_grad()
-        arm_loss_l, arm_loss_c = arm_criterion(out, targets)
-        odm_loss_l, odm_loss_c = odm_criterion(out, targets)
+        arm_loss_l, arm_loss_c = arm_criterion(out, priors, targets)
+        odm_loss_l, odm_loss_c = odm_criterion(out, priors, targets)
         arm_loss = arm_loss_l + arm_loss_c
         odm_loss = odm_loss_l + odm_loss_c
 
@@ -268,7 +306,7 @@ def adjust_learning_rate(optimizer, gamma, epoch, step_index, iteration, epoch_s
     # Adapted from PyTorch Imagenet example:
     # https://github.com/pytorch/examples/blob/master/imagenet/main.py
     """
-    warmup_epoch = 5
+    warmup_epoch = 10
     if epoch <= warmup_epoch:
         lr = 1e-6 + (initial_lr-1e-6) * iteration / (epoch_size * warmup_epoch)
     else:
