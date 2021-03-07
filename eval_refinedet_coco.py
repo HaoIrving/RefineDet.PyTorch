@@ -327,8 +327,7 @@ def soft_bbox_vote(det):
     return dets
 
 
-def multi_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stats=None):
-    target_size = net.size
+def multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, detect, AP_stats=None):
     num_images = len(dataset)
     all_boxes = [[[] for _ in range(num_images)]
                  for _ in range(num_classes)]
@@ -430,8 +429,7 @@ def multi_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stat
     AP_stats['ap_large'].append(stats[5])
 
 
-def single_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stats=None):
-    target_size = net.size
+def single_scale_test_net(target_size, save_folder, net, num_classes, dataset, detect, AP_stats=None):
     num_images = len(dataset)
     all_boxes = [[[] for _ in range(num_images)]
                  for _ in range(num_classes)]
@@ -451,7 +449,6 @@ def single_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_sta
         im, target = dataset.pull_image(i)
         _t['im_detect'].tic()
         det = im_detect(net, im, target_size)
-        # det = im_detect_ratio(net, im, target_size, int(0.75*target_size))
         _t['im_detect'].toc()
 
         for j in range(1, num_classes):
@@ -553,6 +550,7 @@ if __name__ == '__main__':
         backbone_dict = dict(bn=True)
 
     cfg = coco_refinedet[args.input_size]
+    target_size = cfg['min_dim']
     seg_num_grids = cfg['feature_maps']  # [64, 32, 16, 8]
     num_classes = cfg['num_classes']
     objectness_threshold = 0.01
@@ -598,9 +596,9 @@ if __name__ == '__main__':
         ap_stats['epoch'].append(start_epoch + index * step)
         print("evaluating epoch: {}".format(ap_stats['epoch'][-1]))
         if not args.multi_scale_test:
-            single_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stats=ap_stats)
+            single_scale_test_net(target_size, save_folder, net, num_classes, dataset, detect, AP_stats=ap_stats)
         else:
-            multi_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stats=ap_stats)
+            multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, detect, AP_stats=ap_stats)
 
     # print the best model.
     max_idx = np.argmax(np.asarray(ap_stats['ap50']))
@@ -612,17 +610,17 @@ if __name__ == '__main__':
     print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
         format(ap_stats['ap'][max_idx], ap_stats['ap50'][max_idx], ap_stats['ap75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
     res_file = os.path.join(save_folder, 'ap_stats.json')
-    # print('Writing ap stats json to {}'.format(res_file))
-    # with open(res_file, 'w') as fid:
-    #     json.dump(ap_stats, fid)
+    print('Writing ap stats json to {}'.format(res_file))
+    with open(res_file, 'w') as fid:
+        json.dump(ap_stats, fid)
     
-    # # plot curves
-    # fig_name = 'ap.png'
-    # metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    # legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    # plot_map(save_folder, ap_stats, metrics, legend, fig_name)
-    # txt_log = prefix + '/log.txt'
-    # plot_loss(save_folder, txt_log)
+    # plot curves
+    fig_name = 'ap.png'
+    metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
+    legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
+    plot_map(save_folder, ap_stats, metrics, legend, fig_name)
+    txt_log = prefix + '/log.txt'
+    plot_loss(save_folder, txt_log)
 """
 refinedet
 lr_2e3
