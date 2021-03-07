@@ -49,6 +49,7 @@ parser.add_argument('--nms_threshold', default=0.3, type=float, help='nms_thresh
 parser.add_argument('--keep_top_k', default=750, type=int, help='keep_top_k')
 parser.add_argument('-mstest', '--multi_scale_test', default=False, type=str2bool, help='multi scale test')
 parser.add_argument('--model', default='512_ResNet_101', type=str, help='model name')
+parser.add_argument('-mo', '--maxout', action="store_true", default=False, help='use maxout for the first detection layer')
 args = parser.parse_args()
 
 
@@ -496,8 +497,8 @@ if __name__ == '__main__':
     # prefix = 'weights/at1_4e3_01'
     # prefix = 'weights/at1_4e3_05'
     # prefix = 'weights/at1_mh_4e3_1'
-    prefix = 'weights/at1_mh_4e3_01'  # sigma 0.2
-    prefix = 'weights/at1_mh_4e3_01_5125vggbn'  # sigma 0.2
+    # prefix = 'weights/at1_mh_4e3_01'  # sigma 0.2
+    # prefix = 'weights/at1_mh_4e3_01_5125vggbn'  # sigma 0.2
     # prefix = 'weights/at1_mh_4e3_01_sigma1'
     # prefix = 'weights/at1_mh_4e3_1_ce_sigma1'
     # prefix = 'weights/at1_mh_4e3_1_ce_sigma02'
@@ -510,10 +511,11 @@ if __name__ == '__main__':
     if not os.path.exists(save_folder):
         os.mkdir(save_folder)
     
+    maxout = args.maxout
     model = args.model
-    model = '512_vggbn'
-    model = '5125_vggbn'
-    model = '640_vggbn'
+    # model = '512_vggbn'
+    # model = '5125_vggbn'
+    # model = '640_vggbn'
     # model = '512_ResNet_101'
     # model = '512_ResNet_50'
     # model = '1024_ResNet_101'
@@ -543,7 +545,10 @@ if __name__ == '__main__':
         args.input_size = str(5125)
         backbone_dict = dict(bn=True)
     elif model == '640_vggbn':
-        from sardet.refinedet_bn_at1_mh import build_refinedet
+        if maxout:
+            from sardet.refinedet_bn_at1_mh_mxo import build_refinedet
+        else:
+            from sardet.refinedet_bn_at1_mh import build_refinedet
         args.input_size = str(640)
         backbone_dict = dict(bn=True)
 
@@ -577,9 +582,9 @@ if __name__ == '__main__':
     # start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    # ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_245.pth') 
+    ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_245.pth') 
     # ToBeTested *= 5
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
