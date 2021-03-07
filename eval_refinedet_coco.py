@@ -571,7 +571,7 @@ if __name__ == '__main__':
     # args.show_image = True
 
     # load data
-    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sar')
     # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
@@ -587,9 +587,9 @@ if __name__ == '__main__':
     # start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_245.pth') 
+    # ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
+    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_290.pth') 
     # ToBeTested *= 5
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
