@@ -19,3 +19,6 @@ python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_m
 # CUDA_VISIBLE_DEVICES=1 python eval_refinedet_coco.py --prefix weights/at1_mh_4e3_01_640vggbn_mo --model 640_vggbn -mo
 CUDA_VISIBLE_DEVICES=1 python eval_refinedet_coco.py --prefix weights/at1_mh_4e3_01_640vggbn --model 640_vggbn 
 # CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at1_mh_4e3_01_5125vggbn --model 5125_vggbn 
+
+# CUDA_VISIBLE_DEVICES=2,3 python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_mh_4e3_01_5126vggbn/ --ngpu 2 --batch_size 16 --model 5126_vggbn
+# CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at1_mh_4e3_01_5126vggbn --model 5126_vggbn 
