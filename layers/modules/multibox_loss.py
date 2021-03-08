@@ -45,7 +45,7 @@ class MultiBoxLoss(nn.Module):
         self.neg_overlap = neg_overlap
         self.variance = cfg['variance']
 
-    def forward(self, predictions, targets):
+    def forward(self, predictions, priors, targets):
         """Multibox Loss
         Args:
             predictions (tuple): A tuple containing loc preds, conf preds,
@@ -57,12 +57,12 @@ class MultiBoxLoss(nn.Module):
             targets (tensor): Ground truth boxes and labels for a batch,
                 shape: [batch_size,num_objs,5] (last idx is the label).
         """
-        loc_data, conf_data, priors = predictions
+        loc_data, conf_data= predictions
         num = loc_data.size(0)
         priors = priors[:loc_data.size(1), :]
         num_priors = (priors.size(0))
         num_classes = self.num_classes
-        print(loc_data.size(), conf_data.size(), priors.size())
+        # print(loc_data.size(), conf_data.size(), priors.size())
 
         # match priors (default boxes) and ground truth boxes
         loc_t = torch.Tensor(num, num_priors, 4)
@@ -81,10 +81,10 @@ class MultiBoxLoss(nn.Module):
         #conf_t = Variable(conf_t, requires_grad=False)
         loc_t.requires_grad = False
         conf_t.requires_grad = False
-        print(loc_t.size(), conf_t.size())
+        # print(loc_t.size(), conf_t.size())
 
         pos = conf_t > 0
-        print(pos.size())
+        # print(pos.size())
         #num_pos = pos.sum(dim=1, keepdim=True)
 
         # Localization Loss (Smooth L1)
@@ -97,7 +97,7 @@ class MultiBoxLoss(nn.Module):
         # Compute max conf across batch for hard negative mining
         batch_conf = conf_data.view(-1, self.num_classes)
         loss_c = log_sum_exp(batch_conf) - batch_conf.gather(1, conf_t.view(-1, 1))
-        print(loss_c.size())
+        # print(loss_c.size())
 
         # Hard Negative Mining
         loss_c[pos.view(-1,1)] = 0  # filter out pos boxes for now
@@ -107,14 +107,14 @@ class MultiBoxLoss(nn.Module):
         num_pos = pos.long().sum(1, keepdim=True)
         num_neg = torch.clamp(self.negpos_ratio*num_pos, max=pos.size(1)-1)
         neg = idx_rank < num_neg.expand_as(idx_rank)
-        print(num_pos.size(), num_neg.size(), neg.size())
+        # print(num_pos.size(), num_neg.size(), neg.size())
 
         # Confidence Loss Including Positive and Negative Examples
         pos_idx = pos.unsqueeze(2).expand_as(conf_data)
         neg_idx = neg.unsqueeze(2).expand_as(conf_data)
         conf_p = conf_data[(pos_idx+neg_idx).gt(0)].view(-1, self.num_classes)
         targets_weighted = conf_t[(pos+neg).gt(0)]
-        print(pos_idx.size(), neg_idx.size(), conf_p.size(), targets_weighted.size())
+        # print(pos_idx.size(), neg_idx.size(), conf_p.size(), targets_weighted.size())
         loss_c = F.cross_entropy(conf_p, targets_weighted, reduction='sum')
 
         # Sum of losses: L(x,c,l,g) = (Lconf(x, c) + αLloc(x,l,g)) / N

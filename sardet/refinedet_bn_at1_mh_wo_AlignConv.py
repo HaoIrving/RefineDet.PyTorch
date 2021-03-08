@@ -33,7 +33,7 @@ class RefineDet(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, size, base, extras, ARM, ADM, TCB, num_classes, seg_num_grids=[36, 24, 16, 12], bn=True):
+    def __init__(self, phase, size, base, extras, ARM, ODM, TCB, num_classes, seg_num_grids=[36, 24, 16, 12], bn=True):
         super(RefineDet, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
@@ -48,20 +48,6 @@ class RefineDet(nn.Module):
         if size == 640 or size == 5126:
             self.extra_2_layer = (8, 12)[self.bn]
 
-
-        # for calc offset of ADM
-        self.variance = self.cfg['variance']
-        self.aspect_ratio = 2
-        self.anchor_stride_ratio = 4
-        self.anchor_num = 3
-        self.dcn_kernel = 3
-        self.dcn_pad = 1
-        dcn_base = np.arange(-self.dcn_pad, self.dcn_pad + 1).astype(np.float64)
-        dcn_base_y = np.repeat(dcn_base, self.dcn_kernel)
-        dcn_base_x = np.tile(dcn_base, self.dcn_kernel)
-        dcn_base_offset = np.stack([dcn_base_y, dcn_base_x], axis=1).reshape((-1))
-        self.dcn_base_offset = torch.tensor(dcn_base_offset).view(1, -1, 1, 1)
-
         # SSD network
         self.vgg = nn.ModuleList(base)
         # Layer learns to scale the l2 normalized features from conv4_3
@@ -73,12 +59,9 @@ class RefineDet(nn.Module):
 
         self.arm_loc = nn.ModuleList(ARM[0])
         self.arm_conf = nn.ModuleList(ARM[1])
-        self.adm_loc1 = nn.ModuleList(ADM[0][0])
-        self.adm_loc2 = nn.ModuleList(ADM[0][1])
-        self.adm_loc3 = nn.ModuleList(ADM[0][2])
-        self.adm_conf1 = nn.ModuleList(ADM[1][0])
-        self.adm_conf2 = nn.ModuleList(ADM[1][1])
-        self.adm_conf3 = nn.ModuleList(ADM[1][2])
+        self.odm_loc = nn.ModuleList(ODM[0])
+        self.odm_conf = nn.ModuleList(ODM[1])
+    
 
         #self.tcb = nn.ModuleList(TCB)
         self.tcb0 = nn.ModuleList(TCB[0])
@@ -151,8 +134,8 @@ class RefineDet(nn.Module):
         tcb_source = list()
         arm_loc = list()
         arm_conf = list()
-        adm_loc = list()
-        adm_conf = list()
+        odm_loc = list()
+        odm_conf = list()
         if self.phase == 'test':
             feat_sizes = list()
 
@@ -194,17 +177,12 @@ class RefineDet(nn.Module):
                 if self.phase == 'test':
                     feat_sizes.append(x.shape[2:])
 
-        # apply ARM and ADM to source layers
-        arm_loc_align = list()
+        # apply ARM and ODM to source layers
         for (x, l, c) in zip(sources, self.arm_loc, self.arm_conf):
             loc_tensor = l(x)
-            arm_loc_align.append(loc_tensor.detach())
             arm_loc.append(loc_tensor.permute(0, 2, 3, 1).contiguous())
             arm_conf.append(c(x).permute(0, 2, 3, 1).contiguous())
-        
-        # calculate init ponits of offset before shape change
-        adm_points = self.get_ponits(arm_loc_align)
-        
+                
         arm_loc = torch.cat([o.view(o.size(0), -1) for o in arm_loc], 1)
         arm_conf = torch.cat([o.view(o.size(0), -1) for o in arm_conf], 1)
 
@@ -255,36 +233,20 @@ class RefineDet(nn.Module):
             tcb_source_new.append(feature)
 
         # apply alignconv to source layers
-        dcn_base_offset = self.dcn_base_offset.type_as(x)
-        for (x, ponits, l1, l2, l3, c1, c2, c3) in zip(
-            tcb_source_new, adm_points, 
-            self.adm_loc1, self.adm_loc2, self.adm_loc3, 
-            self.adm_conf1, self.adm_conf2, self.adm_conf3
-            ):
-            loc = []
-            conf = []
-            dcn_offset1 = ponits[:, 0, ...].contiguous() - dcn_base_offset
-            dcn_offset2 = ponits[:, 1, ...].contiguous() - dcn_base_offset
-            dcn_offset3 = ponits[:, 2, ...].contiguous() - dcn_base_offset
-            loc.append(l1(x, dcn_offset1))
-            loc.append(l2(x, dcn_offset2))
-            loc.append(l3(x, dcn_offset3))
-            conf.append(c1(x, dcn_offset1))
-            conf.append(c2(x, dcn_offset2))
-            conf.append(c3(x, dcn_offset3))
-            adm_loc.append(torch.cat(loc, 1).permute(0, 2, 3, 1).contiguous())
-            adm_conf.append(torch.cat(conf, 1).permute(0, 2, 3, 1).contiguous())
-        adm_loc = torch.cat([o.view(o.size(0), -1) for o in adm_loc], 1)
-        adm_conf = torch.cat([o.view(o.size(0), -1) for o in adm_conf], 1)
+        for (x, l, c) in zip(tcb_source_new, self.odm_loc, self.odm_conf):
+            odm_loc.append(l(x).permute(0, 2, 3, 1).contiguous())
+            odm_conf.append(c(x).permute(0, 2, 3, 1).contiguous())
+        odm_loc = torch.cat([o.view(o.size(0), -1) for o in odm_loc], 1)
+        odm_conf = torch.cat([o.view(o.size(0), -1) for o in odm_conf], 1)
 
         if self.phase == "test":
             output = (
                 arm_loc.view(arm_loc.size(0), -1, 4),           # arm loc preds
                 self.softmax(arm_conf.view(arm_conf.size(0), -1,
                              2)),                               # arm conf preds
-                adm_loc.view(adm_loc.size(0), -1, 4),           # adm loc preds
-                self.softmax(adm_conf.view(adm_conf.size(0), -1,
-                             self.num_classes)),                # adm conf preds
+                odm_loc.view(odm_loc.size(0), -1, 4),           # odm loc preds
+                self.softmax(odm_conf.view(odm_conf.size(0), -1,
+                             self.num_classes)),                # odm conf preds
                 feat_sizes
             )
         else:
@@ -292,50 +254,11 @@ class RefineDet(nn.Module):
                 attention_maps,
                 arm_loc.view(arm_loc.size(0), -1, 4),
                 arm_conf.view(arm_conf.size(0), -1, 2),
-                adm_loc.view(adm_loc.size(0), -1, 4),
-                adm_conf.view(adm_conf.size(0), -1, self.num_classes),
+                odm_loc.view(odm_loc.size(0), -1, 4),
+                odm_conf.view(odm_conf.size(0), -1, self.num_classes),
             )
         return output
 
-    def get_ponits(self, arm_loc):
-        return multi_apply(self.get_ponits_single, arm_loc)
-
-    # This fuction is modified from 
-    # https://github.com/open-mmlab/mmdetection/blob/master/mmdet/models/dense_heads/reppoints_head.py
-    def get_ponits_single(self, reg):
-        scale = self.anchor_stride_ratio / 2
-        anchors = [-scale, -scale, scale, scale]
-        ls = scale*sqrt(self.aspect_ratio)
-        ss = scale/sqrt(self.aspect_ratio)
-        anchors += [-ls, -ss, ls, ss]
-        anchors += [-ss, -ls, ss, ls]
-        previous_boxes = reg.new_tensor(anchors).view(1, 3, 4, 1, 1)
-
-        b, _, h, w = reg.shape
-        reg = reg.view(b, self.anchor_num, 4, h, w)
-
-        bxy = (previous_boxes[:, :, :2, ...] + previous_boxes[:, :, 2:, ...]) / 2.
-        bwh = (previous_boxes[:, :, 2:, ...] -
-               previous_boxes[:, :, :2, ...]).clamp(min=1e-6)
-        grid_topleft = bxy + bwh * reg[:, :, :2, ...] * self.variance[0] - 0.5 * bwh * torch.exp(
-            reg[:, :, 2:, ...]) * self.variance[1]
-        grid_wh = bwh * torch.exp(reg[:, :, 2:, ...]) * self.variance[1]
-        grid_left = grid_topleft[:, :, [0], ...]
-        grid_top = grid_topleft[:, :, [1], ...]
-        grid_width = grid_wh[:, :, [0], ...]
-        grid_height = grid_wh[:, :, [1], ...]
-        intervel = torch.tensor([(2 * i - 1) / (2 * self.dcn_kernel) for i in range(1, self.dcn_kernel + 1)]).view(
-            1, 1, self.dcn_kernel, 1, 1).type_as(reg)
-        grid_x = grid_left + grid_width * intervel
-        grid_x = grid_x.unsqueeze(2).repeat(1, 1, self.dcn_kernel, 1, 1, 1)
-        grid_x = grid_x.view(b, self.anchor_num, -1, h, w)
-        grid_y = grid_top + grid_height * intervel
-        grid_y = grid_y.unsqueeze(3).repeat(1, 1, 1, self.dcn_kernel, 1, 1)
-        grid_y = grid_y.view(b, self.anchor_num, -1, h, w)
-        grid_yx = torch.stack([grid_y, grid_x], dim=3)
-        grid_yx = grid_yx.view(b, self.anchor_num, -1, h, w)
-    
-        return grid_yx
 
     def init_weights(self, pretrained=None):
         if isinstance(pretrained, str):
@@ -356,16 +279,11 @@ class RefineDet(nn.Module):
         self.extras.apply(init_method)
         self.arm_loc.apply(init_method)
         self.arm_conf.apply(init_method)
+        self.odm_loc.apply(init_method)
+        self.odm_conf.apply(init_method)
         self.tcb0.apply(init_method)
         self.tcb1.apply(init_method)
         self.tcb2.apply(init_method)
-        # initialize deform conv layers with normal method
-        for adm_loc in (self.adm_loc1, self.adm_loc2, self.adm_loc3):
-            for m in adm_loc:
-                normal_init(m, std=0.01)
-        for adm_conf in (self.adm_conf1, self.adm_conf2, self.adm_conf3):
-            for m in adm_conf:
-                normal_init(m, std=0.01)
         # initialize attention head
         for m in self.cate_convs:
             normal_init(m.conv, std=0.01)
@@ -391,10 +309,6 @@ def init_method(m):
     elif isinstance(m, nn.BatchNorm2d):
         constant_init(m, 1)
 
-def multi_apply(func, *args, **kwargs):
-    pfunc = partial(func, **kwargs) if kwargs else func
-    map_results = map(pfunc, *args)
-    return tuple(map_results)
 
 # This function is derived from torchvision VGG make_layers()
 # https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
@@ -549,6 +463,7 @@ def build_refinedet(phase, size=320, num_classes=21, seg_num_grids=[36, 24, 16, 
     base_ = vgg(base[str(size)], 3, bn)
     extras_ = add_extras(extras[str(size)], 1024, bn)
     ARM_ = arm_multibox(arm[str(size)], mbox[str(size)])
-    ADM_ = adm_multibox(arm[str(size)], mbox[str(size)], num_classes)
+    # ADM_ = adm_multibox(arm[str(size)], mbox[str(size)], num_classes)
+    ODM_ = odm_multibox(arm[str(size)], mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
-    return RefineDet(phase, size, base_, extras_, ARM_, ADM_, TCB_, num_classes, seg_num_grids, bn)
+    return RefineDet(phase, size, base_, extras_, ARM_, ODM_, TCB_, num_classes, seg_num_grids, bn)
