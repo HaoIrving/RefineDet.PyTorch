@@ -28,6 +28,8 @@ python train_refinedet_ablation.py --num_workers 12 --lr 4e-3 --save_folder weig
 python train_refinedet_ablation.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_mh_4e3_01_640vggbn_wo_align_refine_fuse/ --ngpu 4 --batch_size 16 --model 640_vggbn -wofuse
 python train_refinedet_ablation.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_mh_4e3_01_640vggbn_wo_align_refine_fuse_at/ --ngpu 4 --batch_size 16 --model 640_vggbn -woat
 
+CUDA_VISIBLE_DEVICES=2,3 python train_refinedet_ablation.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_mh_4e3_01_640vggbn_wo_align_refine_fuse_at/ --ngpu 2 --batch_size 16 --model 640_vggbn -woat
+
 CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco_ablation.py --prefix weights/at1_mh_4e3_01_640vggbn_wo_align --model 640_vggbn -woalign
 CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco_ablation.py --prefix weights/at1_mh_4e3_01_640vggbn_wo_align_refine --model 640_vggbn -worefine
 CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco_ablation.py --prefix weights/at1_mh_4e3_01_640vggbn_wo_align_refine_fuse --model 640_vggbn -wofuse

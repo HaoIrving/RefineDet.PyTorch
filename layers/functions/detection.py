@@ -64,7 +64,6 @@ class Detect(Function):
         scores = scores.cpu().numpy()
 
         for j in range(1, self.num_classes):
-            # j = 0
             inds = np.where(scores[:, j] > self.confidence_threshold)[0]
             if len(inds) == 0:
                 continue
