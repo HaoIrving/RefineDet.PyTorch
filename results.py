@@ -57,9 +57,9 @@ ap: 0.5747, ap50: 0.9627, ap75: 0.6312, ap_s: 0.5295, ap_m: 0.6414, ap_l: 0.6492
 Best ap  : 0.5962 at epoch 240
 ap: 0.5962, ap50: 0.9602, ap75: 0.6796, ap_s: 0.5532, ap_m: 0.6603, ap_l: 0.6407
 at1_mh_4e3_01_640vggbn_wo_align_refine_fuse_at
-Best ap50: 0.9599 at epoch 285
-ap: 0.5982, ap50: 0.9599, ap75: 0.6904, ap_s: 0.5564, ap_m: 0.6599, ap_l: 0.6924
-Best ap  : 0.5995 at epoch 300
-ap: 0.5995, ap50: 0.9593, ap75: 0.6744, ap_s: 0.5624, ap_m: 0.6540, ap_l: 0.7067
+Best ap50: 0.9620 at epoch 265
+ap: 0.5935, ap50: 0.9620, ap75: 0.6732, ap_s: 0.5493, ap_m: 0.6623, ap_l: 0.6801
+Best ap  : 0.6003 at epoch 290
+ap: 0.6003, ap50: 0.9581, ap75: 0.6823, ap_s: 0.5614, ap_m: 0.6628, ap_l: 0.6634
 
 """

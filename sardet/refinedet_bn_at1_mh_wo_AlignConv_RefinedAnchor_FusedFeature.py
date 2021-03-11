@@ -11,6 +11,7 @@ from itertools import product as product
 from functools import partial
 from six.moves import map, zip
 from math import sqrt as sqrt
+import cv2
 # mmd
 from mmcv.ops import DeformConv2d
 from mmcv.cnn import normal_init, kaiming_init, constant_init, xavier_init, bias_init_with_prob, ConvModule
@@ -111,7 +112,7 @@ class RefineDet(nn.Module):
         self.grid_cate = nn.ModuleList(grid_cate)
         self.sigmoid = nn.Sigmoid()
 
-    def forward(self, x, ):
+    def forward(self, x, img_id=None, img_gt=None):
         """Applies network layers and ops on input image(s) x.
 
         Args:
@@ -195,7 +196,7 @@ class RefineDet(nn.Module):
             if not os.path.exists(save_dir):
                 os.mkdir(save_dir)
             for index, level in enumerate(attention_sources):
-                i = self.cfg[str(self.size)]['steps'][index]
+                i = self.cfg['steps'][index]
                 level = F.interpolate(level, size=(self.size, self.size), mode='bilinear') # bilinear, bicubic,nearest
                 level = level.squeeze(0)
                 level = level.cpu().numpy().copy()
