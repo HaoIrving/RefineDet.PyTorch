@@ -111,7 +111,7 @@ class RefineDet(nn.Module):
         self.grid_cate = nn.ModuleList(grid_cate)
         self.sigmoid = nn.Sigmoid()
 
-    def forward(self, x):
+    def forward(self, x, ):
         """Applies network layers and ops on input image(s) x.
 
         Args:
@@ -189,17 +189,27 @@ class RefineDet(nn.Module):
             cate_pred = self.sigmoid(cate_feat)
             attention_sources.append(cate_pred)
 
-        # if self.phase == 'test':
-        #     save_dir = './eval/attention_maps'
-        #     if not os.path.exists(save_dir):
-        #         os.mkdir(save_dir)
-        #     for index, level in enumerate(attention_sources):
-        #         i = self.cfg[str(self.size)]['steps'][index]
-        #         level = F.interpolate(level, size=(self.size, self.size), mode='bicubic') # bilinear, nearest
-        #         level = level.squeeze(0)
-        #         level = level.cpu().numpy().copy()
-        #         level = np.transpose(level, (1, 2, 0))
-        #         plt.imsave(os.path.join(save_dir, str(i) + '.png'), level[:,:,0])#, cmap='gray')
+        ## https://blog.csdn.net/weixin_41735859/article/details/106474768
+        if self.phase == 'test' and img_id is not None:
+            save_dir = './eval/attention_maps'
+            if not os.path.exists(save_dir):
+                os.mkdir(save_dir)
+            for index, level in enumerate(attention_sources):
+                i = self.cfg[str(self.size)]['steps'][index]
+                level = F.interpolate(level, size=(self.size, self.size), mode='bilinear') # bilinear, bicubic,nearest
+                level = level.squeeze(0)
+                level = level.cpu().numpy().copy()
+                level = np.transpose(level, (1, 2, 0))
+                # plt.imsave(os.path.join(save_dir, str(img_id) + '_' + str(i) + '.png'), level[:,:,0])#, cmap='gray')
+                
+                cam = np.maximum(level, 0)
+                cam -= np.min(cam)
+                cam = cam / cam.max()
+                heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
+                cam_img = 0.5 * heatmap + 0.5 * img_gt
+                save_path = os.path.join(save_dir, str(img_id) + '_' + str(i) + '.png')
+                # cv2.imwrite(save_path, heatmap)
+                cv2.imwrite(save_path, cam_img)
 
         # apply attention
         sources_new = list()
