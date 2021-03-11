@@ -550,7 +550,7 @@ if __name__ == '__main__':
         backbone_dict = dict(bn=True)
     elif model == '640_vggbn':
         if maxout:
-            from sardet.refinedet_bn_at1_mh_mxo import build_refinedet
+            from sardet.refinedet_bn_at1_mh_mxo1 import build_refinedet
         else:
             from sardet.refinedet_bn_at1_mh import build_refinedet
         args.input_size = str(640)

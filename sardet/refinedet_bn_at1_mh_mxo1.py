@@ -459,7 +459,7 @@ def add_extras(cfg, i, batch_norm=False):
 def arm_multibox(in_channels, anchor_nums):
     arm_loc_layers = []
     arm_conf_layers = []
-    for i, in_channel, anchor_num in zip(range(len(in_channels), in_channels, anchor_nums):
+    for i, in_channel, anchor_num in zip(range(len(in_channels)), in_channels, anchor_nums):
         arm_loc_layers += [nn.Conv2d(in_channel, anchor_num * 4, kernel_size=3, padding=1)]
         if i == 0:
             arm_conf_layers += [nn.Conv2d(in_channel, anchor_num * (3 + 1), kernel_size=3, padding=1)]
