@@ -65,8 +65,8 @@ parser.add_argument('--model', default='512_ResNet_101',
                     type=str, help='model name')
 parser.add_argument('--pretrained', action="store_true", default=False, 
                     help='Use pretrained backbone')
-parser.add_argument('-aw', '--at_weight', default=0.1, type=float,
-                    help='attention loss weight, 0.1 for focal loss, 1 for cross entropy loss')
+parser.add_argument('-aw', '--at_weight', default=1, type=float,
+                    help='attention loss weight, 1 for focal loss, 1 for cross entropy loss')
 parser.add_argument('-atsg', '--at_sigma', default=0.2, type=float,
                     help='attention loss grid sampling ratio, <1 means center sampling')
 parser.add_argument('-atce', '--at_ce', action="store_true", default=False, help='set attention loss as cross entropy')

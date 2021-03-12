@@ -533,7 +533,7 @@ if __name__ == '__main__':
     # prefix = 'weights/at1_mh_4e3_01_5125vggbn'  # sigma 0.2
     # prefix = 'weights/at1_mh_4e3_01_sigma1'
     # prefix = 'weights/at1_mh_4e3_1_ce_sigma1'
-    prefix = 'weights/at1_mh_4e3_1_ce_sigma02'
+    # prefix = 'weights/at1_mh_4e3_1_ce_sigma02'
     # prefix = 'weights/at1_mh2_4e3_1'
     # prefix = 'weights/at2_mh_4e3_03'
     # prefix = 'weights/at2_mh_4e3_01'
@@ -542,13 +542,15 @@ if __name__ == '__main__':
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
     if not os.path.exists(save_folder):
         os.mkdir(save_folder)
+    from utils.logger import Logger
+    sys.stdout = Logger(os.path.join(save_folder, 'eval.txt'))
     
     # args.show_image = True
-    args.vis_attention = True
+    # args.vis_attention = True
     
     maxout = args.maxout
     model = args.model
-    model = '512_vggbn'
+    # model = '512_vggbn'
     # model = '5125_vggbn'
     # model = '640_vggbn'
     # model = '512_ResNet_101'
@@ -608,8 +610,8 @@ if __name__ == '__main__':
     # args.multi_scale_test = True
 
     # load data
-    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sar')
-    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sar')
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
@@ -624,9 +626,9 @@ if __name__ == '__main__':
     # start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    # ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
-    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_245.pth') 
+    ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
+    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_245.pth') 
     # ToBeTested *= 5
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):

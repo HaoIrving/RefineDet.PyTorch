@@ -548,7 +548,7 @@ if __name__ == '__main__':
     # prefix = 'weights/tmp'
     # prefix = 'weights/at_2e3'
     # prefix = 'weights/at_4e3'
-    prefix = 'weights/at1_4e3_01'
+    # prefix = 'weights/at1_4e3_01'
     # prefix = 'weights/at1_4e3_05'
     # prefix = 'weights/at1_mh_4e3_1'
     # prefix = 'weights/best_at1_mh_4e3_01'  # sigma 0.2
@@ -573,7 +573,7 @@ if __name__ == '__main__':
     sys.stdout = Logger(os.path.join(save_folder, 'eval.txt'))
 
     # args.show_image = True
-    args.vis_attention = True
+    # args.vis_attention = True
 
     # args.wo_attention = True
     wo_attention = args.wo_attention
@@ -581,11 +581,11 @@ if __name__ == '__main__':
     wo_fused_feature = args.wo_fused_feature
     # args.wo_refined_anchor = True
     wo_refined_anchor = args.wo_refined_anchor
-    args.wo_alignconv = True
+    # args.wo_alignconv = True
     wo_alignconv = args.wo_alignconv
     maxout = args.maxout
     model = args.model
-    model = '512_vggbn'
+    # model = '512_vggbn'
     # model = '5125_vggbn'
     # model = '640_vggbn'
     # model = '512_ResNet_101'
@@ -593,8 +593,8 @@ if __name__ == '__main__':
     # model = '1024_ResNet_101'
     # model = '1024_ResNeXt_152'
     if model == '512_vggbn':
-        # from sardet.refinedet_bn_at1_mh import build_refinedet
-        from sardet.refinedet_bn_at1_sh import build_refinedet
+        from sardet.refinedet_bn_at1_mh import build_refinedet
+        # from sardet.refinedet_bn_at1_sh import build_refinedet
         args.input_size = str(512)
         backbone_dict = dict(bn=True)
     elif model == '5126_vggbn':
@@ -637,8 +637,8 @@ if __name__ == '__main__':
     # args.multi_scale_test = True
 
     # load data
-    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sar')
-    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sar')
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
@@ -656,10 +656,10 @@ if __name__ == '__main__':
     # start_epoch = 30; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    # ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
+    ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
     # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_240.pth') 
-    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_295.pth') 
+    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_295.pth') 
     # ToBeTested *= 5
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
