@@ -11,8 +11,8 @@ from six.moves import map, zip
 
 # solo
 from mmdet.models.builder import build_loss
-from mmdet import __version__
-assert __version__ == '1.0.0+0f0bb8b', 'You are using mmd env, solo set 0 as background label, \
+from mmdet import short_version
+assert short_version == '1.0.0', 'You are using mmd env, solo set 0 as background label, \
     while mmd set num_classes as bg label, revert the label when using mmd, otherwise will misusing focal loss.'
 
 def multi_apply(func, *args, **kwargs):
