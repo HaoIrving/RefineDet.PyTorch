@@ -34,11 +34,15 @@ class RefineDet(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, size, base, extras, ARM, ODM, TCB, num_classes, bn=True):
+    def __init__(self, phase, size, base, extras, ARM, ODM, TCB, num_classes, bn=True, detector=None):
         super(RefineDet, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
         self.cfg = (coco_refinedet, voc_refinedet)[num_classes == 21][str(size)]
+        self.priorbox = PriorBox(self.cfg)
+        with torch.no_grad():
+            self.priors = self.priorbox.forward()
+        
         self.size = size
         self.bn = bn
         if size != 512 and size != 320:
@@ -69,6 +73,7 @@ class RefineDet(nn.Module):
 
         if phase == 'test':
             self.softmax = nn.Softmax(dim=-1)
+            self.detect = detector
 
     def forward(self, x):
         """Applies network layers and ops on input image(s) x.
@@ -165,14 +170,15 @@ class RefineDet(nn.Module):
         odm_conf = torch.cat([o.view(o.size(0), -1) for o in odm_conf], 1)
 
         if self.phase == "test":
-            output = (
+            #print(loc, conf)
+            output = self.detect.forward(
                 arm_loc.view(arm_loc.size(0), -1, 4),           # arm loc preds
                 self.softmax(arm_conf.view(arm_conf.size(0), -1,
                              2)),                               # arm conf preds
                 odm_loc.view(odm_loc.size(0), -1, 4),           # odm loc preds
                 self.softmax(odm_conf.view(odm_conf.size(0), -1,
                              self.num_classes)),                # odm conf preds
-                feat_sizes
+                self.priors.type(type(x.data))                  # default boxes
             )
         else:
             output = (
@@ -180,6 +186,7 @@ class RefineDet(nn.Module):
                 arm_conf.view(arm_conf.size(0), -1, 2),
                 odm_loc.view(odm_loc.size(0), -1, 4),
                 odm_conf.view(odm_conf.size(0), -1, self.num_classes),
+                self.priors
             )
         return output
     
@@ -206,9 +213,9 @@ class RefineDet(nn.Module):
         self.tcb1.apply(init_method)
         self.tcb2.apply(init_method)
         # initialize deform conv layers with normal method
-        for m in odm_loc:
+        for m in self.odm_loc:
             normal_init(m, std=0.01)
-        for m in odm_conf:
+        for m in self.odm_conf:
             normal_init(m, std=0.01)
 
     def load_weights(self, base_file):
@@ -367,7 +374,7 @@ arm = {
     '896': [256, 512, 512, 1024, 512],
 }
 
-def build_refinedet(phase, size=320, num_classes=21, backbone_dict=dict(bn=True)):
+def build_refinedet(phase, size=320, num_classes=21, backbone_dict=dict(bn=True), detector=None):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
@@ -377,4 +384,4 @@ def build_refinedet(phase, size=320, num_classes=21, backbone_dict=dict(bn=True)
     ARM_ = arm_multibox(arm[str(size)], mbox[str(size)])
     ODM_ = odm_multibox(arm[str(size)], mbox[str(size)], num_classes)
     TCB_ = add_tcb(tcb[str(size)])
-    return RefineDet(phase, size, base_, extras_, ARM_, ODM_, TCB_, num_classes, bn)
+    return RefineDet(phase, size, base_, extras_, ARM_, ODM_, TCB_, num_classes, bn, detector)

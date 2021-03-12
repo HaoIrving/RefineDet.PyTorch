@@ -3,8 +3,7 @@ from utils.augmentations import SSDAugmentation
 from layers.modules import RefineDetMultiBoxLoss
 #from ssd import build_ssd
 from models.refinedet import build_refinedet
-# from models.s2rn import build_s2rn
-# from models.s2rnv3 import build_s2rn
+# from models.refinedet_bn import build_refinedet
 
 import os
 import sys
@@ -96,6 +95,9 @@ args.max_epoch = 300
 negpos_ratio = 3
 initial_lr = args.lr
 
+pretrained = None
+# pretrained = args.basenet
+
 def train():
     if args.visdom:
         import visdom
@@ -163,9 +165,7 @@ def train():
         # refinedet_net.conv7_Norm.apply(weights_init_relu)
         # refinedet_net.conv_extra_Norm.apply(weights_init_relu)
         refinedet_net.extras.apply(weights_init_relu)
-        
-        # refinedet_net.extras.apply(weights_init)
-        
+        # refinedet_net.extras.apply(weights_init)        
         refinedet_net.arm_loc.apply(weights_init)
         refinedet_net.arm_conf.apply(weights_init)
         refinedet_net.odm_loc.apply(weights_init)
@@ -174,6 +174,7 @@ def train():
         refinedet_net.tcb1.apply(weights_init)
         refinedet_net.tcb2.apply(weights_init)
     
+        # refinedet_net.init_weights(pretrained=pretrained)
 
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
