@@ -290,6 +290,7 @@ if __name__ == '__main__':
     # prefix = 'weights/lr_5e4'
     # prefix = 'weights/lr_1e3'
     prefix = 'weights/lr_2e3'
+    prefix = 'weights/2e3'
     # prefix = 'weights/lr_3e3'
     # prefix = 'weights/lr_4e3'
     # prefix = 'weights/srn_1e3'
@@ -310,8 +311,8 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
@@ -327,9 +328,9 @@ if __name__ == '__main__':
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_250.pth') 
+    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_250.pth') 
     # ToBeTested *= 5
 
     for index, model_path in enumerate(ToBeTested):
@@ -392,6 +393,12 @@ Best ap50: 0.9893 at epoch 225
 ap: 0.6393, ap50: 0.9893, ap75: 0.7521, ap_s: 0.5869, ap_m: 0.7125, ap_l: 0.7697
 Best ap  : 0.6500 at epoch 275
 ap: 0.6500, ap50: 0.9888, ap75: 0.7740, ap_s: 0.6026, ap_m: 0.7166, ap_l: 0.7605
+
+lr_2e3 b16
+Best ap50: 0.9829 at epoch 220
+ap: 0.6082, ap50: 0.9829, ap75: 0.6960, ap_s: 0.5546, ap_m: 0.6835, ap_l: 0.6684
+Best ap  : 0.6149 at epoch 245
+ap: 0.6149, ap50: 0.9804, ap75: 0.6972, ap_s: 0.5604, ap_m: 0.6877, ap_l: 0.6725
 
 
 lr_3e3
