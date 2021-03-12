@@ -232,18 +232,18 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
 
         # print('im_detect: {:d}/{:d} forward_nms_time{:.4f}s'.format(i + 1, num_images, _t['im_detect'].average_time))
         if args.show_image:
-            # boxes = all_boxes[1][i][:]
-            # for b in boxes:
-            #     b[0] *= xr
-            #     b[2] *= xr
-            #     b[1] *= yr
-            #     b[3] *= yr
-            #     if b[4] < args.vis_thres:
-            #         continue
-            #     b = list(map(int, b))
-            #     cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
-            #     cx = b[2]
-            #     cy = b[1] + 12
+            boxes = all_boxes[1][i].copy()
+            for b in boxes:
+                b[0] *= xr
+                b[2] *= xr
+                b[1] *= yr
+                b[3] *= yr
+                if b[4] < args.vis_thres:
+                    continue
+                b = list(map(int, b))
+                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
+                cx = b[2]
+                cy = b[1] + 12
                 # text = "{:.2f}".format(b[4])
                 # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
             # cv2.imshow('res', img_gt)
@@ -308,8 +308,8 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
@@ -326,7 +326,7 @@ if __name__ == '__main__':
     ToBeTested = []
     # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_250.pth') 
+    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
     # ToBeTested *= 5
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
@@ -367,10 +367,10 @@ if __name__ == '__main__':
     fig_name = 'ap_last10.png'
     metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    # plot_map(save_folder, ap_stats, metrics, legend, fig_name)
+    plot_map(save_folder, ap_stats, metrics, legend, fig_name)
 
-    # txt_log = prefix + '/log.txt'
-    # plot_loss(save_folder, txt_log)
+    txt_log = prefix + '/log.txt'
+    plot_loss(save_folder, txt_log)
 """
 refinedet
 lr_3e3
@@ -456,6 +456,11 @@ Best ap  : 0.6491 at epoch 295
 ap: 0.6491, ap50: 0.9890, ap75: 0.7612, ap_s: 0.5980, ap_m: 0.7160, ap_l: 0.8113
 
 2.0==cs fcos
+Best ap50: 0.9822 at epoch 245
+ap: 0.6127, ap50: 0.9822, ap75: 0.7062, ap_s: 0.5723, ap_m: 0.6759, ap_l: 0.6397
+Best ap  : 0.6204 at epoch 280
+ap: 0.6204, ap50: 0.9809, ap75: 0.7213, ap_s: 0.5717, ap_m: 0.6898, ap_l: 0.6503
+
 Best ap50: 0.9790 at epoch 240
 ap: 0.6124, ap50: 0.9790, ap75: 0.7034, ap_s: 0.5725, ap_m: 0.6739, ap_l: 0.6302
 Best ap  : 0.6135 at epoch 290
