@@ -11,10 +11,14 @@ from itertools import product as product
 from functools import partial
 from six.moves import map, zip
 from math import sqrt as sqrt
-# mmd
-from mmcv.ops import DeformConv2d
-# from mmdet.core import multi_apply
+try:
+    # mmd
+    from mmcv.ops import DeformConv2d
+except:
+    # solo
+    from mmdet.ops import DeformConv as DeformConv2d
 from mmcv.cnn import normal_init, kaiming_init, constant_init, xavier_init
+
 
 class RefineDet(nn.Module):
     """Single Shot Multibox Architecture

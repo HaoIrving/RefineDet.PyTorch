@@ -11,9 +11,18 @@ from itertools import product as product
 from functools import partial
 from six.moves import map, zip
 from math import sqrt as sqrt
-# mmd
-from mmcv.ops import DeformConv2d
-from mmcv.cnn import normal_init, kaiming_init, constant_init, xavier_init, bias_init_with_prob, ConvModule
+try:
+    # mmd
+    from mmcv.ops import DeformConv2d
+except:
+    # solo
+    from mmdet.ops import DeformConv as DeformConv2d
+try:
+    from mmcv.cnn import bias_init_with_prob, ConvModule
+except:
+    from mmdet.models.utils import bias_init_with_prob, ConvModule
+from mmcv.cnn import normal_init, kaiming_init, constant_init, xavier_init
+
 
 class RefineDet(nn.Module):
     """Single Shot Multibox Architecture

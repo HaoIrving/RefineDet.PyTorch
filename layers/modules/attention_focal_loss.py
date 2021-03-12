@@ -9,8 +9,11 @@ from ..box_utils import match, log_sum_exp
 from functools import partial
 from six.moves import map, zip
 
-# solo / mmd 
+# solo
 from mmdet.models.builder import build_loss
+from mmdet import __version__
+assert __version__ == '1.0.0+0f0bb8b', 'You are using mmd env, solo set 0 as background label, \
+    while mmd set num_classes as bg label, revert the label when using mmd, otherwise will misusing focal loss.'
 
 def multi_apply(func, *args, **kwargs):
     pfunc = partial(func, **kwargs) if kwargs else func

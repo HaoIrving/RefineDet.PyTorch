@@ -569,6 +569,8 @@ if __name__ == '__main__':
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
     if not os.path.exists(save_folder):
         os.mkdir(save_folder)
+    from utils.logger import Logger
+    sys.stdout = Logger(os.path.join(save_folder, 'eval.txt'))
 
     # args.show_image = True
     args.vis_attention = True

@@ -11,10 +11,11 @@ from data import voc_refinedet, coco_refinedet, MEANS
 from .weights_init import normal_init, bias_init_with_prob
 
 # mmd
-from mmcv.cnn import ConvModule
-
-# solo
-# from mmdet.models.utils import ConvModule
+try:
+    from mmcv.cnn import ConvModule
+except:
+    # solo
+    from mmdet.models.utils import ConvModule
 
 
 class RefineDet(nn.Module):

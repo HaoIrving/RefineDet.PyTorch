@@ -41,6 +41,7 @@ parser.add_argument('--cleanup', default=True, type=str2bool, help='Cleanup and 
 parser.add_argument('--input_size', default='512', choices=['320', '512'], type=str, help='RefineDet320 or RefineDet512')
 parser.add_argument('--retest', default=False, type=bool, help='test cache results')
 parser.add_argument('--show_image', action="store_true", default=False, help='show detection results')
+parser.add_argument('--vis_attention', action="store_true", default=False, help='show attention maps')
 parser.add_argument('--vis_thres', default=0.5, type=float, help='visualization_threshold')
 parser.add_argument('--prefix', default='weights/lr_5e4', type=str, help='File path to save results')
 parser.add_argument('--confidence_threshold', default=0.05, type=float, help='confidence_threshold')
@@ -48,7 +49,7 @@ parser.add_argument('--top_k', default=5000, type=int, help='top_k')
 parser.add_argument('--nms_threshold', default=0.3, type=float, help='nms_threshold')
 parser.add_argument('--keep_top_k', default=750, type=int, help='keep_top_k')
 parser.add_argument('-mstest', '--multi_scale_test', default=False, type=str2bool, help='multi scale test')
-parser.add_argument('--model', default='512_ResNet_101', type=str, help='model name')
+parser.add_argument('--model', default='640_vggbn', type=str, help='model name')
 parser.add_argument('-mo', '--maxout', action="store_true", default=False, help='use maxout for the first detection layer')
 args = parser.parse_args()
 
@@ -118,11 +119,9 @@ class Timer(object):
             return self.diff
 
 
-def vis_detection(im, target, cls_dets, save_folder, target_size, i):
-    h, w, _ = im.shape
+def put_gtbox(im_gt, target, h, w, target_size):
     xr = target_size / w
     yr = target_size / h
-    im_gt = cv2.resize(im, (target_size, target_size), interpolation=cv2.INTER_LINEAR).astype(np.uint8)
     for b in target:
         b[0] *= xr
         b[2] *= xr
@@ -134,6 +133,10 @@ def vis_detection(im, target, cls_dets, save_folder, target_size, i):
         # cy = b[1]
         # text = "ship"
         # cv2.putText(im_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
+    return im_gt
+
+
+def put_box(im_gt, cls_dets):
     boxes = cls_dets.copy()
     for b in boxes:
         b[0] *= xr
@@ -144,16 +147,45 @@ def vis_detection(im, target, cls_dets, save_folder, target_size, i):
             continue
         b = list(map(int, b))
         cv2.rectangle(im_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
-        cx = b[2]
-        cy = b[1] + 12
+        # cx = b[2]
+        # cy = b[1] + 12
         # text = "{:.2f}".format(b[4])
         # cv2.putText(im_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
+    return im_gt
+
+
+def vis_detection(im, target, cls_dets, save_folder, target_size, i):
+    h, w, _ = im.shape
+    im_gt = cv2.resize(im, (target_size, target_size), interpolation=cv2.INTER_LINEAR).astype(np.uint8)
+    im_gt = put_gtbox(im_gt, target, h, w, target_size)
+    im_gt = put_box(im_gt, cls_dets)
     # cv2.imshow('res', im_gt)
     # cv2.waitKey(0)
     save_gt_dir = os.path.join(save_folder, 'gt_im')
     if not os.path.exists(save_gt_dir):
         os.mkdir(save_gt_dir)
     cv2.imwrite(save_gt_dir + f'/{i}.png',im_gt, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+
+
+def im_detect_vis(net, im, target, i, target_size):
+    device = net.arm_conf[0].weight.device
+    h, w, _ = im.shape
+    scale = torch.Tensor([w, h, w, h])
+    scale = scale.to(device)
+    im_orig = im.astype(np.float32, copy=True)
+    im = cv2.resize(im_orig, (target_size, target_size), interpolation=cv2.INTER_LINEAR)
+    x = (im - MEANS).astype(np.float32)
+    x = x.transpose(2, 0, 1)
+    x = torch.from_numpy(x).unsqueeze(0)
+    x = x.to(device)
+
+    im_gt = put_gtbox(im, target, h, w, target_size)
+    arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x, i, im_gt)
+    priorbox = PriorBox(net.cfg, feat_sizes, (target_size, target_size), phase='test')
+    priors = priorbox.forward()
+    priors = priors.to(device)
+    det = detect.forward(arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
+    return det
 
 
 def im_detect(net, im, target_size):
@@ -448,7 +480,10 @@ def single_scale_test_net(target_size, save_folder, net, num_classes, dataset, d
     for i in range(num_images):
         im, target = dataset.pull_image(i)
         _t['im_detect'].tic()
-        det = im_detect(net, im, target_size)
+        if args.vis_attention:
+            det = im_detect_vis(net, im, target, i, target_size)
+        else:
+            det = im_detect(net, im, target_size)
         _t['im_detect'].toc()
 
         for j in range(1, num_classes):
@@ -498,7 +533,7 @@ if __name__ == '__main__':
     # prefix = 'weights/at1_mh_4e3_01_5125vggbn'  # sigma 0.2
     # prefix = 'weights/at1_mh_4e3_01_sigma1'
     # prefix = 'weights/at1_mh_4e3_1_ce_sigma1'
-    # prefix = 'weights/at1_mh_4e3_1_ce_sigma02'
+    prefix = 'weights/at1_mh_4e3_1_ce_sigma02'
     # prefix = 'weights/at1_mh2_4e3_1'
     # prefix = 'weights/at2_mh_4e3_03'
     # prefix = 'weights/at2_mh_4e3_01'
@@ -508,9 +543,12 @@ if __name__ == '__main__':
     if not os.path.exists(save_folder):
         os.mkdir(save_folder)
     
+    # args.show_image = True
+    args.vis_attention = True
+    
     maxout = args.maxout
     model = args.model
-    # model = '512_vggbn'
+    model = '512_vggbn'
     # model = '5125_vggbn'
     # model = '640_vggbn'
     # model = '512_ResNet_101'
@@ -568,11 +606,10 @@ if __name__ == '__main__':
     args.keep_top_k = 500
     args.vis_thres = 0.3
     # args.multi_scale_test = True
-    # args.show_image = True
 
     # load data
-    dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sar')
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sar')
+    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
@@ -587,9 +624,9 @@ if __name__ == '__main__':
     # start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
-    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_290.pth') 
+    # ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
+    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_245.pth') 
     # ToBeTested *= 5
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
