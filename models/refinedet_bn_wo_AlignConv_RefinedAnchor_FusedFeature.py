@@ -61,12 +61,6 @@ class RefineDet(nn.Module):
         self.odm_loc = nn.ModuleList(ODM[0])
         self.odm_conf = nn.ModuleList(ODM[1])
 
-        #self.tcb = nn.ModuleList(TCB)
-        self.tcb0 = nn.ModuleList(TCB[0])
-        self.tcb1 = nn.ModuleList(TCB[1])
-        self.tcb2 = nn.ModuleList(TCB[2])
-        self.step = len(self.cfg['feature_maps']) - 1
-
         if phase == 'test':
             self.softmax = nn.Softmax(dim=-1)
 
@@ -90,7 +84,6 @@ class RefineDet(nn.Module):
                     3: priorbox layers, Shape: [2,num_priors*4]
         """
         sources = list()
-        tcb_source = list()
         odm_loc = list()
         odm_conf = list()
         if self.phase == 'test':
