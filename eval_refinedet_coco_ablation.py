@@ -578,7 +578,7 @@ if __name__ == '__main__':
     sys.stdout = Logger(os.path.join(save_folder, 'eval.txt'))
 
     # args.show_image = True
-    args.vis_attention = True
+    # args.vis_attention = True
 
     # args.wo_attention = True
     wo_attention = args.wo_attention
