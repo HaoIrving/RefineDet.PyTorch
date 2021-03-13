@@ -51,23 +51,33 @@ Best ap50: 0.9695 at epoch 255
 ap: 0.6023, ap50: 0.9695, ap75: 0.6693, ap_s: 0.5739, ap_m: 0.6477, ap_l: 0.6699
 Best ap  : 0.6134 at epoch 290
 ap: 0.6134, ap50: 0.9662, ap75: 0.6995, ap_s: 0.5850, ap_m: 0.6564, ap_l: 0.6750
-at1_mh_4e3_01_640vggbn_wo_align_refine_fuse
+at1_mh_4e3_1_640vggbn_wo_align_refine_fuse
 Best ap50: 0.9626 at epoch 270
 ap: 0.5952, ap50: 0.9626, ap75: 0.6718, ap_s: 0.5587, ap_m: 0.6518, ap_l: 0.6572
 Best ap  : 0.5983 at epoch 280
 ap: 0.5983, ap50: 0.9586, ap75: 0.6828, ap_s: 0.5638, ap_m: 0.6522, ap_l: 0.6641
-at1_mh_4e3_01_640vggbn_wo_align_refine_fuse_at
+at1_mh_4e3_1_640vggbn_wo_align_refine_fuse_at
 Best ap50: 0.9620 at epoch 265
 ap: 0.5935, ap50: 0.9620, ap75: 0.6732, ap_s: 0.5493, ap_m: 0.6623, ap_l: 0.6801
 Best ap  : 0.6003 at epoch 290
 ap: 0.6003, ap50: 0.9581, ap75: 0.6823, ap_s: 0.5614, ap_m: 0.6628, ap_l: 0.6634
 
+at1_mh_4e3_1_ce_640vggbn_wo_align
+Best ap50: 0.9826 at epoch 205
+ap: 0.6131, ap50: 0.9826, ap75: 0.6839, ap_s: 0.5809, ap_m: 0.6600, ap_l: 0.6373
+Best ap  : 0.6284 at epoch 275
+ap: 0.6284, ap50: 0.9724, ap75: 0.7297, ap_s: 0.5940, ap_m: 0.6791, ap_l: 0.6472
+at1_mh_4e3_1_ce_640vggbn_wo_align_refine
+Best ap50: 0.9739 at epoch 285
+ap: 0.6094, ap50: 0.9739, ap75: 0.6789, ap_s: 0.5729, ap_m: 0.6656, ap_l: 0.6995
+Best ap  : 0.6115 at epoch 295
+ap: 0.6115, ap50: 0.9719, ap75: 0.7029, ap_s: 0.5759, ap_m: 0.6684, ap_l: 0.6890
 at1_mh_4e3_1_ce_640vggbn_wo_align_refine_fuse
 Best ap50: 0.9618 at epoch 295
 ap: 0.6016, ap50: 0.9618, ap75: 0.6805, ap_s: 0.5665, ap_m: 0.6541, ap_l: 0.6863
 Best ap  : 0.6021 at epoch 280
 ap: 0.6021, ap50: 0.9607, ap75: 0.6743, ap_s: 0.5689, ap_m: 0.6547, ap_l: 0.6882
-at1_mh_4e3_01_640vggbn_wo_align_refine_fuse_at
+at1_mh_4e3_1_640vggbn_wo_align_refine_fuse_at
 Best ap50: 0.9620 at epoch 265
 ap: 0.5935, ap50: 0.9620, ap75: 0.6732, ap_s: 0.5493, ap_m: 0.6623, ap_l: 0.6801
 Best ap  : 0.6003 at epoch 290

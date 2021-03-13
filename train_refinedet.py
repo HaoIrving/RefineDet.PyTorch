@@ -71,6 +71,9 @@ parser.add_argument('-atsg', '--at_sigma', default=0.2, type=float,
                     help='attention loss grid sampling ratio, <1 means center sampling')
 parser.add_argument('-atce', '--at_ce', action="store_true", default=False, help='set attention loss as cross entropy')
 parser.add_argument('-mo', '--maxout', action="store_true", default=False, help='use maxout for the first detection layer')
+parser.add_argument('-dcn', '--dcn_head', action="store_true", default=False, help=' ')
+parser.add_argument('-sl', '--shallow_head', action="store_true", default=False, help=' ')
+parser.add_argument('-at2', '--at2', action="store_true", default=False, help=' ')
 args = parser.parse_args()
 
 
@@ -89,6 +92,9 @@ if not os.path.exists(args.save_folder):
 
 sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
+args.at2 = True
+args.dcn_head = True
+
 maxout = args.maxout
 # maxout = True
 att_loss_weight = args.at_weight
@@ -98,7 +104,7 @@ model = args.model
 # model = '512_ResNet_50'
 # model = '512_vggbn'
 # model = '5125_vggbn'
-# model = '640_vggbn'
+model = '640_vggbn'
 # model = '512_ResNet_101'
 # model = '1024_ResNet_101'
 # model = '1024_ResNeXt_152'
@@ -162,6 +168,16 @@ elif model == '640_vggbn':
         from sardet.refinedet_bn_at1_mh_mxo1 import build_refinedet
     else:
         from sardet.refinedet_bn_at1_mh import build_refinedet
+    if args.dcn_head:
+        from sardet.refinedet_bn_at1_d_mh import build_refinedet
+    if args.shallow_head:
+        from sardet.refinedet_bn_at1_d_mh_shallow import build_refinedet
+    if args.at2:
+        from sardet.refinedet_bn_at2_mh import build_refinedet
+        if args.dcn_head:
+            from sardet.refinedet_bn_at2_d_mh import build_refinedet
+        if args.shallow_head:
+            from sardet.refinedet_bn_at2_d_mh_shallow import build_refinedet
     args.input_size = str(640)
     backbone_dict = dict(bn=True)
     if pretrained:

@@ -140,7 +140,7 @@ class RefineDet(nn.Module):
         # attention head
         self.lvl_num = len(self.cfg['feature_maps'])
         self.seg_num_grids = seg_num_grids
-        self.in_channels = arm[str(size)]
+        self.in_channels = [256] * self.lvl_num 
         self.seg_feat_channels = 256
         self.stacked_convs = 1
         self._init_solo_layers()
