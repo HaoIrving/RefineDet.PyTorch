@@ -127,24 +127,8 @@ class RefineDet(nn.Module):
                 if self.phase == 'test':
                     feat_sizes.append(x.shape[2:])
 
-        # calculate TCB features
-        p = None
-        for k, v in enumerate(sources[::-1]):
-            s = v
-            for i in range(3):
-                s = self.tcb0[(self.step-k)*3 + i](s)
-            if k != 0:
-                u = p
-                u = self.tcb1[self.step-k](u)
-                s += u
-            for i in range(3):
-                s = self.tcb2[(self.step-k)*3 + i](s)
-            p = s
-            tcb_source.append(s)
-        tcb_source.reverse()
-
         # apply ODM to source layers
-        for (x, l, c) in zip(tcb_source, self.odm_loc, self.odm_conf):
+        for (x, l, c) in zip(sources, self.odm_loc, self.odm_conf):
             odm_loc.append(l(x).permute(0, 2, 3, 1).contiguous())
             odm_conf.append(c(x).permute(0, 2, 3, 1).contiguous())
         odm_loc = torch.cat([o.view(o.size(0), -1) for o in odm_loc], 1)

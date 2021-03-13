@@ -12,7 +12,7 @@ from torch.autograd import Variable
 from data import COCOroot, MEANS, COCODetection
 import torch.utils.data as data
 
-from layers import Detect_RefineDet
+from layers import Detect_RefineDet, Detect
 from utils.nms_wrapper import nms, soft_nms
 from layers import PriorBox
 from plot_curve import plot_map, plot_loss
@@ -47,7 +47,10 @@ parser.add_argument('--top_k', default=5000, type=int, help='top_k')
 parser.add_argument('--nms_threshold', default=0.3, type=float, help='nms_threshold')
 parser.add_argument('--keep_top_k', default=750, type=int, help='keep_top_k')
 parser.add_argument('-mstest', '--multi_scale_test', default=False, type=str2bool, help='multi scale test')
-parser.add_argument('--model', default='512_ResNet_101', type=str, help='model name')
+parser.add_argument('--model', default='640_vggbn', type=str, help='model name')
+parser.add_argument('-woalign', '--wo_alignconv', action="store_true", default=False, help=' ')
+parser.add_argument('-worefine', '--wo_refined_anchor', action="store_true", default=False, help=' ')
+parser.add_argument('-wofuse', '--wo_fused_feature', action="store_true", default=False, help=' ')
 args = parser.parse_args()
 
 
@@ -166,11 +169,17 @@ def im_detect(net, im, target_size):
     x = torch.from_numpy(x).unsqueeze(0)
     x = x.to(device)
 
-    arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x)
+    if args.wo_refined_anchor:
+        adm_loc, adm_conf, feat_sizes = net(x)
+    else:
+        arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x)
     priorbox = PriorBox(net.cfg, feat_sizes, (target_size, target_size), phase='test')
     priors = priorbox.forward()
     priors = priors.to(device)
-    det = detect.forward(arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
+    if args.wo_refined_anchor:
+        det = detect.forward(adm_loc, adm_conf, priors, scale)
+    else:
+        det = detect.forward(arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
     return det
 
 
@@ -488,7 +497,29 @@ if __name__ == '__main__':
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
     
+    prefix = args.prefix
+    # prefix = 'weights/align_2e3_512res50'
+    # prefix = 'weights/align_1e3_512res101'
+    # prefix = 'weights/align_4e3'
+    
+    # prefix = 'weights/align_4e3_5l'
+    # prefix = 'weights/align_2e3'
+    save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
+    if not os.path.exists(save_folder):
+        os.mkdir(save_folder)
+    from utils.logger import Logger
+    sys.stdout = Logger(os.path.join(save_folder, 'eval.txt'))
+
+    # args.show_image = True
+
+    # args.wo_fused_feature = True
+    wo_fused_feature = args.wo_fused_feature
+    # args.wo_refined_anchor = True
+    wo_refined_anchor = args.wo_refined_anchor
+    # args.wo_alignconv = True
+    wo_alignconv = args.wo_alignconv
     model = args.model
+    # model = '640_vggbn'
     # model = '512_vggbn'
     # model = '512_ResNet_101'
     # model = '512_ResNet_50'
@@ -514,6 +545,17 @@ if __name__ == '__main__':
         from models.refinedet_bn import build_refinedet
         args.input_size = str(512)
         backbone_dict = dict(bn=True)
+    elif model == '640_vggbn':
+        from models.refinedet_bn import build_refinedet
+        if wo_alignconv:
+            from models.refinedet_bn_wo_AlignConv import build_refinedet
+        if wo_refined_anchor:
+            from models.refinedet_bn_wo_AlignConv_RefinedAnchor import build_refinedet
+        if wo_fused_feature:
+            from models.refinedet_bn_wo_AlignConv_RefinedAnchor_FusedFeature import build_refinedet
+            args.wo_refined_anchor = True
+        args.input_size = str(640)
+        backbone_dict = dict(bn=True)
     
     num_classes = 2 
     objectness_threshold = 0.01
@@ -522,22 +564,8 @@ if __name__ == '__main__':
     args.confidence_threshold = 0.01
     args.top_k = 1000
     args.keep_top_k = 500
-    # args.multi_scale_test = True
-
-    # args.cuda = False
-    # args.retest = True
-    # args.show_image = True
     args.vis_thres = 0.3
-    prefix = args.prefix
-    # prefix = 'weights/align_2e3_512res50'
-    prefix = 'weights/align_1e3_512res101'
-    # prefix = 'weights/align_4e3'
-    
-    # prefix = 'weights/align_4e3_5l'
-    # prefix = 'weights/align_2e3'
-    save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
-    if not os.path.exists(save_folder):
-        os.mkdir(save_folder)
+    # args.multi_scale_test = True
 
     # load data
     dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sarship')
@@ -549,7 +577,10 @@ if __name__ == '__main__':
     load_to_cpu = not args.cuda
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
-    detect = Detect_RefineDet(num_classes, int(args.input_size), 0, objectness_threshold, confidence_threshold=args.confidence_threshold, nms_threshold=args.nms_threshold, top_k=args.top_k, keep_top_k=args.keep_top_k)
+    if args.wo_refined_anchor:
+        detect = Detect(          num_classes, int(args.input_size), 0,                       confidence_threshold=args.confidence_threshold, nms_threshold=args.nms_threshold, top_k=args.top_k, keep_top_k=args.keep_top_k)
+    else:
+        detect = Detect_RefineDet(num_classes, int(args.input_size), 0, objectness_threshold, confidence_threshold=args.confidence_threshold, nms_threshold=args.nms_threshold, top_k=args.top_k, keep_top_k=args.keep_top_k)
     net = build_refinedet('test', int(args.input_size), num_classes, backbone_dict) 
 
     # test multi models, to filter out the best model.
