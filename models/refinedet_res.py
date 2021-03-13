@@ -11,8 +11,12 @@ from itertools import product as product
 from functools import partial
 from six.moves import map, zip
 from math import sqrt as sqrt
-# mmd
-from mmcv.ops import DeformConv2d
+try:
+    # mmd
+    from mmcv.ops import DeformConv2d
+except:
+    # solo
+    from mmdet.ops import DeformConv as DeformConv2d
 # from mmdet.core import multi_apply
 from mmcv.cnn import normal_init, kaiming_init, constant_init, xavier_init
 
@@ -332,7 +336,12 @@ def resnet(backbone_dict):
 def add_extras(size, in_channels, base_, backbone_dict):
     _type = backbone_dict['type']
     # Extra layers added to ResNet for feature scaling
-    from mmdet.models.utils import ResLayer
+    try:
+        # mmd
+        from mmdet.models.utils import ResLayer
+    except:
+        # solo
+        from mmdet.models import ResLayer
     if _type == 'ResNet':
         from mmdet.models.backbones.resnet import Bottleneck
         res6 = ResLayer(

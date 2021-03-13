@@ -584,8 +584,8 @@ if __name__ == '__main__':
     net = build_refinedet('test', int(args.input_size), num_classes, backbone_dict) 
 
     # test multi models, to filter out the best model.
-    start_epoch = 10; step = 10
-    # start_epoch = 200; step = 5
+    # start_epoch = 10; step = 10
+    start_epoch = 200; step = 5
     ToBeTested = []
     ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 

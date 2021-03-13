@@ -37,7 +37,7 @@ def plot_loss(save_folder, txt_log):
     
     print(f'save curve to: {out}')
     plt.savefig(out)
-    plt.show()
+    # plt.show()
     plt.cla()
 
 
@@ -64,7 +64,7 @@ def plot_map(save_folder, ap_stats, metrics, legend, fig_name):
     
     print(f'save curve to: {out}')
     plt.savefig(out)
-    plt.show()
+    # plt.show()
     plt.cla()
 
 
