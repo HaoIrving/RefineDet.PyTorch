@@ -553,11 +553,16 @@ if __name__ == '__main__':
     # prefix = 'weights/at1_mh_4e3_1'
     # prefix = 'weights/best_at1_mh_4e3_01'  # sigma 0.2
     # prefix = 'weights/at1_mh_4e3_01_5125vggbn'  # sigma 0.2
-    # prefix = 'weights/at1_mh_4e3_01_640vggbn'  # sigma 0.2
-    # prefix = 'weights/at1_mh_4e3_01_640vggbn_wo_align'  # sigma 0.2
-    # prefix = 'weights/at1_mh_4e3_01_640vggbn_wo_align_refine'  # sigma 0.2
-    # prefix = 'weights/at1_mh_4e3_01_640vggbn_wo_align_refine_fuse'  # sigma 0.2
-    # prefix = 'weights/at1_mh_4e3_01_640vggbn_wo_align_refine_fuse_at'  # sigma 0.2
+    # prefix = 'weights/at1_mh_4e3_1_640vggbn'  # sigma 0.2
+    # prefix = 'weights/at1_mh_4e3_1_640vggbn_wo_align'  # sigma 0.2
+    # prefix = 'weights/at1_mh_4e3_1_640vggbn_wo_align_refine'  # sigma 0.2
+    # prefix = 'weights/at1_mh_4e3_1_640vggbn_wo_align_refine_fuse'  # sigma 0.2
+    # prefix = 'weights/at1_mh_4e3_1_640vggbn_wo_align_refine_fuse_at'  # sigma 0.2
+    # prefix = 'weights/at1_mh_4e3_1_ce_640vggbn'  # sigma 0.2
+    # prefix = 'weights/at1_mh_4e3_1_ce_640vggbn_wo_align'  # sigma 0.2
+    # prefix = 'weights/at1_mh_4e3_1_ce_640vggbn_wo_align_refine'  # sigma 0.2
+    # prefix = 'weights/at1_mh_4e3_1_ce_640vggbn_wo_align_refine_fuse'  # sigma 0.2
+    # prefix = 'weights/at1_mh_4e3_1_ce_640vggbn_wo_align_refine_fuse_at'  # sigma 0.2
     # prefix = 'weights/at1_mh_4e3_01_sigma1'
     # prefix = 'weights/at1_mh_4e3_1_ce_sigma1'
     # prefix = 'weights/at1_mh_4e3_1_ce_sigma02'
@@ -573,7 +578,7 @@ if __name__ == '__main__':
     sys.stdout = Logger(os.path.join(save_folder, 'eval.txt'))
 
     # args.show_image = True
-    # args.vis_attention = True
+    args.vis_attention = True
 
     # args.wo_attention = True
     wo_attention = args.wo_attention
@@ -659,7 +664,7 @@ if __name__ == '__main__':
     ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
     # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_240.pth') 
-    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_295.pth') 
+    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_280.pth') 
     # ToBeTested *= 5
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
