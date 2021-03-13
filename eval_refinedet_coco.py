@@ -51,6 +51,9 @@ parser.add_argument('--keep_top_k', default=750, type=int, help='keep_top_k')
 parser.add_argument('-mstest', '--multi_scale_test', default=False, type=str2bool, help='multi scale test')
 parser.add_argument('--model', default='640_vggbn', type=str, help='model name')
 parser.add_argument('-mo', '--maxout', action="store_true", default=False, help='use maxout for the first detection layer')
+parser.add_argument('-dcn', '--dcn_head', action="store_true", default=False, help=' ')
+parser.add_argument('-sl', '--shallow_head', action="store_true", default=False, help=' ')
+parser.add_argument('-at2', '--at2', action="store_true", default=False, help=' ')
 args = parser.parse_args()
 
 
@@ -593,6 +596,16 @@ if __name__ == '__main__':
             from sardet.refinedet_bn_at1_mh_mxo1 import build_refinedet
         else:
             from sardet.refinedet_bn_at1_mh import build_refinedet
+        if args.dcn_head:
+            from sardet.refinedet_bn_at1_d_mh import build_refinedet
+        if args.shallow_head:
+            from sardet.refinedet_bn_at1_d_mh_shallow import build_refinedet
+        if args.at2:
+            from sardet.refinedet_bn_at2_mh import build_refinedet
+            if args.dcn_head:
+                from sardet.refinedet_bn_at2_d_mh import build_refinedet
+            if args.shallow_head:
+                from sardet.refinedet_bn_at2_d_mh_shallow import build_refinedet
         args.input_size = str(640)
         backbone_dict = dict(bn=True)
 

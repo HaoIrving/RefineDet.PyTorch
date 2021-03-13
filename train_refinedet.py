@@ -92,8 +92,8 @@ if not os.path.exists(args.save_folder):
 
 sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
-args.at2 = True
-args.dcn_head = True
+# args.at2 = True
+# args.dcn_head = True
 
 maxout = args.maxout
 # maxout = True
@@ -104,7 +104,7 @@ model = args.model
 # model = '512_ResNet_50'
 # model = '512_vggbn'
 # model = '5125_vggbn'
-model = '640_vggbn'
+# model = '640_vggbn'
 # model = '512_ResNet_101'
 # model = '1024_ResNet_101'
 # model = '1024_ResNeXt_152'
