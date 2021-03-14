@@ -28,18 +28,18 @@
 
 
 ### dcn head ###
-# python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_d_mh_4e3_1_ce_640vggbn/ --ngpu 4 --batch_size 16 --model 640_vggbn -atce -dcn
-# CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at1_d_mh_4e3_1_ce_640vggbn --model 640_vggbn -dcn
+python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_d_mh_4e3_1_ce_640vggbn/ --ngpu 4 --batch_size 16 --model 640_vggbn -atce -dcn
+CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at1_d_mh_4e3_1_ce_640vggbn --model 640_vggbn -dcn
 
-# python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_d_mh_sl_4e3_1_ce_640vggbn/ --ngpu 4 --batch_size 16 --model 640_vggbn -atce -sl
-# CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at1_d_mh_sl_4e3_1_ce_640vggbn --model 640_vggbn -sl
+python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_d_mh_sl_4e3_1_ce_640vggbn/ --ngpu 4 --batch_size 16 --model 640_vggbn -atce -sl
+CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at1_d_mh_sl_4e3_1_ce_640vggbn --model 640_vggbn -sl
 
-python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at2_mh_4e3_1_ce_640vggbn/ --ngpu 4 --batch_size 16 --model 640_vggbn -atce -at2
-CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at2_mh_4e3_1_ce_640vggbn --model 640_vggbn -at2
+# python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at2_mh_4e3_1_ce_640vggbn/ --ngpu 4 --batch_size 16 --model 640_vggbn -atce -at2
+# CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at2_mh_4e3_1_ce_640vggbn --model 640_vggbn -at2
 
 
-python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at2_d_mh_4e3_1_ce_640vggbn/ --ngpu 4 --batch_size 16 --model 640_vggbn -atce -dcn -at2
-CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at2_d_mh_4e3_1_ce_640vggbn --model 640_vggbn -dcn -at2
+# python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at2_d_mh_4e3_1_ce_640vggbn/ --ngpu 4 --batch_size 16 --model 640_vggbn -atce -dcn -at2
+# CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at2_d_mh_4e3_1_ce_640vggbn --model 640_vggbn -dcn -at2
 
-python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at2_d_mh_sl_4e3_1_ce_640vggbn/ --ngpu 4 --batch_size 16 --model 640_vggbn -atce -sl -at2
-CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at2_d_mh_sl_4e3_1_ce_640vggbn --model 640_vggbn -sl -at2
+# python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at2_d_mh_sl_4e3_1_ce_640vggbn/ --ngpu 4 --batch_size 16 --model 640_vggbn -atce -sl -at2
+# CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at2_d_mh_sl_4e3_1_ce_640vggbn --model 640_vggbn -sl -at2
