@@ -312,12 +312,12 @@ def adm_multibox(level_channels, anchor_nums, num_classes):
         (adm_loc_layers1, adm_loc_layers2, adm_loc_layers3), 
         (adm_conf_layers1, adm_conf_layers2, adm_conf_layers3))
 
-def odm_multibox(level_channels, anchor_nums, num_classes):
+def odm_multibox(in_channels, anchor_nums, num_classes):
     odm_loc_layers = []
     odm_conf_layers = []
-    for i in range(len(level_channels)):
-        odm_loc_layers += [nn.Conv2d(256, anchor_nums[i] * 4, kernel_size=3, padding=1)]
-        odm_conf_layers += [nn.Conv2d(256, anchor_nums[i] * num_classes, kernel_size=3, padding=1)]
+    for in_channel, anchor_num in zip(in_channels, anchor_nums):
+        odm_loc_layers += [nn.Conv2d(in_channel, anchor_num * 4, kernel_size=3, padding=1)]
+        odm_conf_layers += [nn.Conv2d(in_channel, anchor_num * num_classes, kernel_size=3, padding=1)]
     return (odm_loc_layers, odm_conf_layers)
 
 def add_tcb(cfg):
