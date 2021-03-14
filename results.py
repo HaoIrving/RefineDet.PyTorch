@@ -46,6 +46,21 @@ Best ap50: 0.9761 at epoch 240
 ap: 0.6347, ap50: 0.9761, ap75: 0.7345, ap_s: 0.6025, ap_m: 0.6785, ap_l: 0.6899
 Best ap  : 0.6369 at epoch 245
 ap: 0.6369, ap50: 0.9743, ap75: 0.7322, ap_s: 0.5978, ap_m: 0.6890, ap_l: 0.6982
+align_4e3_640vggbn_wo_align
+Best ap50: 0.9814 at epoch 285
+ap: 0.6330, ap50: 0.9814, ap75: 0.7398, ap_s: 0.5923, ap_m: 0.6913, ap_l: 0.6707
+Best ap  : 0.6330 at epoch 285
+ap: 0.6330, ap50: 0.9814, ap75: 0.7398, ap_s: 0.5923, ap_m: 0.6913, ap_l: 0.6707
+align_4e3_640vggbn_wo_align_refine
+Best ap50: 0.9682 at epoch 285
+ap: 0.6140, ap50: 0.9682, ap75: 0.7092, ap_s: 0.5767, ap_m: 0.6705, ap_l: 0.6879
+Best ap  : 0.6153 at epoch 235
+ap: 0.6153, ap50: 0.9671, ap75: 0.7185, ap_s: 0.5843, ap_m: 0.6639, ap_l: 0.6688
+align_4e3_640vggbn_wo_align_refine_fuse
+Best ap50: 0.9631 at epoch 295
+ap: 0.5975, ap50: 0.9631, ap75: 0.6700, ap_s: 0.5551, ap_m: 0.6636, ap_l: 0.6329
+Best ap  : 0.6015 at epoch 290
+ap: 0.6015, ap50: 0.9614, ap75: 0.6828, ap_s: 0.5636, ap_m: 0.6596, ap_l: 0.6436
 
 at1_mh_4e3_1_ce_640vggbn
 Best ap50: 0.9849 at epoch 215
