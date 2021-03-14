@@ -158,7 +158,10 @@ def vis_detection(im, target, cls_dets, save_folder, target_size, i):
 
 
 def im_detect(net, im, target_size):
-    device = net.arm_conf[0].weight.device
+    try:
+        device = net.arm_conf[0].weight.device
+    except:
+        device = net.odm_conf[0].weight.device
     h, w, _ = im.shape
     scale = torch.Tensor([w, h, w, h])
     scale = scale.to(device)
