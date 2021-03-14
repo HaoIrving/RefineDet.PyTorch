@@ -210,9 +210,6 @@ class RefineDet(nn.Module):
         self.extras.apply(init_method)
         self.odm_loc.apply(init_method)
         self.odm_conf.apply(init_method)
-        self.tcb0.apply(init_method)
-        self.tcb1.apply(init_method)
-        self.tcb2.apply(init_method)
 
     def load_weights(self, base_file):
         other, ext = os.path.splitext(base_file)
