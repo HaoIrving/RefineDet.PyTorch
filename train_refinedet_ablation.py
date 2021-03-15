@@ -229,6 +229,9 @@ def train():
 
     if args.resume_epoch > 0:
         start_iter = args.resume_epoch * epoch_size
+        for step in stepvalues:
+            if step < start_iter:
+                step_index += 1
     else:
         start_iter = 0
 
