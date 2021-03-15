@@ -227,7 +227,18 @@ def train():
     
     if args.resume:
         print('Resuming training, loading {}...'.format(args.resume))
-        refinedet_net.load_weights(args.resume)
+        state_dict = torch.load(args.resume)
+        # create new OrderedDict that does not contain `module.`
+        from collections import OrderedDict
+        new_state_dict = OrderedDict()
+        for k, v in state_dict.items():
+            head = k[:7]
+            if head == 'module.':
+                name = k[7:] # remove `module.`
+            else:
+                name = k
+            new_state_dict[name] = v
+        refinedet_net.load_state_dict(new_state_dict)
     else:
         print('Initializing weights...')
         refinedet_net.init_weights(pretrained=pretrained)
