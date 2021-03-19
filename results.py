@@ -92,6 +92,10 @@ ap: 0.6315, ap50: 0.9849, ap75: 0.7513, ap_s: 0.5938, ap_m: 0.6828, ap_l: 0.6688
 Best ap  : 0.6438 at epoch 280
 ap: 0.6438, ap50: 0.9761, ap75: 0.7669, ap_s: 0.6100, ap_m: 0.6898, ap_l: 0.6879
 at1_mh_4e3_1_ce_640vggbn_wo_align
+Best ap50: 0.9846 at epoch 235
+ap: 0.6227, ap50: 0.9846, ap75: 0.7259, ap_s: 0.5782, ap_m: 0.6931, ap_l: 0.6122
+Best ap  : 0.6356 at epoch 295
+ap: 0.6356, ap50: 0.9764, ap75: 0.7374, ap_s: 0.5973, ap_m: 0.6952, ap_l: 0.6611
 Best ap50: 0.9803 at epoch 290
 ap: 0.6324, ap50: 0.9803, ap75: 0.7437, ap_s: 0.5899, ap_m: 0.6919, ap_l: 0.6677
 Best ap  : 0.6336 at epoch 285
