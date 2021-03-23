@@ -278,16 +278,14 @@ if __name__ == '__main__':
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
     
-    # args.trained_model = 'weights/lr_1e3/RefineDet512_COCO_final.pth'
-    # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
-    args.show_image = True
-    args.vis_thres = 0.9
+    # args.show_image = True
+    args.vis_thres = 0.3
     prefix = args.prefix
-    prefix = 'weights/solo_2e3'
-    prefix = 'weights/solo_cs_2e3'
-    prefix = 'weights/solo_cs_fcos_2e3'
+    # prefix = 'weights/solo_2e3'
+    # prefix = 'weights/solo_cs_2e3'
+    # prefix = 'weights/solo_cs_fcos_2e3'
     # prefix = 'weights/tmp'
     # prefix = 'weights/solo_g8_2e3'
     # prefix = 'weights/solo_b32_2e3'
@@ -324,9 +322,9 @@ if __name__ == '__main__':
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
+    ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
+    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
     # ToBeTested *= 5
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path

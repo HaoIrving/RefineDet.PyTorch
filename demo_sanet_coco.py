@@ -33,7 +33,7 @@ def str2bool(v):
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Evaluation')
 parser.add_argument('--trained_model',
-                    default='weights/ssd300_mAP_77.43_v2.pth', type=str,
+                    default='RefineDet512_COCO_epoches_280.pth', type=str,
                     help='Trained state_dict file path to open')
 parser.add_argument('--save_folder', default='eval/', type=str,
                     help='File path to save results')
@@ -52,6 +52,7 @@ parser.add_argument('--input_size', default='512', choices=['320', '512'],
 parser.add_argument('--retest', default=False, type=bool,
                     help='test cache results')
 parser.add_argument('--show_image', action="store_true", default=False, help='show detection results')
+parser.add_argument('--save_detected', action="store_true", default=False, help='save detection results')
 parser.add_argument('--vis_thres', default=0.5, type=float, help='visualization_threshold')
 parser.add_argument('--prefix', default='weights/lr_5e4', type=str, help='File path to save results')
 
@@ -196,7 +197,8 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
                 # text = "ship"
                 # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
             _t['im_detect'].tic()
-            boxes, scores = net(x, i, img_gt)
+            # boxes, scores = net(x, i, img_gt)
+            boxes, scores = net(x)
         else:
             _t['im_detect'].tic()
             boxes, scores = net(x)
@@ -246,12 +248,14 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
                 cy = b[1] + 12
                 # text = "{:.2f}".format(b[4])
                 # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
-            # cv2.imshow('res', img_gt)
-            # cv2.waitKey(0)
-            save_gt_dir = os.path.join(save_folder, 'gt_img')
-            if not os.path.exists(save_gt_dir):
-                os.mkdir(save_gt_dir)
-            cv2.imwrite(save_gt_dir + f'/{i}.png',img_gt, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            if args.save_detected:
+                save_gt_dir = os.path.join(save_folder, 'gt_img')
+                if not os.path.exists(save_gt_dir):
+                    os.mkdir(save_gt_dir)
+                cv2.imwrite(save_gt_dir + f'/{i}.png',img_gt, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            else:
+                cv2.imshow('res', img_gt)
+                cv2.waitKey(0)
 
     # with open(det_file, 'wb') as f:
     #     pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
@@ -278,16 +282,14 @@ if __name__ == '__main__':
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
     
-    # args.trained_model = 'weights/lr_1e3/RefineDet512_COCO_final.pth'
-    # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
     args.show_image = True
-    args.vis_thres = 0.9
+    args.vis_thres = 0.3
     prefix = args.prefix
-    prefix = 'weights/solo_2e3'
-    prefix = 'weights/solo_cs_2e3'
-    prefix = 'weights/solo_cs_fcos_2e3'
+    # prefix = 'weights/solo_2e3'
+    # prefix = 'weights/solo_cs_2e3'
+    # prefix = 'weights/solo_cs_fcos_2e3'
     # prefix = 'weights/tmp'
     # prefix = 'weights/solo_g8_2e3'
     # prefix = 'weights/solo_b32_2e3'
@@ -324,10 +326,8 @@ if __name__ == '__main__':
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
-    # ToBeTested *= 5
+    ToBeTested.append(prefix + f'/{args.trained_model}') 
+    
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
@@ -343,31 +343,32 @@ if __name__ == '__main__':
                 BaseTransform(net.size, rgb_means, (2, 0, 1)), top_k, 
                 keep_top_k, confidence_threshold=confidence_threshold, nms_threshold=nms_threshold, AP_stats=ap_stats)
 
-    print(ap_stats)
-    res_file = os.path.join(save_folder, 'ap_stats.json')
+    print('Finished.')
+    # print(ap_stats)
+    # res_file = os.path.join(save_folder, 'ap_stats.json')
 
-    max_idx = np.argmax(np.asarray(ap_stats['ap50']))
-    print('Best ap50: {:.4f} at epoch {}'.format(ap_stats['ap50'][max_idx], ap_stats['epoch'][max_idx]))
-    print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
-        format(ap_stats['ap'][max_idx], ap_stats['ap50'][max_idx], ap_stats['ap75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
-    max_idx = np.argmax(np.asarray(ap_stats['ap']))
-    print('Best ap  : {:.4f} at epoch {}'.format(ap_stats['ap'][max_idx], ap_stats['epoch'][max_idx]))
-    print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
-        format(ap_stats['ap'][max_idx], ap_stats['ap50'][max_idx], ap_stats['ap75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
+    # max_idx = np.argmax(np.asarray(ap_stats['ap50']))
+    # print('Best ap50: {:.4f} at epoch {}'.format(ap_stats['ap50'][max_idx], ap_stats['epoch'][max_idx]))
+    # print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
+    #     format(ap_stats['ap'][max_idx], ap_stats['ap50'][max_idx], ap_stats['ap75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
+    # max_idx = np.argmax(np.asarray(ap_stats['ap']))
+    # print('Best ap  : {:.4f} at epoch {}'.format(ap_stats['ap'][max_idx], ap_stats['epoch'][max_idx]))
+    # print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
+    #     format(ap_stats['ap'][max_idx], ap_stats['ap50'][max_idx], ap_stats['ap75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
 
-    import json
-    print('Writing ap stats json to {}'.format(res_file))
-    with open(res_file, 'w') as fid:
-        json.dump(ap_stats, fid)
-    with open(res_file) as f:
-        ap_stats = json.load(f)
+    # import json
+    # print('Writing ap stats json to {}'.format(res_file))
+    # with open(res_file, 'w') as fid:
+    #     json.dump(ap_stats, fid)
+    # with open(res_file) as f:
+    #     ap_stats = json.load(f)
     
-    from plot_curve import plot_map, plot_loss
-    fig_name = 'ap.png'
-    fig_name = 'ap_last10.png'
-    metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    plot_map(save_folder, ap_stats, metrics, legend, fig_name)
+    # from plot_curve import plot_map, plot_loss
+    # fig_name = 'ap.png'
+    # fig_name = 'ap_last10.png'
+    # metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
+    # legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
+    # plot_map(save_folder, ap_stats, metrics, legend, fig_name)
 
-    txt_log = prefix + '/log.txt'
-    plot_loss(save_folder, txt_log)
+    # txt_log = prefix + '/log.txt'
+    # plot_loss(save_folder, txt_log)
