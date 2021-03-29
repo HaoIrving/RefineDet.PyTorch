@@ -93,15 +93,13 @@ class RefineDetMultiBoxLoss(nn.Module):
         loc_t.requires_grad = False
         conf_t.requires_grad = False
 
+        pos = conf_t > 0
         if self.use_ARM:
             if arm_conf_data is not None:
                 P = F.softmax(arm_conf_data, 2)
                 arm_conf_tmp = P[:,:,1]
                 object_score_index = arm_conf_tmp <= self.theta
-                pos = conf_t > 0
                 pos[object_score_index.data] = 0
-        else:
-            pos = conf_t > 0
 
         # Localization Loss (Smooth L1)
         # Shape: [batch,num_priors,4]
