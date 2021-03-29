@@ -132,6 +132,7 @@ class RefineDetMultiBoxLoss(nn.Module):
             loss_c = F.cross_entropy(conf_p, targets_weighted, reduction='sum')
         else:
             loss_c = torch.zeros(1)
+            num_pos = pos.long().sum(1, keepdim=True)
 
         # Sum of losses: L(x,c,l,g) = (Lconf(x, c) + αLloc(x,l,g)) / N
         # N = max(num_pos.data.sum().float(), 1)
