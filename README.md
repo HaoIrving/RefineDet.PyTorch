@@ -45,25 +45,16 @@ git clone https://github.com/HaoIrving/SSDD_coco.git
 To visualize the detected ships:
 
 ```Shell
-python demo_sanet_coco.py --prefix weights/tmp --trained_model RefineDet512_COCO_epoches_280.pth
+python demo_sanet_coco.py --prefix weights/tmp --trained_model RefineDet512_COCO_epoches_280.pth 
+python demo_sanet_coco.py --prefix weights/tmp --trained_model RefineDet512_COCO_epoches_280.pth --inshore
+python demo_sanet_coco.py --prefix weights/tmp --trained_model RefineDet512_COCO_epoches_280.pth --offshore
 
 # if you want the detected picture be saved: 
 python demo_sanet_coco.py --prefix weights/tmp --trained_model RefineDet512_COCO_epoches_280.pth --save_detected
+python demo_sanet_coco.py --prefix weights/tmp --trained_model RefineDet512_COCO_epoches_280.pth --save_detected --inshore
+python demo_sanet_coco.py --prefix weights/tmp --trained_model RefineDet512_COCO_epoches_280.pth --save_detected --offshore
 ```
-<!-- 
-## Training
-
-```Shell
-python train_sanet.py --num_workers 12 --lr 2e-3 --save_folder weights/tmp/ --batch_size 16
-```
-
-## Evaluation
-To evaluate a trained network:
-
-```Shell
-python eval_sanet_coco.py --prefix weights/tmp
-```
-the code will filter out the best model among the last 20 models. -->
+the picture will be saved at `./eval/tmp/gt_im`
 
 
 

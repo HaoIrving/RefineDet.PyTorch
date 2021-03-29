@@ -53,6 +53,8 @@ parser.add_argument('--retest', default=False, type=bool,
                     help='test cache results')
 parser.add_argument('--show_image', action="store_true", default=False, help='show detection results')
 parser.add_argument('--save_detected', action="store_true", default=False, help='save detection results')
+parser.add_argument('--inshore', action="store_true", default=False, help='inshore detection results')
+parser.add_argument('--offshore', action="store_true", default=False, help='offshore detection results')
 parser.add_argument('--vis_thres', default=0.5, type=float, help='visualization_threshold')
 parser.add_argument('--prefix', default='weights/lr_5e4', type=str, help='File path to save results')
 
@@ -310,9 +312,12 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
+    if args.inshore:
+        dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    elif args.offshore:
+        dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
+    else:
+        dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
