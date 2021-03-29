@@ -17,7 +17,7 @@ A higher performance [PyTorch](http://pytorch.org/) implementation of [RefineDet
 
 ## Major features
 - Original RefineDet model.
-- Align Convolution module proposed in RefineDet++, which is a good solution for the feature misalignment problem among 1.5 stage object detection methods.
+- Align Convolution module proposed in RefineDet++ is implemented by DeformConv with accurately calculated offset rather than learned, which is a good solution for the feature misalignment problem among 1.5 stage object detection methods.
 - Multi-scale test, which is modified from the original caffe implementation of RefineDet.
 - VGG backbone with bn layers to make the training more stable.
 - ResNet and ResNeXt backbone, which has been implemented fully, but the training is hard to converge for slightly large learning rate, sting working on this.
