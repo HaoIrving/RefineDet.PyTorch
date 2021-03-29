@@ -616,7 +616,7 @@ if __name__ == '__main__':
     target_size = cfg['min_dim']
     seg_num_grids = cfg['feature_maps']  # [64, 32, 16, 8]
     num_classes = cfg['num_classes']
-    confidence_map_threshold = 0.5
+    confidence_map_threshold = 0.0001
     objectness_threshold = 0.01
     args.nms_threshold = 0.49  # nms
     # args.nms_threshold = 0.45  # softnms
@@ -645,7 +645,7 @@ if __name__ == '__main__':
     ToBeTested = []
     single = True
     epoch_ = 200
-    single = False
+    # single = False
     if not single:
         ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
         ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 

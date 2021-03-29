@@ -259,10 +259,14 @@ class RefineDet(nn.Module):
                 level = np.transpose(level, (1, 2, 0))
                 # plt.imsave(os.path.join(save_dir, str(img_id) + '_' + str(i) + '.png'), level[:,:,0])#, cmap='gray')
                 
-                level -= 0.5
-                cam = np.maximum(level, 0)  # output of sigmoid (0, 1)
+                print(str(img_id) + '_' + str(i))
+                print(level.max())
+                print(level.min())
+                level -= 0.1
+                cam = np.maximum(level, 1e-9)  # output of sigmoid (0, 1)
                 # cam -= np.min(cam)
-                cam = cam / cam.max()
+                if cam.max() > 1e-9:
+                    cam = cam / cam.max()
                 heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
                 cam_img = 0.6 * heatmap + 0.4 * img_gt
                 save_path = os.path.join(save_dir, str(img_id) + '_' + str(i) + '.png')
@@ -298,8 +302,12 @@ class RefineDet(nn.Module):
         adm_loc = torch.cat([o.view(o.size(0), -1) for o in adm_loc], 1)
         adm_conf = torch.cat([o.view(o.size(0), -1) for o in adm_conf], 1)
 
+        # confidence_maps = [map_.permute(0, 2, 3, 1).contiguous() for map_ in confidence_maps]
+        # confidence_maps = [map_.repeat(1, 1, 1, 3) for map_ in confidence_maps]
+        # confidence_maps = torch.cat([o.view(o.size(0), -1) for o in confidence_maps], 1)
         if self.phase == "test":
             output = (
+                # confidence_maps.view(confidence_maps.size(0), -1, 1), 
                 confidence_maps, 
                 arm_loc.view(arm_loc.size(0), -1, 4),           # arm loc preds
                 self.softmax(arm_conf.view(arm_conf.size(0), -1,

@@ -159,4 +159,29 @@ Best ap50: 0.9731 at epoch 270
 ap: 0.6317, ap50: 0.9731, ap75: 0.7415, ap_s: 0.5931, ap_m: 0.6854, ap_l: 0.6984
 Best ap  : 0.6328 at epoch 300
 ap: 0.6328, ap50: 0.9706, ap75: 0.7277, ap_s: 0.5921, ap_m: 0.6905, ap_l: 0.6877
+
+inshore
+plain 
+Best ap50: 0.9299 at epoch 200
+ap: 0.5578, ap50: 0.9299, ap75: 0.5941, ap_s: 0.5139, ap_m: 0.6046, ap_l: 0.6713
+Best ap  : 0.5578 at epoch 200
+ap: 0.5578, ap50: 0.9299, ap75: 0.5941, ap_s: 0.5139, ap_m: 0.6046, ap_l: 0.6713
+
+arm conf
+Best ap50: 0.9190 at epoch 200
+ap: 0.5538, ap50: 0.9190, ap75: 0.5902, ap_s: 0.5124, ap_m: 0.5960, ap_l: 0.6577
+Best ap  : 0.5538 at epoch 200
+ap: 0.5538, ap50: 0.9190, ap75: 0.5902, ap_s: 0.5124, ap_m: 0.5960, ap_l: 0.6577
+
+confidence map 
+Best ap50: 0.9300 at epoch 200
+ap: 0.5579, ap50: 0.9300, ap75: 0.5941, ap_s: 0.5139, ap_m: 0.6046, ap_l: 0.6714
+Best ap  : 0.5579 at epoch 200
+ap: 0.5579, ap50: 0.9300, ap75: 0.5941, ap_s: 0.5139, ap_m: 0.6046, ap_l: 0.6714
+
+offshore
+Best ap50: 0.9877 at epoch 200
+ap: 0.6665, ap50: 0.9877, ap75: 0.7906, ap_s: 0.6222, ap_m: 0.7349, ap_l: 0.7372
+Best ap  : 0.6665 at epoch 200
+ap: 0.6665, ap50: 0.9877, ap75: 0.7906, ap_s: 0.6222, ap_m: 0.7349, ap_l: 0.7372
 """
