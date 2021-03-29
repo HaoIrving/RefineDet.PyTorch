@@ -540,7 +540,7 @@ if __name__ == '__main__':
     # prefix = 'weights/at1_mh_4e3_1_ce_sigma02'
     # prefix = 'weights/at1_mh2_4e3_1'
     # prefix = 'weights/at2_mh_4e3_03'
-    prefix = 'weights/at2_mh_pp_4e3_1_ce_640vggbn'
+    # prefix = 'weights/at2_mh_pp_4e3_1_ce_640vggbn'
     # prefix = 'weights/at2_4e3_03'
     # prefix = 'weights/at2_4e3_01'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
@@ -552,7 +552,7 @@ if __name__ == '__main__':
     # args.show_image = True
     # args.vis_attention = True
     
-    args.at2 = True
+    # args.at2 = True
     maxout = args.maxout
     model = args.model
     # model = '512_vggbn'
@@ -645,7 +645,7 @@ if __name__ == '__main__':
     ToBeTested = []
     single = True
     epoch_ = 200
-    # single = False
+    single = False
     if not single:
         ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
         ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 

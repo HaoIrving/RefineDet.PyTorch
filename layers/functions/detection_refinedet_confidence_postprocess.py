@@ -12,7 +12,7 @@ class Detect_RefineDet(Function):
     scores and threshold to a top_k number of output predictions for both
     confidence score and locations.
     """
-    def __init__(self, num_classes, size, bkg_label, confidence_map_threshold=0.1, objectness_threshold=0.01, 
+    def __init__(self, num_classes, size, bkg_label, confidence_map_threshold=1e-4, objectness_threshold=0.01, 
                 confidence_threshold=0.01, nms_threshold=0.5, top_k=1000, keep_top_k=500):
         self.num_classes = num_classes
         self.background_label = bkg_label
@@ -40,14 +40,9 @@ class Detect_RefineDet(Function):
         loc_data = odm_loc_data
         conf_data = odm_conf_data
 
-        # for map_ in confidence_maps:
-        #     th = map_.min() + (map_.max() - map_.min()) / 1000
-        #     no_ob_index = map_ <= th
-        #     map_[no_ob_index] = 0
-        confidence_maps = [map_.permute(0, 2, 3, 1).contiguous().repeat(1, 1, 1, 3) for map_ in confidence_maps]
-        confidence_maps = torch.cat([o.view(o.size(0), -1) for o in confidence_maps], 1)
-        confidence_maps = confidence_maps.view(confidence_maps.size(0), -1, 1)
-        non_object_index = confidence_maps == 0
+        # confidence_maps = [map_.permute(0, 2, 3, 1).contiguous().repeat(1, 1, 1, 3) for map_ in confidence_maps]
+        # confidence_maps = torch.cat([o.view(o.size(0), -1) for o in confidence_maps], 1)
+        # confidence_maps = confidence_maps.view(confidence_maps.size(0), -1, 1)
 
         non_object_index = confidence_maps <= self.confidence_map_threshold
         if non_object_index.sum():
