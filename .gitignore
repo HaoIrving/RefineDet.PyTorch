@@ -1,0 +1,12 @@
+.vscode
+
+weights
+utils/build
+utils/nms/*.so
+utils/nms/*.c
+utils/nms/*.cpp
+*.pyc
+
+eval
+data/SSDD
+data/tianchi_tile_coco

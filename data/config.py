@@ -1,0 +1,182 @@
+# config.py
+import os.path
+
+# gets home dir cross platform
+# HOME = os.path.expanduser("~")
+# HOME = os.path.expanduser("~/projects/ssd.pytorch")
+HOME = os.getcwd()
+COCOroot = os.path.join(HOME,"data/SSDD/SSDD_coco")
+# for making bounding boxes pretty
+COLORS = ((255, 0, 0, 128), (0, 255, 0, 128), (0, 0, 255, 128),
+          (0, 255, 255, 128), (255, 0, 255, 128), (255, 255, 0, 128))
+
+MEANS = (98.13131, 98.13131, 98.13131)
+
+# SSD CONFIGS
+voc = {
+    '300': {
+        'num_classes': 21,
+        'lr_steps': (80000, 100000, 120000),
+        'max_iter': 120000,
+        'feature_maps': [38, 19, 10, 5, 3, 1],
+        'min_dim': 300,
+        'steps': [8, 16, 32, 64, 100, 300],
+        'min_sizes': [30, 60, 111, 162, 213, 264],
+        'max_sizes': [60, 111, 162, 213, 264, 315],
+        'aspect_ratios': [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
+        'variance': [0.1, 0.2],
+        'clip': True,
+        'name': 'VOC_300',
+    },
+    '512': {
+        'num_classes': 21,
+        'lr_steps': (80000, 100000, 120000),
+        'max_iter': 120000,
+        'feature_maps': [64, 32, 16, 8, 4, 2, 1],
+        'min_dim': 512,
+        'steps': [8, 16, 32, 64, 128, 256, 512],
+        'min_sizes': [20, 51, 133, 215, 296, 378, 460],
+        'max_sizes': [51, 133, 215, 296, 378, 460, 542],
+        'aspect_ratios': [[2], [2, 3], [2, 3], [2, 3], [2, 3], [2], [2]],
+        'variance': [0.1, 0.2],
+        'clip': True,
+        'name': 'VOC_512',
+    }
+}
+
+coco = {
+    'num_classes': 201,
+    'lr_steps': (280000, 360000, 400000),
+    'max_iter': 400000,
+    'feature_maps': [38, 19, 10, 5, 3, 1],
+    'min_dim': 300,
+    'steps': [8, 16, 32, 64, 100, 300],
+    'min_sizes': [21, 45, 99, 153, 207, 261],
+    'max_sizes': [45, 99, 153, 207, 261, 315],
+    'aspect_ratios': [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
+    'variance': [0.1, 0.2],
+    'clip': True,
+    'name': 'COCO',
+}
+
+# RefineDet CONFIGS
+voc_refinedet = {
+    '320': {
+        'num_classes': 21,
+        'lr_steps': (80000, 100000, 120000),
+        'max_iter': 120000,
+        'feature_maps': [40, 20, 10, 5],
+        'min_dim': 320,
+        'steps': [8, 16, 32, 64],
+        'min_sizes': [32, 64, 128, 256],
+        'max_sizes': [],
+        'aspect_ratios': [[2], [2], [2], [2]],
+        'variance': [0.1, 0.2],
+        'clip': True,
+        'name': 'RefineDet_VOC_320',
+    },
+    '512': {
+        'num_classes': 21,
+        'lr_steps': (80000, 100000, 120000),
+        'max_iter': 120000,
+        'feature_maps': [64, 32, 16, 8],
+        'min_dim': 512,
+        'steps': [8, 16, 32, 64],
+        'min_sizes': [32, 64, 128, 256],
+        'max_sizes': [],
+        'aspect_ratios': [[2], [2], [2], [2]],
+        'variance': [0.1, 0.2],
+        'clip': True,
+        'name': 'RefineDet_VOC_320',
+    }
+}
+
+coco_refinedet = {
+    '320': {
+        'num_classes': 2,
+        'feature_maps': [40, 20, 10, 5],
+        'min_dim': 320,
+        'steps': [8, 16, 32, 64],
+        'min_sizes': [32, 64, 128, 256],
+        'max_sizes': [],
+        'aspect_ratios': [[2], [2], [2], [2]],
+        'variance': [0.1, 0.2],
+        'clip': True,
+        'name': 'RefineDet_COCO_320',
+    },
+    '512': {
+        'num_classes': 2,
+        'feature_maps': [64, 32, 16, 8],
+        'min_dim': 512,
+        'steps': [8, 16, 32, 64],
+        'min_sizes': [32, 64, 128, 256],
+        'max_sizes': [],
+        'aspect_ratios': [[2], [2], [2], [2]],
+        'variance': [0.1, 0.2],
+        'clip': True,
+        'name': 'RefineDet_COCO_512',
+    },    
+    '1024': {
+        'num_classes': 2,
+        'feature_maps': [128, 64, 32, 16, 8],
+        'min_dim': 1024,
+        'steps': [8, 16, 32, 64, 128],
+        'min_sizes': [32, 64, 128, 256, 512],
+        'max_sizes': [],
+        'aspect_ratios': [[2], [2], [2], [2], [2]],
+        'variance': [0.1, 0.2],
+        'clip': True,
+        'name': 'RefineDet_COCO_1024',
+    },
+    '768': {
+        'num_classes': 2,
+        'feature_maps': [192, 96, 48, 24, 12],
+        'min_dim': 768,
+        'steps': [4, 8, 16, 32, 64],
+        'min_sizes': [16, 32, 64, 128, 256],
+        'max_sizes': [],
+        'aspect_ratios': [[2], [2], [2], [2], [2]],
+        'variance': [0.1, 0.2],
+        'clip': True,
+        'name': 'RefineDet_COCO_768',
+    },
+    '5125': {
+        'num_classes': 2,
+        'feature_maps': [128, 64, 32, 16, 8],
+        'min_dim': 512,
+        'steps': [4, 8, 16, 32, 64],
+        'min_sizes': [16, 32, 64, 128, 256],
+        'scale_ranges': ((1, 32), (16, 64), (32, 128), (64, 256), (128, 512)),
+        'max_sizes': [],
+        'aspect_ratios': [[2], [2], [2], [2], [2]],
+        'variance': [0.1, 0.2],
+        'clip': True,
+        'name': 'RefineDet_COCO_5125',
+    },
+    '5126': {
+        'num_classes': 2,
+        'feature_maps': [128, 64, 32, 16, 8, 4],
+        'min_dim': 512,
+        'steps': [4, 8, 16, 32, 64, 128],
+        'min_sizes': [16, 32, 64, 128, 256, 512],
+        'scale_ranges': ((1, 32), (16, 64), (32, 128), (64, 256), (128, 512), (256, 1024)),
+        'max_sizes': [],
+        'aspect_ratios': [[2], [2], [2], [2], [2], [2]],
+        'variance': [0.1, 0.2],
+        'clip': True,
+        'name': 'RefineDet_COCO_5126',
+    },
+    '640': {
+        'num_classes': 2,
+        'feature_maps': [160, 80, 40, 20, 10, 5],
+        'min_dim': 640,
+        'steps': [4, 8, 16, 32, 64, 128],
+        'min_sizes': [16, 32, 64, 128, 256, 512],
+        'scale_ranges': ((1, 32), (16, 64), (32, 128), (64, 256), (128, 512), (256, 1024)),
+        'max_sizes': [],
+        'aspect_ratios': [[2], [2], [2], [2], [2], [2]],
+        'variance': [0.1, 0.2],
+        'clip': True,
+        'name': 'RefineDet_COCO_640',
+    }
+}
