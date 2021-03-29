@@ -42,8 +42,8 @@ ms: multi scale test, we report the best results among many times run, so the re
 
 ##### mAP 
 
-| Arch | Our PyTorch Version |
-|:-:|:-:|
+| Arch | Paper | Our PyTorch Version |
+|:-:|:-:|:-:|
 | RefineDet++512 | 82.5% | TODO |
 
 ## Installation
