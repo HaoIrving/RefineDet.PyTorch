@@ -29,8 +29,8 @@ A higher performance [PyTorch](http://pytorch.org/) implementation of [RefineDet
 ##### COCO AP 
 
 | Arch | Our PyTorch Version |
-|:-:|:-:|:-:|:-:|
-| RefineDet++512 ms| 66.21% | 
+|:-:|:-:|
+| RefineDet++512 ms | 66.21% |
 | RefineDet++512 | 62.94% | 
 | RefineDet512 | 62.57% | 
 ms: multi scale test, we report the best results among many times run, so the results are convincing.
@@ -40,7 +40,7 @@ ms: multi scale test, we report the best results among many times run, so the re
 ##### mAP 
 
 | Arch | Paper | Our PyTorch Version |
-|:-:|:-:|:-:|:-:|
+|:-:|:-:|
 | RefineDet++512 | 82.5% | TODO |
 
 ## Installation
