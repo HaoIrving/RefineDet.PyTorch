@@ -173,7 +173,8 @@ elif model == '640_vggbn':
     if args.shallow_head:
         from sardet.refinedet_bn_at1_d_mh_shallow import build_refinedet
     if args.at2:
-        from sardet.refinedet_bn_at2_mh import build_refinedet
+        # from sardet.refinedet_bn_at2_mh import build_refinedet
+        from sardet.refinedet_bn_at2_mh_postprocess import build_refinedet
         if args.dcn_head:
             from sardet.refinedet_bn_at2_d_mh import build_refinedet
         if args.shallow_head:
