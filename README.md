@@ -1,7 +1,8 @@
 A higher performance [PyTorch](http://pytorch.org/) implementation of [RefineDet++: Single-Shot Refinement Neural Network for Object Detection](http://www.cbsr.ia.ac.cn/users/sfzhang/files/TCSVT_RefineDet++.pdf ).
 
+
 ### Table of Contents
-- <a href='#major features'>Major features</a>
+- <a href='#Majorfeatures'>Major features</a>
 - <a href='#performance'>Performance</a>
 - <a href='#installation'>Installation</a>
 - <a href='#datasets'>Datasets</a>
@@ -16,6 +17,7 @@ A higher performance [PyTorch](http://pytorch.org/) implementation of [RefineDet
 &nbsp;
 
 ## Major features
+
 - Original RefineDet model.
 - Align Convolution module proposed in RefineDet++ is implemented by DeformConv with accurately calculated offset rather than learned, which is a good solution for the feature misalignment problem among 1.5 stage object detection methods.
 - Multi-scale test, which is modified from the original caffe implementation of RefineDet.
@@ -39,7 +41,7 @@ ms: multi scale test, we report the best results among many times run, so the re
 
 ##### mAP 
 
-| Arch | Paper | Our PyTorch Version |
+| Arch | Our PyTorch Version |
 |:-:|:-:|
 | RefineDet++512 | 82.5% | TODO |
 
