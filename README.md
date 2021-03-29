@@ -105,7 +105,6 @@ python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/align
 
 - Note:
   * For training, an NVIDIA GPU is strongly recommended for speed.
-  * For instructions on Visdom usage/installation, see the <a href='#installation'>Installation</a> section.
   * You can pick-up training from a checkpoint by specifying the path as one of the training parameters (again, see `train_refinedet.py` for options)
 
 ## Evaluation
