@@ -12,7 +12,8 @@ from torch.autograd import Variable
 from data import COCOroot, MEANS, COCODetection
 import torch.utils.data as data
 
-from layers import Detect_RefineDet
+# from layers import Detect_RefineDet
+from layers.functions.detection_refinedet_confidence_postprocess import Detect_RefineDet
 from utils.nms_wrapper import nms, soft_nms
 from data import coco_refinedet
 from layers import PriorBox
@@ -183,11 +184,11 @@ def im_detect_vis(net, im, target, i, target_size):
     x = x.to(device)
 
     im_gt = put_gtbox(im, target, h, w, target_size)
-    arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x, i, im_gt)
+    confidence_maps, arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x, i, im_gt)
     priorbox = PriorBox(net.cfg, feat_sizes, (target_size, target_size), phase='test')
     priors = priorbox.forward()
     priors = priors.to(device)
-    det = detect.forward(arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
+    det = detect.forward(confidence_maps, arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
     return det
 
 
@@ -203,11 +204,11 @@ def im_detect(net, im, target_size):
     x = torch.from_numpy(x).unsqueeze(0)
     x = x.to(device)
 
-    arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x)
+    confidence_maps, arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x)
     priorbox = PriorBox(net.cfg, feat_sizes, (target_size, target_size), phase='test')
     priors = priorbox.forward()
     priors = priors.to(device)
-    det = detect.forward(arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
+    det = detect.forward(confidence_maps, arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
     return det
 
 
@@ -225,11 +226,11 @@ def im_detect_ratio(net, im, target_size1, target_size2):
     x = torch.from_numpy(x).unsqueeze(0)
     x = x.to(device)
 
-    arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x)
+    confidence_maps, arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x)
     priorbox = PriorBox(net.cfg, feat_sizes, (target_size1, target_size2), phase='test')
     priors = priorbox.forward()
     priors = priors.to(device)
-    det = detect.forward(arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
+    det = detect.forward(confidence_maps, arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
     return det
     
 
@@ -362,7 +363,7 @@ def soft_bbox_vote(det):
     return dets
 
 
-def multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, detect, AP_stats=None):
+def multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, AP_stats=None):
     num_images = len(dataset)
     all_boxes = [[[] for _ in range(num_images)]
                  for _ in range(num_classes)]
@@ -464,7 +465,7 @@ def multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, de
     AP_stats['ap_large'].append(stats[5])
 
 
-def single_scale_test_net(target_size, save_folder, net, num_classes, dataset, detect, AP_stats=None):
+def single_scale_test_net(target_size, save_folder, net, num_classes, dataset, AP_stats=None):
     num_images = len(dataset)
     all_boxes = [[[] for _ in range(num_images)]
                  for _ in range(num_classes)]
@@ -539,7 +540,7 @@ if __name__ == '__main__':
     # prefix = 'weights/at1_mh_4e3_1_ce_sigma02'
     # prefix = 'weights/at1_mh2_4e3_1'
     # prefix = 'weights/at2_mh_4e3_03'
-    # prefix = 'weights/at2_mh_4e3_01'
+    prefix = 'weights/at2_mh_pp_4e3_1_ce_640vggbn'
     # prefix = 'weights/at2_4e3_03'
     # prefix = 'weights/at2_4e3_01'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
@@ -551,6 +552,7 @@ if __name__ == '__main__':
     # args.show_image = True
     # args.vis_attention = True
     
+    args.at2 = True
     maxout = args.maxout
     model = args.model
     # model = '512_vggbn'
@@ -614,6 +616,7 @@ if __name__ == '__main__':
     target_size = cfg['min_dim']
     seg_num_grids = cfg['feature_maps']  # [64, 32, 16, 8]
     num_classes = cfg['num_classes']
+    confidence_map_threshold = 0.5
     objectness_threshold = 0.01
     args.nms_threshold = 0.49  # nms
     # args.nms_threshold = 0.45  # softnms
@@ -633,17 +636,23 @@ if __name__ == '__main__':
     load_to_cpu = not args.cuda
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
-    detect = Detect_RefineDet(num_classes, int(args.input_size), 0, objectness_threshold, confidence_threshold=args.confidence_threshold, nms_threshold=args.nms_threshold, top_k=args.top_k, keep_top_k=args.keep_top_k)
+    detect = Detect_RefineDet(num_classes, int(args.input_size), 0, confidence_map_threshold=confidence_map_threshold, objectness_threshold=objectness_threshold, confidence_threshold=args.confidence_threshold, nms_threshold=args.nms_threshold, top_k=args.top_k, keep_top_k=args.keep_top_k)
     net = build_refinedet('test', int(args.input_size), num_classes, seg_num_grids, backbone_dict) 
 
     # test multi models, to filter out the best model.
     # start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
-    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_245.pth') 
-    # ToBeTested *= 5
+    single = True
+    epoch_ = 200
+    single = False
+    if not single:
+        ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+        ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
+    else:
+        ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
+        # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch_}.pth') 
+        # ToBeTested *= 5  # for calculate FPS
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
@@ -656,9 +665,9 @@ if __name__ == '__main__':
         ap_stats['epoch'].append(start_epoch + index * step)
         print("evaluating epoch: {}".format(ap_stats['epoch'][-1]))
         if not args.multi_scale_test:
-            single_scale_test_net(target_size, save_folder, net, num_classes, dataset, detect, AP_stats=ap_stats)
+            single_scale_test_net(target_size, save_folder, net, num_classes, dataset, AP_stats=ap_stats)
         else:
-            multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, detect, AP_stats=ap_stats)
+            multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, AP_stats=ap_stats)
 
     # print the best model.
     max_idx = np.argmax(np.asarray(ap_stats['ap50']))
@@ -675,191 +684,9 @@ if __name__ == '__main__':
         json.dump(ap_stats, fid)
     
     # plot curves
-    fig_name = 'ap.png'
-    metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    plot_map(save_folder, ap_stats, metrics, legend, fig_name)
-    txt_log = prefix + '/log.txt'
-    plot_loss(save_folder, txt_log)
-"""
-refinedet
-lr_2e3
-Best ap50: 0.9802 at epoch 240
-ap: 0.6022, ap50: 0.9802, ap75: 0.6750, ap_s: 0.5550, ap_m: 0.6715, ap_l: 0.6515
-Best ap  : 0.6091 at epoch 290
-ap: 0.6091, ap50: 0.9783, ap75: 0.6921, ap_s: 0.5646, ap_m: 0.6713, ap_l: 0.6569
-inshore 
-Best ap50: 0.9400 at epoch 270
-ap: 0.5124, ap50: 0.9400, ap75: 0.5157, ap_s: 0.4715, ap_m: 0.5679, ap_l: 0.5575
-Best ap  : 0.5171 at epoch 250
-ap: 0.5171, ap50: 0.9365, ap75: 0.5157, ap_s: 0.4693, ap_m: 0.5835, ap_l: 0.5242
-offshore 
-Best ap50: 0.9893 at epoch 225
-ap: 0.6393, ap50: 0.9893, ap75: 0.7521, ap_s: 0.5869, ap_m: 0.7125, ap_l: 0.7697
-Best ap  : 0.6500 at epoch 275
-ap: 0.6500, ap50: 0.9888, ap75: 0.7740, ap_s: 0.6026, ap_m: 0.7166, ap_l: 0.7605
-
-align 4e3 b16
-Best ap50: 0.9725 at epoch 230
-ap: 0.6147, ap50: 0.9725, ap75: 0.6975, ap_s: 0.5665, ap_m: 0.6831, ap_l: 0.6665
-Best ap  : 0.6225 at epoch 255
-ap: 0.6225, ap50: 0.9714, ap75: 0.7194, ap_s: 0.5729, ap_m: 0.6922, ap_l: 0.6703
-
-at0 4e3 
-Best ap50: 0.9801 at epoch 250
-ap: 0.6113, ap50: 0.9801, ap75: 0.7057, ap_s: 0.5639, ap_m: 0.6778, ap_l: 0.6822
-Best ap  : 0.6221 at epoch 280
-ap: 0.6221, ap50: 0.9734, ap75: 0.7235, ap_s: 0.5784, ap_m: 0.6831, ap_l: 0.7019
-Best ap50: 0.9741 at epoch 215
-ap: 0.6166, ap50: 0.9741, ap75: 0.7045, ap_s: 0.5813, ap_m: 0.6688, ap_l: 0.6718
-Best ap  : 0.6291 at epoch 290
-ap: 0.6291, ap50: 0.9740, ap75: 0.7438, ap_s: 0.5869, ap_m: 0.6914, ap_l: 0.6600
-
-at1 4e3 aw01
-Best ap50: 0.9744 at epoch 295
-ap: 0.6220, ap50: 0.9744, ap75: 0.7126, ap_s: 0.5714, ap_m: 0.6980, ap_l: 0.6666
-Best ap  : 0.6220 at epoch 295
-ap: 0.6220, ap50: 0.9744, ap75: 0.7126, ap_s: 0.5714, ap_m: 0.6980, ap_l: 0.6666
-at1 4e3 mh aw 1
-Best ap50: 0.9771 at epoch 205
-ap: 0.6110, ap50: 0.9771, ap75: 0.6949, ap_s: 0.5689, ap_m: 0.6765, ap_l: 0.6506
-Best ap  : 0.6229 at epoch 245
-ap: 0.6229, ap50: 0.9695, ap75: 0.7137, ap_s: 0.5765, ap_m: 0.6881, ap_l: 0.6845
-
-################### at1 4e3 mh aw 01 #############
-Best ap50: 0.9797 at epoch 235
-ap: 0.6160, ap50: 0.9797, ap75: 0.6952, ap_s: 0.5645, ap_m: 0.6962, ap_l: 0.6520
-Best ap  : 0.6278 at epoch 285
-ap: 0.6278, ap50: 0.9728, ap75: 0.7241, ap_s: 0.5823, ap_m: 0.6969, ap_l: 0.6628
-
-Best ap50: 0.9747 at epoch 300
-ap: 0.6248, ap50: 0.9747, ap75: 0.7381, ap_s: 0.5703, ap_m: 0.6999, ap_l: 0.6892
-Best ap  : 0.6251 at epoch 280
-ap: 0.6251, ap50: 0.9744, ap75: 0.7130, ap_s: 0.5697, ap_m: 0.7006, ap_l: 0.6861
-
-Best ap50: 0.9758 at epoch 210
-ap: 0.6215, ap50: 0.9758, ap75: 0.7015, ap_s: 0.5809, ap_m: 0.6847, ap_l: 0.6423
-Best ap  : 0.6234 at epoch 215
-ap: 0.6234, ap50: 0.9724, ap75: 0.7107, ap_s: 0.5837, ap_m: 0.6824, ap_l: 0.6613
-
-at1 4e3 mh aw 01 sigma1
-Best ap50: 0.9824 at epoch 205
-ap: 0.6175, ap50: 0.9824, ap75: 0.7053, ap_s: 0.5722, ap_m: 0.6790, ap_l: 0.6811
-Best ap  : 0.6233 at epoch 300
-ap: 0.6233, ap50: 0.9735, ap75: 0.7259, ap_s: 0.5781, ap_m: 0.6857, ap_l: 0.6608
-
-at1_mh_4e3_aw1_ce_sigma1
-Best ap50: 0.9828 at epoch 255
-ap: 0.6265, ap50: 0.9828, ap75: 0.7237, ap_s: 0.5864, ap_m: 0.6886, ap_l: 0.6457
-Best ap  : 0.6265 at epoch 255
-ap: 0.6265, ap50: 0.9828, ap75: 0.7237, ap_s: 0.5864, ap_m: 0.6886, ap_l: 0.6457
-at1_mh_4e3_aw1_ce_sigma02
-Best ap50: 0.9836 at epoch 255
-ap: 0.6216, ap50: 0.9836, ap75: 0.7045, ap_s: 0.5745, ap_m: 0.6882, ap_l: 0.6606
-Best ap  : 0.6273 at epoch 245
-ap: 0.6273, ap50: 0.9831, ap75: 0.7252, ap_s: 0.5802, ap_m: 0.6960, ap_l: 0.6691
-Best ap50: 0.9749 at epoch 205
-ap: 0.6120, ap50: 0.9749, ap75: 0.6851, ap_s: 0.5603, ap_m: 0.6873, ap_l: 0.6589
-Best ap  : 0.6234 at epoch 275
-ap: 0.6234, ap50: 0.9634, ap75: 0.7250, ap_s: 0.5745, ap_m: 0.6935, ap_l: 0.6747
-
-at1 4e3 mh2
-Best ap50: 0.9781 at epoch 275
-ap: 0.6104, ap50: 0.9781, ap75: 0.7071, ap_s: 0.5590, ap_m: 0.6805, ap_l: 0.6920
-Best ap  : 0.6182 at epoch 250
-ap: 0.6182, ap50: 0.9779, ap75: 0.7257, ap_s: 0.5702, ap_m: 0.6827, ap_l: 0.6856
-
-at2 4e3 aw01
-Best ap50: 0.9756 at epoch 230
-ap: 0.6201, ap50: 0.9756, ap75: 0.7068, ap_s: 0.5725, ap_m: 0.6914, ap_l: 0.6551
-Best ap  : 0.6213 at epoch 255
-ap: 0.6213, ap50: 0.9750, ap75: 0.7192, ap_s: 0.5717, ap_m: 0.6898, ap_l: 0.6774
-at2 4e3 mh aw01
-Best ap50: 0.9806 at epoch 225
-ap: 0.6234, ap50: 0.9806, ap75: 0.7251, ap_s: 0.5744, ap_m: 0.6887, ap_l: 0.7107
-Best ap  : 0.6274 at epoch 275
-ap: 0.6274, ap50: 0.9719, ap75: 0.7242, ap_s: 0.5747, ap_m: 0.7016, ap_l: 0.7138
-Best ap50: 0.9730 at epoch 300
-ap: 0.6185, ap50: 0.9730, ap75: 0.7088, ap_s: 0.5649, ap_m: 0.6963, ap_l: 0.6784
-Best ap  : 0.6235 at epoch 280
-ap: 0.6235, ap50: 0.9656, ap75: 0.7284, ap_s: 0.5730, ap_m: 0.6984, ap_l: 0.6743
-Best ap50: 0.9793 at epoch 210
-ap: 0.6042, ap50: 0.9793, ap75: 0.6967, ap_s: 0.5611, ap_m: 0.6702, ap_l: 0.6921
-Best ap  : 0.6233 at epoch 280
-ap: 0.6233, ap50: 0.9726, ap75: 0.7242, ap_s: 0.5766, ap_m: 0.6900, ap_l: 0.7055
-Best ap50: 0.9835 at epoch 205
-ap: 0.6115, ap50: 0.9835, ap75: 0.7005, ap_s: 0.5714, ap_m: 0.6764, ap_l: 0.6669
-Best ap  : 0.6201 at epoch 255
-ap: 0.6201, ap50: 0.9747, ap75: 0.7178, ap_s: 0.5766, ap_m: 0.6838, ap_l: 0.6519
-
-1.0==cps solo 2e3 bs16 g12(cps, complementary sampling), solo has less grid number than fcos
-Best ap50: 0.9826 at epoch 265
-ap: 0.6140, ap50: 0.9826, ap75: 0.7032, ap_s: 0.5641, ap_m: 0.6851, ap_l: 0.6542
-Best ap  : 0.6212 at epoch 295
-ap: 0.6212, ap50: 0.9809, ap75: 0.7185, ap_s: 0.5688, ap_m: 0.6948, ap_l: 0.6764
-inshore 
-Best ap50: 0.9449 at epoch 280
-ap: 0.5335, ap50: 0.9449, ap75: 0.5323, ap_s: 0.4896, ap_m: 0.5979, ap_l: 0.5640
-Best ap  : 0.5391 at epoch 300
-ap: 0.5391, ap50: 0.9413, ap75: 0.5515, ap_s: 0.4916, ap_m: 0.6108, ap_l: 0.5388
-offshore 
-Best ap50: 0.9895 at epoch 200
-ap: 0.5956, ap50: 0.9895, ap75: 0.6853, ap_s: 0.5501, ap_m: 0.6572, ap_l: 0.7790
-Best ap  : 0.6562 at epoch 280
-ap: 0.6562, ap50: 0.9893, ap75: 0.7934, ap_s: 0.6000, ap_m: 0.7357, ap_l: 0.8126
-
-1.0==cps fcos
-Best ap50: 0.9798 at epoch 300
-ap: 0.6238, ap50: 0.9798, ap75: 0.7139, ap_s: 0.5805, ap_m: 0.6876, ap_l: 0.6612
-Best ap : 0.6246 at epoch 295
-ap: 0.6246, ap50: 0.9796, ap75: 0.7154, ap_s: 0.5821, ap_m: 0.6862, ap_l: 0.6693
-inshore 
-Best ap50: 0.9345 at epoch 235
-ap: 0.5218, ap50: 0.9345, ap75: 0.5302, ap_s: 0.4627, ap_m: 0.6103, ap_l: 0.5061
-Best ap : 0.5418 at epoch 295
-ap: 0.5418, ap50: 0.9334, ap75: 0.5716, ap_s: 0.4998, ap_m: 0.6064, ap_l: 0.5539
-offshore
-Best ap50: 0.9897 at epoch 210
-ap: 0.6415, ap50: 0.9897, ap75: 0.7580, ap_s: 0.5853, ap_m: 0.7127, ap_l: 0.8235
-Best ap : 0.6594 at epoch 240
-ap: 0.6594, ap50: 0.9896, ap75: 0.7994, ap_s: 0.6058, ap_m: 0.7275, ap_l: 0.7844
-
-in ap:   cps > cs, fcos > solo
-in ap50: cps > cs, fcos = solo
-best solution: cps + fcos grid number
-
-2.0==cs solo(consistent sampling)
-Best ap50: 0.9723 at epoch 250
-ap: 0.6037, ap50: 0.9723, ap75: 0.6872, ap_s: 0.5528, ap_m: 0.6759, ap_l: 0.6628
-Best ap  : 0.6109 at epoch 295
-ap: 0.6109, ap50: 0.9707, ap75: 0.7024, ap_s: 0.5656, ap_m: 0.6742, ap_l: 0.6737
-inshore 
-Best ap50: 0.9217 at epoch 285
-ap: 0.5187, ap50: 0.9217, ap75: 0.5607, ap_s: 0.4865, ap_m: 0.5697, ap_l: 0.5492
-Best ap  : 0.5193 at epoch 275
-ap: 0.5193, ap50: 0.9193, ap75: 0.5444, ap_s: 0.4824, ap_m: 0.5792, ap_l: 0.5443
-offshore 
-Best ap50: 0.9894 at epoch 210
-ap: 0.6308, ap50: 0.9894, ap75: 0.7157, ap_s: 0.5792, ap_m: 0.6993, ap_l: 0.7628
-Best ap  : 0.6491 at epoch 295
-ap: 0.6491, ap50: 0.9890, ap75: 0.7612, ap_s: 0.5980, ap_m: 0.7160, ap_l: 0.8113
-
-2.0==cs fcos
-Best ap50: 0.9790 at epoch 240
-ap: 0.6124, ap50: 0.9790, ap75: 0.7034, ap_s: 0.5725, ap_m: 0.6739, ap_l: 0.6302
-Best ap  : 0.6135 at epoch 290
-ap: 0.6135, ap50: 0.9734, ap75: 0.7075, ap_s: 0.5666, ap_m: 0.6798, ap_l: 0.6465
-inshore 
-Best ap50: 0.9363 at epoch 220
-ap: 0.5110, ap50: 0.9363, ap75: 0.5118, ap_s: 0.4567, ap_m: 0.5925, ap_l: 0.4804
-Best ap  : 0.5284 at epoch 250
-ap: 0.5284, ap50: 0.9327, ap75: 0.5372, ap_s: 0.4880, ap_m: 0.5949, ap_l: 0.4907
-offshore
-Best ap50: 0.9896 at epoch 255
-ap: 0.6485, ap50: 0.9896, ap75: 0.7613, ap_s: 0.5956, ap_m: 0.7226, ap_l: 0.7752
-Best ap  : 0.6524 at epoch 290
-ap: 0.6524, ap50: 0.9893, ap75: 0.7766, ap_s: 0.5994, ap_m: 0.7228, ap_l: 0.7984
-
-
-
-"""
+    # fig_name = 'ap.png'
+    # metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
+    # legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
+    # plot_map(save_folder, ap_stats, metrics, legend, fig_name)
+    # txt_log = prefix + '/log.txt'
+    # plot_loss(save_folder, txt_log)

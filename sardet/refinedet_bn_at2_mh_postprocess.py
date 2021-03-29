@@ -235,7 +235,7 @@ class RefineDet(nn.Module):
         tcb_source.reverse()
 
         # apply attention head
-        attention_sources = list()
+        confidence_maps = list()
         attention_maps = list()
         for (x, lvl, cate) in zip(tcb_source, range(self.lvl_num), self.grid_cate):
             for conv in self.cate_convs[lvl*self.stacked_convs: (lvl+1)*self.stacked_convs]:
@@ -244,33 +244,34 @@ class RefineDet(nn.Module):
             attention_maps.append(cate_feat)
 
             cate_pred = self.sigmoid(cate_feat)
-            attention_sources.append(cate_pred)
+            confidence_maps.append(cate_pred)
 
         ## https://blog.csdn.net/weixin_41735859/article/details/106474768
         if self.phase == 'test' and img_id is not None:
             save_dir = './eval/attention_maps'
             if not os.path.exists(save_dir):
                 os.mkdir(save_dir)
-            for index, level in enumerate(attention_sources):
+            for index, level in enumerate(confidence_maps):
                 i = self.cfg['steps'][index]
-                level = F.interpolate(level, size=(self.size, self.size), mode='bilinear') # bilinear, bicubic,nearest
+                level = F.interpolate(level, size=(self.size, self.size), mode='nearest') # bilinear, bicubic,nearest
                 level = level.squeeze(0)
                 level = level.cpu().numpy().copy()
                 level = np.transpose(level, (1, 2, 0))
                 # plt.imsave(os.path.join(save_dir, str(img_id) + '_' + str(i) + '.png'), level[:,:,0])#, cmap='gray')
                 
-                cam = np.maximum(level, 0)
-                cam -= np.min(cam)
+                level -= 0.5
+                cam = np.maximum(level, 0)  # output of sigmoid (0, 1)
+                # cam -= np.min(cam)
                 cam = cam / cam.max()
                 heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
-                cam_img = 0.5 * heatmap + 0.5 * img_gt
+                cam_img = 0.6 * heatmap + 0.4 * img_gt
                 save_path = os.path.join(save_dir, str(img_id) + '_' + str(i) + '.png')
                 # cv2.imwrite(save_path, heatmap)
                 cv2.imwrite(save_path, cam_img)
 
         # apply attention
         # tcb_source_new = list()
-        # for attention, tcbx in zip(attention_sources, tcb_source):
+        # for attention, tcbx in zip(confidence_maps, tcb_source):
         #     feature = tcbx * torch.exp(attention)
         #     tcb_source_new.append(feature)
 
@@ -299,6 +300,7 @@ class RefineDet(nn.Module):
 
         if self.phase == "test":
             output = (
+                confidence_maps, 
                 arm_loc.view(arm_loc.size(0), -1, 4),           # arm loc preds
                 self.softmax(arm_conf.view(arm_conf.size(0), -1,
                              2)),                               # arm conf preds
