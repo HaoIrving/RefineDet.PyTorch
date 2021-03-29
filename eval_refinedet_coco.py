@@ -503,7 +503,7 @@ if __name__ == '__main__':
     prefix = args.prefix
     # prefix = 'weights/align_2e3_512res50'
     # prefix = 'weights/align_1e3_512res101'
-    # prefix = 'weights/align_4e3'
+    prefix = 'weights/align_4e3_640vggbn'
     
     # prefix = 'weights/align_4e3_5l'
     # prefix = 'weights/align_2e3'
@@ -522,6 +522,7 @@ if __name__ == '__main__':
     # args.wo_alignconv = True
     wo_alignconv = args.wo_alignconv
     model = args.model
+    model = '768_vggbn'
     # model = '640_vggbn'
     # model = '512_vggbn'
     # model = '512_ResNet_101'
@@ -548,6 +549,10 @@ if __name__ == '__main__':
         from models.refinedet_bn import build_refinedet
         args.input_size = str(512)
         backbone_dict = dict(bn=True)
+    elif model == '768_vggbn':
+        from models.refinedet_bn import build_refinedet
+        args.input_size = str(768)
+        backbone_dict = dict(bn=True)
     elif model == '640_vggbn':
         from models.refinedet_bn import build_refinedet
         if wo_alignconv:
@@ -568,7 +573,7 @@ if __name__ == '__main__':
     args.top_k = 1000
     args.keep_top_k = 500
     args.vis_thres = 0.3
-    # args.multi_scale_test = True
+    args.multi_scale_test = True
 
     # load data
     dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sarship')
@@ -590,14 +595,14 @@ if __name__ == '__main__':
     # start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    # ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
     # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
     # ToBeTested *= 5
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
-        net = load_model(net, args.trained_model, load_to_cpu)
+        # net = load_model(net, args.trained_model, load_to_cpu)
         net.eval()
         print('Finished loading model!')
         # print(net)

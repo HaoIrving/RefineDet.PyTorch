@@ -128,17 +128,17 @@ coco_refinedet = {
         'clip': True,
         'name': 'RefineDet_COCO_1024',
     },
-    '896': {
+    '768': {
         'num_classes': 2,
-        'feature_maps': [224, 112, 56, 28, 14],
-        'min_dim': 896,
+        'feature_maps': [192, 96, 48, 24, 12],
+        'min_dim': 768,
         'steps': [4, 8, 16, 32, 64],
         'min_sizes': [16, 32, 64, 128, 256],
         'max_sizes': [],
         'aspect_ratios': [[2], [2], [2], [2], [2]],
         'variance': [0.1, 0.2],
         'clip': True,
-        'name': 'RefineDet_COCO_896',
+        'name': 'RefineDet_COCO_768',
     },
     '5125': {
         'num_classes': 2,

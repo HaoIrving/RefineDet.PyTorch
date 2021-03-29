@@ -1,6 +1,7 @@
-A higher performance [PyTorch](http://pytorch.org/) implementation of [Single-Shot Refinement Neural Network for Object Detection](https://arxiv.org/abs/1711.06897 ). The official and original Caffe code can be found [here](https://github.com/sfzhang15/RefineDet).
+A higher performance [PyTorch](http://pytorch.org/) implementation of [RefineDet++: Single-Shot Refinement Neural Network for Object Detection](http://www.cbsr.ia.ac.cn/users/sfzhang/files/TCSVT_RefineDet++.pdf ).
 
 ### Table of Contents
+- <a href='#major features'>Major features</a>
 - <a href='#performance'>Performance</a>
 - <a href='#installation'>Installation</a>
 - <a href='#datasets'>Datasets</a>
@@ -14,38 +15,50 @@ A higher performance [PyTorch](http://pytorch.org/) implementation of [Single-Sh
 &nbsp;
 &nbsp;
 
+## Major features
+- Original RefineDet model.
+- Align Convolution module proposed in RefineDet++, which is a good solution for the feature misalignment problem among 1.5 stage object detection methods.
+- Multi-scale test, which is modified from the original caffe implementation of RefineDet.
+- VGG backbone with bn layers to make the training more stable.
+- ResNet and ResNeXt backbone, which has been implemented fully, but the training is hard to converge for slightly large learning rate, sting working on this.
+
 ## Performance
+
+#### SSDD (remote ship detection dataset of Radar images)
+
+##### COCO AP 
+
+| Arch | Our PyTorch Version |
+|:-:|:-:|:-:|:-:|
+| RefineDet++512 ms| 66.21% | 
+| RefineDet++512 | 62.94% | 
+| RefineDet512 | 62.57% | 
+ms: multi scale test, we report the best results among many times run, so the results are convincing.
 
 #### VOC2007 Test
 
-##### mAP (*Single Scale Test*)
+##### mAP 
 
-| Arch | Paper | Caffe Version | Our PyTorch Version |
+| Arch | Paper | Our PyTorch Version |
 |:-:|:-:|:-:|:-:|
-| RefineDet320 | 80.0% | 79.52% | 79.81% |
-| RefineDet512 | 81.8% | 81.85% | 80.50% |
+| RefineDet++512 | 82.5% | TODO |
 
 ## Installation
-- Install [PyTorch](http://pytorch.org/) by selecting your environment on the website and running the appropriate command.
-  * Note: You should use at least PyTorch0.4.0
-- Clone this repository.
-  * Note: We currently only support Python 3+.
-- Then download the dataset by following the [instructions](#datasets) below.
-- We now support [Visdom](https://github.com/facebookresearch/visdom) for real-time loss visualization during training!
-  * To use Visdom in the browser:
-  ```Shell
-  # First install Python server and client
-  pip install visdom
-  # Start the server (probably in a screen or tmux)
-  python -m visdom.server
-  ```
-  * Then (during training) navigate to http://localhost:8097/ (see the Train section below for training details).
-- Note: For training, we currently support [VOC](http://host.robots.ox.ac.uk/pascal/VOC/) and [COCO](http://mscoco.org/), and aim to add [ImageNet](http://www.image-net.org/) support soon.
+We use [MMDetection v2](https://mmdetection.readthedocs.io/) as our environment, since we need the Deformable Convolution implementation of it. Our results are derived with the latest version of MMDetection, other version is obscure.
 
 ## Datasets
-To make things easy, we provide bash scripts to handle the dataset downloads and setup for you.  We also provide simple dataset loaders that inherit `torch.utils.data.Dataset`, making them fully compatible with the `torchvision.datasets` [API](http://pytorch.org/docs/torchvision/datasets.html).
+We currently use SSDD in our lab, which is a remote ship detection dataset widely used. It can be found at my another repository (https://github.com/HaoIrving/SSDD_coco.git).
 
+run following commands to settle the dataset:
+```Shell
+cd data
+mkdir SSDD
+cd SSDD
+git clone https://github.com/HaoIrving/SSDD_coco.git
+# or put SSDD_coco in other place, then ln -s /absolute/path/to/SSDD_coco /absolute/path/to/SANet/data/SSDD/SSDD_coco
+```
 
+<!-- 
 ### COCO
 Microsoft COCO: Common Objects in Context
 
@@ -68,9 +81,9 @@ sh data/scripts/VOC2007.sh # <directory>
 ```Shell
 # specify a directory for dataset to be downloaded into, else default is ~/data/
 sh data/scripts/VOC2012.sh # <directory>
-```
+``` -->
 
-## Training RefineDet
+## Training RefineDet++
 - First download the fc-reduced [VGG-16](https://arxiv.org/abs/1409.1556) PyTorch base network weights at:              https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
 - By default, we assume you have downloaded the file in the `RefineDet.PyTorch/weights` dir:
 
@@ -80,10 +93,11 @@ cd weights
 wget https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
 ```
 
-- To train RefineDet320 or RefineDet512 using the train scripts `train_refinedet320.sh` and `train_refinedet512.sh`. You can manually change them as you want.
+- To train RefineDet320++ or RefineDet512++.
 
 ```Shell
-./train_refinedet320.sh  #./train_refinedet512.sh
+python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/align_4e3_512vggbn/ --ngpu 4  --model 512_vggbn --batch_size 16 
+
 ```
 
 - Note:
@@ -95,18 +109,16 @@ wget https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
 To evaluate a trained network:
 
 ```Shell
-./eval_refinedet.sh
+CUDA_VISIBLE_DEVICES=3 python eval_refinedet_coco.py --prefix weights/align_4e3_512vggbn  --model 512_vggbn
 ```
 
-You can specify the parameters listed in the `eval_refinedet.py` file by flagging them or manually changing them.  
+You can specify the parameters listed in the `eval_refinedet_coco.py` file by flagging them or manually changing them.  
 
 ## TODO
 We have accumulated the following to-do list, which we hope to complete in the near future
 - Still to come:
-  * [ ] Support for multi-scale testing
+  * [ ] Support for ResNet and ResNeXt backbone.
 
 ## References
-- [Original Implementation (CAFFE)](https://github.com/sfzhang15/RefineDet)
-- A list of other great SSD ports that were sources of inspiration:
-  * [amdegroot/ssd.pytorch](https://github.com/amdegroot/ssd.pytorch)
-  * [lzx1413/PytorchSSD](https://github.com/lzx1413/PytorchSSD)
+- [Original RefineDet Implementation (CAFFE)](https://github.com/sfzhang15/RefineDet)
+- Our code is built based on [luuuyi/RefineDet.PyTorch](https://github.com/luuuyi/RefineDet.PyTorch) and [MMDetection](https://github.com/open-mmlab/mmdetection), many thanks to them.
