@@ -1,7 +1,8 @@
 A higher performance [PyTorch](http://pytorch.org/) implementation of [RefineDet++: Single-Shot Refinement Neural Network for Object Detection](http://www.cbsr.ia.ac.cn/users/sfzhang/files/TCSVT_RefineDet++.pdf ).
 
+
 ### Table of Contents
-- <a href='#major features'>Major features</a>
+- <a href='#Majorfeatures'>Major features</a>
 - <a href='#performance'>Performance</a>
 - <a href='#installation'>Installation</a>
 - <a href='#datasets'>Datasets</a>
@@ -29,10 +30,11 @@ A higher performance [PyTorch](http://pytorch.org/) implementation of [RefineDet
 ##### COCO AP 
 
 | Arch | Our PyTorch Version |
-|:-:|:-:|:-:|:-:|
-| RefineDet++512 ms| 66.21% | 
+|:-:|:-:|
+| RefineDet++512 ms | 66.21% |
 | RefineDet++512 | 62.94% | 
 | RefineDet512 | 62.57% | 
+
 ms: multi scale test, we report the best results among many times run, so the results are convincing.
 
 #### VOC2007 Test
@@ -40,7 +42,7 @@ ms: multi scale test, we report the best results among many times run, so the re
 ##### mAP 
 
 | Arch | Paper | Our PyTorch Version |
-|:-:|:-:|:-:|:-:|
+|:-:|:-:|:-:|
 | RefineDet++512 | 82.5% | TODO |
 
 ## Installation
@@ -102,7 +104,6 @@ python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/align
 
 - Note:
   * For training, an NVIDIA GPU is strongly recommended for speed.
-  * For instructions on Visdom usage/installation, see the <a href='#installation'>Installation</a> section.
   * You can pick-up training from a checkpoint by specifying the path as one of the training parameters (again, see `train_refinedet.py` for options)
 
 ## Evaluation
