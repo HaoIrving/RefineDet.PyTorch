@@ -538,7 +538,7 @@ if __name__ == '__main__':
     # prefix = 'weights/at1_mh_4e3_1_ce_sigma1'
     # prefix = 'weights/at1_mh_4e3_1_ce_sigma02'
     # prefix = 'weights/at1_mh2_4e3_1'
-    # prefix = 'weights/at2_mh_4e3_03'
+    prefix = 'weights/best_at1_mh_4e3_1_ce_640vggbn'
     # prefix = 'weights/at2_mh_4e3_01'
     # prefix = 'weights/at2_4e3_03'
     # prefix = 'weights/at2_4e3_01'
@@ -555,7 +555,7 @@ if __name__ == '__main__':
     model = args.model
     # model = '512_vggbn'
     # model = '5125_vggbn'
-    # model = '640_vggbn'
+    model = '640_vggbn'
     # model = '512_ResNet_101'
     # model = '512_ResNet_50'
     # model = '1024_ResNet_101'
@@ -611,7 +611,8 @@ if __name__ == '__main__':
         backbone_dict = dict(bn=True)
 
     cfg = coco_refinedet[args.input_size]
-    target_size = cfg['min_dim']
+    # target_size = cfg['min_dim']
+    target_size = 1024
     seg_num_grids = cfg['feature_maps']  # [64, 32, 16, 8]
     num_classes = cfg['num_classes']
     objectness_threshold = 0.01
@@ -621,7 +622,7 @@ if __name__ == '__main__':
     args.top_k = 1000
     args.keep_top_k = 500
     args.vis_thres = 0.3
-    # args.multi_scale_test = True
+    args.multi_scale_test = True
 
     # load data
     dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sar')
@@ -640,9 +641,9 @@ if __name__ == '__main__':
     # start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
-    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_245.pth') 
+    # ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
+    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_epoches_280.pth') 
     # ToBeTested *= 5
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
