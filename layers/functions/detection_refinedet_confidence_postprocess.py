@@ -44,10 +44,10 @@ class Detect_RefineDet(Function):
         # confidence_maps = torch.cat([o.view(o.size(0), -1) for o in confidence_maps], 1)
         # confidence_maps = confidence_maps.view(confidence_maps.size(0), -1, 1)
 
-        non_object_index = confidence_maps <= self.confidence_map_threshold
-        if non_object_index.sum():
-            print(non_object_index.sum())
-        conf_data[non_object_index.expand_as(conf_data)] = 0
+        # non_object_index = confidence_maps <= self.confidence_map_threshold
+        # if non_object_index.sum():
+        #     print(non_object_index.sum())
+        # conf_data[non_object_index.expand_as(conf_data)] = 0
 
         # confidence_maps /= confidence_maps.max()
         # conf_data = conf_data * confidence_maps
