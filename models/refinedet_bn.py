@@ -49,7 +49,7 @@ class RefineDet(nn.Module):
         self.conv4_3_layer = (23, 33)[self.bn]
         self.conv5_3_layer = (30, 43)[self.bn]
         self.extra_1_layer = (4, 6)[self.bn]
-        if size == 640 or size == 5126:
+        if size == 640 or size == 5126 or size == 768:
             self.extra_2_layer = (8, 12)[self.bn]
 
         # for calc offset of ADM
@@ -153,7 +153,7 @@ class RefineDet(nn.Module):
                 sources.append(x)
                 if self.phase == 'test':
                     feat_sizes.append(x.shape[2:])
-            if (self.size == 640 or self.size == 5126) and self.extra_2_layer - 1 == k:
+            if (self.size == 640 or self.size == 5126 or self.size == 768) and self.extra_2_layer - 1 == k:
                 sources.append(x)
                 if self.phase == 'test':
                     feat_sizes.append(x.shape[2:])

@@ -337,8 +337,7 @@ def soft_bbox_vote(det):
     return dets
 
 
-def multi_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stats=None):
-    target_size = net.size
+def multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, detect, AP_stats=None):
     num_images = len(dataset)
     all_boxes = [[[] for _ in range(num_images)]
                  for _ in range(num_classes)]
@@ -440,8 +439,7 @@ def multi_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stat
     AP_stats['ap_large'].append(stats[5])
 
 
-def single_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stats=None):
-    target_size = net.size
+def single_scale_test_net(target_size, save_folder, net, num_classes, dataset, detect, AP_stats=None):
     num_images = len(dataset)
     all_boxes = [[[] for _ in range(num_images)]
                  for _ in range(num_classes)]
@@ -522,8 +520,8 @@ if __name__ == '__main__':
     # args.wo_alignconv = True
     wo_alignconv = args.wo_alignconv
     model = args.model
-    model = '768_vggbn'
-    # model = '640_vggbn'
+    # model = '768_vggbn'
+    model = '640_vggbn'
     # model = '512_vggbn'
     # model = '512_ResNet_101'
     # model = '512_ResNet_50'
@@ -565,6 +563,8 @@ if __name__ == '__main__':
         args.input_size = str(640)
         backbone_dict = dict(bn=True)
     
+    # target_size = int(args.input_size)
+    target_size = 1024
     num_classes = 2 
     objectness_threshold = 0.01
     args.nms_threshold = 0.49  # nms
@@ -611,9 +611,9 @@ if __name__ == '__main__':
         ap_stats['epoch'].append(start_epoch + index * step)
         print("evaluating epoch: {}".format(ap_stats['epoch'][-1]))
         if not args.multi_scale_test:
-            single_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stats=ap_stats)
+            single_scale_test_net(target_size, save_folder, net, num_classes, dataset, detect, AP_stats=ap_stats)
         else:
-            multi_scale_test_net(save_folder, net, num_classes, dataset, detect, AP_stats=ap_stats)
+            multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, detect, AP_stats=ap_stats)
 
     # print the best model.
     max_idx = np.argmax(np.asarray(ap_stats['ap50']))
