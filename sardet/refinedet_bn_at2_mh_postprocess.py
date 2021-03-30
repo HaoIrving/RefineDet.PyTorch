@@ -302,13 +302,13 @@ class RefineDet(nn.Module):
         adm_loc = torch.cat([o.view(o.size(0), -1) for o in adm_loc], 1)
         adm_conf = torch.cat([o.view(o.size(0), -1) for o in adm_conf], 1)
 
-        # confidence_maps = [map_.permute(0, 2, 3, 1).contiguous() for map_ in confidence_maps]
-        # confidence_maps = [map_.repeat(1, 1, 1, 3) for map_ in confidence_maps]
-        # confidence_maps = torch.cat([o.view(o.size(0), -1) for o in confidence_maps], 1)
+        confidence_maps = [map_.permute(0, 2, 3, 1).contiguous() for map_ in confidence_maps]
+        confidence_maps = [map_.repeat(1, 1, 1, 3) for map_ in confidence_maps]
+        confidence_maps = torch.cat([o.view(o.size(0), -1) for o in confidence_maps], 1)
         if self.phase == "test":
             output = (
-                # confidence_maps.view(confidence_maps.size(0), -1, 1), 
-                confidence_maps, 
+                confidence_maps.view(confidence_maps.size(0), -1, 1), 
+                # confidence_maps, 
                 arm_loc.view(arm_loc.size(0), -1, 4),           # arm loc preds
                 self.softmax(arm_conf.view(arm_conf.size(0), -1,
                              2)),                               # arm conf preds
