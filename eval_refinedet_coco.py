@@ -501,7 +501,7 @@ if __name__ == '__main__':
     prefix = args.prefix
     # prefix = 'weights/align_2e3_512res50'
     # prefix = 'weights/align_1e3_512res101'
-    prefix = 'weights/align_4e3_640vggbn'
+    # prefix = 'weights/align_4e3_640vggbn'
     
     # prefix = 'weights/align_4e3_5l'
     # prefix = 'weights/align_2e3'
@@ -521,7 +521,7 @@ if __name__ == '__main__':
     wo_alignconv = args.wo_alignconv
     model = args.model
     # model = '768_vggbn'
-    model = '640_vggbn'
+    # model = '640_vggbn'
     # model = '512_vggbn'
     # model = '512_ResNet_101'
     # model = '512_ResNet_50'
@@ -563,8 +563,8 @@ if __name__ == '__main__':
         args.input_size = str(640)
         backbone_dict = dict(bn=True)
     
-    # target_size = int(args.input_size)
-    target_size = 1024
+    target_size = int(args.input_size)
+    # target_size = 1024
     num_classes = 2 
     objectness_threshold = 0.01
     args.nms_threshold = 0.49  # nms
@@ -602,7 +602,7 @@ if __name__ == '__main__':
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
-        # net = load_model(net, args.trained_model, load_to_cpu)
+        net = load_model(net, args.trained_model, load_to_cpu)
         net.eval()
         print('Finished loading model!')
         # print(net)
