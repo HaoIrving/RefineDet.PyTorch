@@ -172,7 +172,7 @@ def vis_detection(im, target, cls_dets, save_folder, target_size, i):
 
 
 def im_detect_vis(net, im, target, i, target_size):
-    device = net.arm_conf[0].weight.device
+    device = net.arm_loc[0].weight.device
     h, w, _ = im.shape
     scale = torch.Tensor([w, h, w, h])
     scale = scale.to(device)
@@ -193,7 +193,7 @@ def im_detect_vis(net, im, target, i, target_size):
 
 
 def im_detect(net, im, target_size):
-    device = net.arm_conf[0].weight.device
+    device = net.arm_loc[0].weight.device
     h, w, _ = im.shape
     scale = torch.Tensor([w, h, w, h])
     scale = scale.to(device)
@@ -213,7 +213,7 @@ def im_detect(net, im, target_size):
 
 
 def im_detect_ratio(net, im, target_size1, target_size2):
-    device = net.arm_conf[0].weight.device
+    device = net.arm_loc[0].weight.device
     h, w, _ = im.shape
     scale = torch.Tensor([w, h, w, h])
     scale = scale.to(device)
@@ -604,7 +604,7 @@ if __name__ == '__main__':
             from sardet.refinedet_bn_at1_d_mh_shallow import build_refinedet
         if args.at2:
             # from sardet.refinedet_bn_at2_mh import build_refinedet
-            from sardet.refinedet_bn_at2_mh_postprocess import build_refinedet
+            from sardet.refinedet_bn_at2_mh_postprocess_wo_armconf import build_refinedet
             if args.dcn_head:
                 from sardet.refinedet_bn_at2_d_mh import build_refinedet
             if args.shallow_head:

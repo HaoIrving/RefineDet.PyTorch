@@ -184,4 +184,16 @@ Best ap50: 0.9877 at epoch 200
 ap: 0.6665, ap50: 0.9877, ap75: 0.7906, ap_s: 0.6222, ap_m: 0.7349, ap_l: 0.7372
 Best ap  : 0.6665 at epoch 200
 ap: 0.6665, ap50: 0.9877, ap75: 0.7906, ap_s: 0.6222, ap_m: 0.7349, ap_l: 0.7372
+
+at2_mh_pp_wo_armconf_filter_4e3_1_ce_640vggbn
+plain
+Best ap50: 0.9744 at epoch 220
+ap: 0.6271, ap50: 0.9744, ap75: 0.7270, ap_s: 0.5898, ap_m: 0.6778, ap_l: 0.6629
+Best ap  : 0.6376 at epoch 275
+ap: 0.6376, ap50: 0.9736, ap75: 0.7458, ap_s: 0.5964, ap_m: 0.6939, ap_l: 0.6999
+confidence map 
+Best ap50: 0.9745 at epoch 220
+ap: 0.6271, ap50: 0.9745, ap75: 0.7270, ap_s: 0.5898, ap_m: 0.6778, ap_l: 0.6637
+Best ap  : 0.6377 at epoch 275
+ap: 0.6377, ap50: 0.9738, ap75: 0.7458, ap_s: 0.5964, ap_m: 0.6940, ap_l: 0.6999
 """
