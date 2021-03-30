@@ -386,22 +386,24 @@ def multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, de
         det0_f = flip_im_detect(net, im, target_size)
         det0 = np.row_stack((det0, det0_f))
 
-        det_r = im_detect_ratio(net, im, target_size, int(0.75*target_size))
-        det_r_f = flip_im_detect_ratio(net, im, target_size, int(0.75*target_size))
-        det_r = np.row_stack((det_r, det_r_f))
+        # det_r = im_detect_ratio(net, im, target_size, int(0.75*target_size))
+        # det_r_f = flip_im_detect_ratio(net, im, target_size, int(0.75*target_size))
+        # det_r = np.row_stack((det_r, det_r_f))
 
         # shrink: only detect big object
         det_s1 = im_detect(net, im, int(0.5*target_size))
         det_s1_f = flip_im_detect(net, im, int(0.5*target_size))
         det_s1 = np.row_stack((det_s1, det_s1_f))
 
-        det_s2 = im_detect(net, im, int(0.75*target_size))
-        det_s2_f = flip_im_detect(net, im, int(0.75*target_size))
-        det_s2 = np.row_stack((det_s2, det_s2_f))
+        # det_s2 = im_detect(net, im, int(0.75*target_size))
+        # det_s2_f = flip_im_detect(net, im, int(0.75*target_size))
+        # det_s2 = np.row_stack((det_s2, det_s2_f))
 
         # #enlarge: only detect small object
-        det3 = im_detect(net, im, int(1.75*target_size))
-        det3_f = flip_im_detect(net, im, int(1.75*target_size))
+        # det3 = im_detect(net, im, int(1.75*target_size))
+        # det3_f = flip_im_detect(net, im, int(1.75*target_size))
+        det3 = im_detect(net, im, int(2*target_size))
+        det3_f = flip_im_detect(net, im, int(2*target_size))
         det3 = np.row_stack((det3, det3_f))
         index = np.where(np.minimum(det3[:, 2] - det3[:, 0] + 1, det3[:, 3] - det3[:, 1] + 1) < 128)[0]
         det3 = det3[index, :]
@@ -433,7 +435,8 @@ def multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, de
             det7 = det7[index, :]
             det = np.row_stack((det0, det_r, det_s1, det_s2, det3, det4, det5, det6, det7))
         else:
-            det = np.row_stack((det0, det_r, det_s1, det_s2, det3, det4))
+            # det = np.row_stack((det0, det_r, det_s1, det_s2, det3, det4))
+            det = np.row_stack((det0, det_s1, det3, det4))
         _t['im_detect'].toc()
 
         for j in range(1, num_classes):
@@ -612,7 +615,7 @@ if __name__ == '__main__':
 
     cfg = coco_refinedet[args.input_size]
     # target_size = cfg['min_dim']
-    target_size = 1024
+    target_size = 768
     seg_num_grids = cfg['feature_maps']  # [64, 32, 16, 8]
     num_classes = cfg['num_classes']
     objectness_threshold = 0.01
