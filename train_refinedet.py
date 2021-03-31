@@ -196,7 +196,7 @@ def train():
     print('Using the specified args:')
     print(args)
 
-    refinedet_net = build_refinedet('train', cfg['min_dim'], cfg['num_classes'], backbone_dict)
+    refinedet_net = build_refinedet('train', int(args.input_size), cfg['num_classes'], backbone_dict)
     net = refinedet_net
     print(net)
 
