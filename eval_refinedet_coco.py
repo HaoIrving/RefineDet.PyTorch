@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
-from data import COCOroot, MEANS, COCODetection
+from data import COCOroot, MEANS, COCODetection, coco_refinedet
 import torch.utils.data as data
 
 from layers import Detect_RefineDet, Detect
@@ -563,9 +563,10 @@ if __name__ == '__main__':
         args.input_size = str(640)
         backbone_dict = dict(bn=True)
     
-    target_size = int(args.input_size)
     # target_size = 1024
-    num_classes = 2 
+    cfg = coco_refinedet[args.input_size]
+    target_size = cfg['min_dim']
+    num_classes = cfg['num_classes']
     objectness_threshold = 0.01
     args.nms_threshold = 0.49  # nms
     # args.nms_threshold = 0.45  # softnms
