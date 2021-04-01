@@ -9,7 +9,8 @@ import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
-from data import COCOroot, MEANS, COCODetection, coco_refinedet
+from data import VOC_ROOT, VOCAnnotationTransform, VOCDetection, BaseTransform
+from data import VOC_CLASSES as labelmap
 import torch.utils.data as data
 
 from layers import Detect_RefineDet, Detect
@@ -26,6 +27,10 @@ import pickle
 import cv2
 import json
 
+if sys.version_info[0] == 2:
+    import xml.etree.cElementTree as ET
+else:
+    import xml.etree.ElementTree as ET
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -35,7 +40,7 @@ parser = argparse.ArgumentParser(description='Single Shot MultiBox Detector Eval
 parser.add_argument('--trained_model', default='weights/ssd300_mAP_77.43_v2.pth', type=str, help='Trained state_dict file path to open')
 parser.add_argument('--save_folder', default='eval/', type=str, help='File path to save results')
 parser.add_argument('--cuda', default=True, type=str2bool, help='Use cuda to train model')
-# parser.add_argument('--voc_root', default=VOC_ROOT, help='Location of VOC root directory')
+parser.add_argument('--voc_root', default=VOC_ROOT, help='Location of VOC root directory')
 parser.add_argument('--cleanup', default=True, type=str2bool, help='Cleanup and remove results files following eval')
 parser.add_argument('--input_size', default='512', choices=['320', '512'], type=str, help='RefineDet320 or RefineDet512')
 parser.add_argument('--retest', default=False, type=bool, help='test cache results')
@@ -547,10 +552,18 @@ if __name__ == '__main__':
     args.vis_thres = 0.3
     # args.multi_scale_test = True
 
+    annopath = os.path.join(args.voc_root, 'VOC2007', 'Annotations', '%s.xml')
+    imgpath = os.path.join(args.voc_root, 'VOC2007', 'JPEGImages', '%s.jpg')
+    imgsetpath = os.path.join(args.voc_root, 'VOC2007', 'ImageSets',
+                            'Main', '{:s}.txt')
+    YEAR = '2007'
+    devkit_path = args.voc_root + 'VOC' + YEAR
+    dataset_mean = (104, 117, 123)
+    set_type = 'test'
+
     # load data
     dataset = COCODetection(COCOroot, ['val2017'], None, dataset_name='coco2017')
-    # dataset = COCODetection(COCOroot, ['test2017'], None, dataset_name='coco2017')
-
+    dataset = VOCDetection(args.voc_root, [('2007', set_type)], BaseTransform(int(args.input_size), dataset_mean), VOCAnnotationTransform())
     # load net
     torch.set_grad_enabled(False)
     load_to_cpu = not args.cuda
@@ -563,10 +576,9 @@ if __name__ == '__main__':
     # start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
-    # ToBeTested *= 5
+    ToBeTested = [prefix + f'/RefineDet{args.input_size}_VOC_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_VOC_final.pth') 
+    
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path

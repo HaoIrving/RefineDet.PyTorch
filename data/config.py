@@ -93,7 +93,7 @@ voc_refinedet = {
 
 coco_refinedet = {
     '320': {
-        'num_classes': 2,
+        'num_classes': 81,
         'feature_maps': [40, 20, 10, 5],
         'min_dim': 320,
         'steps': [8, 16, 32, 64],
@@ -105,7 +105,7 @@ coco_refinedet = {
         'name': 'RefineDet_COCO_320',
     },
     '512': {
-        'num_classes': 2,
+        'num_classes': 81,
         'feature_maps': [64, 32, 16, 8],
         'min_dim': 512,
         'steps': [8, 16, 32, 64],
@@ -117,7 +117,7 @@ coco_refinedet = {
         'name': 'RefineDet_COCO_512',
     },    
     '1024': {
-        'num_classes': 2,
+        'num_classes': 81,
         'feature_maps': [128, 64, 32, 16, 8],
         'min_dim': 1024,
         'steps': [8, 16, 32, 64, 128],

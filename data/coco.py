@@ -23,6 +23,7 @@ from pycocotools.cocoeval import COCOeval
 from .config import HOME
 
 COCOroot = os.path.join(HOME,"data/coco")
+# COCOroot = os.path.join(HOME,"data/tianchi_tile_coco")
 
 class COCODetection(data.Dataset):
 
@@ -54,22 +55,23 @@ class COCODetection(data.Dataset):
         self.name = dataset_name
         self.ids = list()
         self.annotations = list()
-        self._view_map = {
-            'minival2014' : 'val2014',          # 5k val2014 subset
-            'valminusminival2014' : 'val2014',  # val2014 \setminus minival2014
-            'test-dev2015' : 'test2015',
-        }
 
+        # use coco2017 instead of coco2014
+        # self._view_map = {
+        #     'minival2014' : 'val2014',          # 5k val2014 subset
+        #     'valminusminival2014' : 'val2014',  # val2014 \setminus minival2014
+        #     'test-dev2015' : 'test2015',
+        # }
         # for (year, image_set) in image_sets:
-        #     coco_name = image_set+year  # 'sarship_train'
-        #     data_name = (self._view_map[coco_name]  # 'sarship_train'
+        #     coco_name = image_set+year  
+        #     data_name = (self._view_map[coco_name]  
         #                 if coco_name in self._view_map
         #                 else coco_name)
 
-        for image_set in image_sets:
+        for image_set in image_sets:  
             self.image_set = image_set
             coco_name = image_set
-            data_name = image_set # 'train'
+            data_name = image_set # 'train2017'
             annofile = self._get_ann_file(coco_name)
             _COCO = COCO(annofile)
             self._COCO = _COCO
@@ -83,10 +85,10 @@ class COCODetection(data.Dataset):
             indexes = _COCO.getImgIds()
             self.image_indexes = indexes
             self.ids.extend([self.image_path_from_index(data_name, index) for index in indexes ])
-            # if image_set.find('test') != -1:
-            #     print('test set will not load annotations!')
-            # else:
-            self.annotations.extend(self._load_coco_annotations(coco_name, indexes,_COCO))
+            if image_set.find('test') != -1:
+                print('test set will not load annotations!')
+            else:
+                self.annotations.extend(self._load_coco_annotations(coco_name, indexes,_COCO))
 
 
 
@@ -107,9 +109,8 @@ class COCODetection(data.Dataset):
 
 
     def _get_ann_file(self, name):
-        # prefix = 'instances' if name.find('test') == -1 \
-        #         else 'image_info'
-        prefix = 'instances' 
+        prefix = 'instances' if name.find('test') == -1 \
+                else 'image_info'
         return os.path.join(self.root, 'annotations',
                         prefix + '_' + name + '.json')
 
@@ -175,15 +176,6 @@ class COCODetection(data.Dataset):
         target = self.annotations[index]
         img = cv2.imread(img_id, -1)
 
-        # pixel_max = img.max()
-        # # # pixel_min = img.min()
-        # k = pixel_max ** (1 / 255)
-        # img = np.clip(img, 1, None)
-        # img = np.log(img) / np.log(k)
-
-        # img = img[:, :, np.newaxis]
-        # img = np.concatenate((img, img, img), axis=2)
-
         height, width, _ = img.shape
 
         if self.target_transform is not None:
@@ -191,8 +183,7 @@ class COCODetection(data.Dataset):
 
 
         if self.transform is not None:
-            img, boxes, labels = self.transform(img, target[:, :4],
-                                                target[:, 4])
+            img, boxes, labels = self.transform(img, target[:, :4], target[:, 4])
             # to rgb
             img = img[:, :, (2, 1, 0)]
 
@@ -216,16 +207,6 @@ class COCODetection(data.Dataset):
         img_id = self.ids[index]
         img = cv2.imread(img_id, -1)
         target = self.annotations[index]
-
-        # pixel_max = img.max()
-        # # # pixel_min = img.min()
-        # k = pixel_max ** (1 / 255)
-        # img = np.clip(img, 1, None)
-        # img = np.log(img) / np.log(k)
-
-        # img = img[:, :, np.newaxis]
-        # img = np.concatenate((img, img, img), axis=2)
-
         return img, target
 
     def pull_tensor(self, index):
@@ -340,8 +321,8 @@ class COCODetection(data.Dataset):
         res_file += '.json'
         self._write_coco_results_file(all_boxes, res_file)
         # Only do evaluation on non-test sets
-        # if self.coco_name.find('test') == -1:
-        stats = self._do_detection_eval(res_file, output_dir)
+        if self.coco_name.find('test') == -1:
+            stats = self._do_detection_eval(res_file, output_dir)
         return stats
         # Optionally cleanup results json file
 

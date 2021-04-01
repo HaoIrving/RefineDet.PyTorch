@@ -138,7 +138,8 @@ def train():
                   "--dataset_root was not specified.")
             args.dataset_root = COCOroot
         cfg = coco_refinedet[args.input_size]
-        train_sets = [('train2017', 'val2017')]
+        train_sets = [('train2017')]
+        # train_sets = [('train2017', 'val2017')]
         dataset = COCODetection(COCOroot, train_sets, SSDAugmentation(cfg['min_dim'], MEANS))
     elif args.dataset == 'VOC':
         '''if args.dataset_root == COCO_ROOT:
@@ -200,6 +201,8 @@ def train():
     max_iter = args.max_epoch * epoch_size
     
     stepvalues = (args.max_epoch * 2 // 3 * epoch_size, args.max_epoch * 8 // 9 * epoch_size, args.max_epoch * epoch_size)
+    if args.dataset == 'VOC':
+        stepvalues = (args.max_epoch * 2 // 3 * epoch_size, args.max_epoch * 5 // 6 * epoch_size, args.max_epoch * epoch_size)
     step_index = 0
 
     if args.resume_epoch > 0:

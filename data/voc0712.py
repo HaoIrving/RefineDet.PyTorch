@@ -25,7 +25,7 @@ VOC_CLASSES = (  # always index 0
     'sheep', 'sofa', 'train', 'tvmonitor')
 
 # note: if you used our download scripts, this should be right
-VOC_ROOT = osp.join(HOME, "datasets/VOCdevkit/")
+VOC_ROOT = osp.join(HOME, "data/VOCdevkit/")
 
 
 class VOCAnnotationTransform(object):
@@ -42,8 +42,9 @@ class VOCAnnotationTransform(object):
     """
 
     def __init__(self, class_to_ind=None, keep_difficult=False):
+        _classes = tuple(['__background__'] + [c for c in VOC_CLASSES])
         self.class_to_ind = class_to_ind or dict(
-            zip(VOC_CLASSES, range(len(VOC_CLASSES))))
+            zip(_classes, range(len(_classes))))
         self.keep_difficult = keep_difficult
 
     def __call__(self, target, width, height):
@@ -67,7 +68,7 @@ class VOCAnnotationTransform(object):
             for i, pt in enumerate(pts):
                 cur_pt = int(bbox.find(pt).text) - 1
                 # scale height or width
-                cur_pt = cur_pt / width if i % 2 == 0 else cur_pt / height
+                # cur_pt = cur_pt / width if i % 2 == 0 else cur_pt / height
                 bndbox.append(cur_pt)
             label_idx = self.class_to_ind[name]
             bndbox.append(label_idx)
@@ -130,7 +131,7 @@ class VOCDetection(data.Dataset):
             target = self.target_transform(target, width, height)
 
         if self.transform is not None:
-            target = np.array(target)
+            target = np.array(target, dtype=np.float64)
             img, boxes, labels = self.transform(img, target[:, :4], target[:, 4])
             # to rgb
             img = img[:, :, (2, 1, 0)]
