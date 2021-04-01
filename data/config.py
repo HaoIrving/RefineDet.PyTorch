@@ -1,11 +1,7 @@
 # config.py
 import os.path
 
-# gets home dir cross platform
-# HOME = os.path.expanduser("~")
-# HOME = os.path.expanduser("~/projects/ssd.pytorch")
-HOME = os.getcwd()
-COCOroot = os.path.join(HOME,"data/SSDD/SSDD_coco")
+
 # for making bounding boxes pretty
 COLORS = ((255, 0, 0, 128), (0, 255, 0, 128), (0, 0, 255, 128),
           (0, 255, 255, 128), (255, 0, 255, 128), (255, 255, 0, 128))
@@ -87,7 +83,7 @@ voc_refinedet = {
         'aspect_ratios': [[2], [2], [2], [2]],
         'variance': [0.1, 0.2],
         'clip': True,
-        'name': 'RefineDet_VOC_320',
+        'name': 'RefineDet_VOC_512',
     }
 }
 
@@ -128,56 +124,4 @@ coco_refinedet = {
         'clip': True,
         'name': 'RefineDet_COCO_1024',
     },
-    '5125': {
-        'num_classes': 2,
-        'feature_maps': [128, 64, 32, 16, 8],
-        'min_dim': 512,
-        'steps': [4, 8, 16, 32, 64],
-        'min_sizes': [16, 32, 64, 128, 256],
-        'scale_ranges': ((1, 32), (16, 64), (32, 128), (64, 256), (128, 512)),
-        'max_sizes': [],
-        'aspect_ratios': [[2], [2], [2], [2], [2]],
-        'variance': [0.1, 0.2],
-        'clip': True,
-        'name': 'RefineDet_COCO_5125',
-    },
-    '5126': {
-        'num_classes': 2,
-        'feature_maps': [128, 64, 32, 16, 8, 4],
-        'min_dim': 512,
-        'steps': [4, 8, 16, 32, 64, 128],
-        'min_sizes': [16, 32, 64, 128, 256, 512],
-        'scale_ranges': ((1, 32), (16, 64), (32, 128), (64, 256), (128, 512), (256, 1024)),
-        'max_sizes': [],
-        'aspect_ratios': [[2], [2], [2], [2], [2], [2]],
-        'variance': [0.1, 0.2],
-        'clip': True,
-        'name': 'RefineDet_COCO_5126',
-    },
-    '640': {
-        'num_classes': 2,
-        'feature_maps': [160, 80, 40, 20, 10, 5],
-        'min_dim': 640,
-        'steps': [4, 8, 16, 32, 64, 128],
-        'min_sizes': [16, 32, 64, 128, 256, 512],
-        'scale_ranges': ((1, 32), (16, 64), (32, 128), (64, 256), (128, 512), (256, 1024)),
-        'max_sizes': [],
-        'aspect_ratios': [[2], [2], [2], [2], [2], [2]],
-        'variance': [0.1, 0.2],
-        'clip': True,
-        'name': 'RefineDet_COCO_640',
-    },
-    '768': {
-        'num_classes': 2,
-        'feature_maps': [192, 96, 48, 24, 12, 6],
-        'min_dim': 768,
-        'steps': [4, 8, 16, 32, 64, 128],
-        'min_sizes': [16, 32, 64, 128, 256, 512],
-        'max_sizes': [],
-        'aspect_ratios': [[2], [2], [2], [2], [2], [2]],
-        'variance': [0.1, 0.2],
-        'clip': True,
-        'name': 'RefineDet_COCO_768',
-    },
-
 }

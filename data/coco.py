@@ -22,6 +22,12 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
 
+# gets home dir cross platform
+# HOME = os.path.expanduser("~")
+# HOME = os.path.expanduser("~/projects/ssd.pytorch")
+HOME = os.getcwd()
+COCOroot = os.path.join(HOME,"data/coco")
+
 class COCODetection(data.Dataset):
 
     """VOC Detection Dataset Object
@@ -64,14 +70,10 @@ class COCODetection(data.Dataset):
         #                 if coco_name in self._view_map
         #                 else coco_name)
 
-        # only support single dataset now.
-        for (dataset, image_set) in image_sets:
+        for image_set in image_sets:
             self.image_set = image_set
-            if not dataset:
-                coco_name = image_set
-            else:
-                coco_name = dataset + '_' + image_set  # 'sarship_train'
-            data_name = image_set.split('_')[0]  # 'train'
+            coco_name = image_set
+            data_name = image_set # 'train'
             annofile = self._get_ann_file(coco_name)
             _COCO = COCO(annofile)
             self._COCO = _COCO

@@ -174,18 +174,13 @@ def train():
                   "--dataset_root was not specified.")
             args.dataset_root = COCOroot
         cfg = coco_refinedet[args.input_size]
-        # dataset = COCODetection(root=args.dataset_root, image_set='train',
-        #                         transform=SSDAugmentation(cfg['min_dim'],
-        #                                                   MEANS))
-        train_sets = [('sarship', 'train')]
+        train_sets = [('train2017', 'val2017')]
         dataset = COCODetection(COCOroot, train_sets, SSDAugmentation(cfg['min_dim'], MEANS))
     elif args.dataset == 'VOC':
         '''if args.dataset_root == COCO_ROOT:
             parser.error('Must specify dataset if specifying dataset_root')'''
         cfg = voc_refinedet[args.input_size]
-        dataset = VOCDetection(root=args.dataset_root,
-                               transform=SSDAugmentation(cfg['min_dim'],
-                                                         MEANS))
+        dataset = VOCDetection(root=VOC_ROOT, transform=SSDAugmentation(cfg['min_dim'], MEANS))
     print('Training RefineDet on:', dataset.name)
     print('Using the specified args:')
     print(args)
