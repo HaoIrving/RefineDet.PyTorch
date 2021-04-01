@@ -146,13 +146,6 @@ elif model == '1024_ResNeXt_152':
     backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=frozen_stages)
 elif model == '512_vggbn':
     from models.refinedet_bn import build_refinedet
-    args.input_size = str(512)
-    backbone_dict = dict(bn=True)
-    if pretrained:
-        pretrained=args.basenet
-        backbone_dict = dict(bn=False)
-elif model == '640_vggbn':
-    from models.refinedet_bn import build_refinedet
     if wo_alignconv:
         from models.refinedet_bn_wo_AlignConv import build_refinedet
     if wo_refined_anchor:
@@ -160,11 +153,12 @@ elif model == '640_vggbn':
     if wo_fused_feature:
         from models.refinedet_bn_wo_AlignConv_RefinedAnchor_FusedFeature import build_refinedet
         wo_refined_anchor = True
-    args.input_size = str(640)
+    args.input_size = str(512)
     backbone_dict = dict(bn=True)
     if pretrained:
         pretrained=args.basenet
         backbone_dict = dict(bn=False)
+
 
 def train():
     if args.visdom:
