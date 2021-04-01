@@ -119,11 +119,9 @@ class Timer(object):
             return self.diff
 
 
-def vis_detection(im, target, cls_dets, save_folder, target_size, i):
-    h, w, _ = im.shape
+def put_gtbox(im_gt, target, h, w, target_size):
     xr = target_size / w
     yr = target_size / h
-    im_gt = cv2.resize(im, (target_size, target_size), interpolation=cv2.INTER_LINEAR).astype(np.uint8)
     for b in target:
         b[0] *= xr
         b[2] *= xr
@@ -135,6 +133,10 @@ def vis_detection(im, target, cls_dets, save_folder, target_size, i):
         # cy = b[1]
         # text = "ship"
         # cv2.putText(im_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
+    return im_gt
+
+
+def put_box(im_gt, cls_dets):
     boxes = cls_dets.copy()
     for b in boxes:
         b[0] *= xr
@@ -145,10 +147,18 @@ def vis_detection(im, target, cls_dets, save_folder, target_size, i):
             continue
         b = list(map(int, b))
         cv2.rectangle(im_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
-        cx = b[2]
-        cy = b[1] + 12
+        # cx = b[2]
+        # cy = b[1] + 12
         # text = "{:.2f}".format(b[4])
         # cv2.putText(im_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
+    return im_gt
+
+
+def vis_detection(im, target, cls_dets, save_folder, target_size, i):
+    h, w, _ = im.shape
+    im_gt = cv2.resize(im, (target_size, target_size), interpolation=cv2.INTER_LINEAR).astype(np.uint8)
+    im_gt = put_gtbox(im_gt, target, h, w, target_size)
+    im_gt = put_box(im_gt, cls_dets)
     # cv2.imshow('res', im_gt)
     # cv2.waitKey(0)
     save_gt_dir = os.path.join(save_folder, 'gt_im')
