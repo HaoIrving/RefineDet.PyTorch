@@ -323,6 +323,6 @@ class COCODetection(data.Dataset):
         # Only do evaluation on non-test sets
         if self.coco_name.find('test') == -1:
             stats = self._do_detection_eval(res_file, output_dir)
-        return stats
+            return stats
         # Optionally cleanup results json file
 

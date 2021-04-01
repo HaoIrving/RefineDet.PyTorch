@@ -63,6 +63,7 @@ parser.add_argument('--ngpu', default=4, type=int, help='gpus')
 parser.add_argument('--pretrained', action="store_true", default=False, 
                     help='Use pretrained backbone')
 parser.add_argument('--model', default='512_vggbn', type=str, help='model name')
+parser.add_argument('-woalign', '--wo_alignconv', action="store_true", default=False, help=' ')
 args = parser.parse_args()
 
 
@@ -117,6 +118,8 @@ elif model == '1024_ResNeXt_152':
     backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=frozen_stages)
 elif model == '512_vggbn':
     from models.refinedet_bn import build_refinedet
+    if args.wo_alignconv:
+        from models.refinedet_bn_wo_AlignConv import build_refinedet
     args.input_size = str(512)
     backbone_dict = dict(bn=True)
     if pretrained:

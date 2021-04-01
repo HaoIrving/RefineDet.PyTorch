@@ -9,11 +9,10 @@ import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
-from data import VOC_ROOT, VOCAnnotationTransform, VOCDetection, BaseTransform
-from data import VOC_CLASSES as labelmap
+from data import VOC_ROOT, MEANS, VOCDetection, voc_refinedet
 import torch.utils.data as data
 
-from layers import Detect_RefineDet, Detect
+from layers import Detect_RefineDet
 from utils.nms_wrapper import nms, soft_nms
 from layers import PriorBox
 from plot_curve import plot_map, plot_loss
@@ -46,13 +45,14 @@ parser.add_argument('--input_size', default='512', choices=['320', '512'], type=
 parser.add_argument('--retest', default=False, type=bool, help='test cache results')
 parser.add_argument('--show_image', action="store_true", default=False, help='show detection results')
 parser.add_argument('--vis_thres', default=0.5, type=float, help='visualization_threshold')
-parser.add_argument('--prefix', default='weights/lr_5e4', type=str, help='File path to save results')
+parser.add_argument('--prefix', default='weights/voc_4e3_512vggbn', type=str, help='File path to save results')
 parser.add_argument('--confidence_threshold', default=0.05, type=float, help='confidence_threshold')
 parser.add_argument('--top_k', default=5000, type=int, help='top_k')
 parser.add_argument('--nms_threshold', default=0.3, type=float, help='nms_threshold')
 parser.add_argument('--keep_top_k', default=750, type=int, help='keep_top_k')
 parser.add_argument('-mstest', '--multi_scale_test', default=False, type=str2bool, help='multi scale test')
 parser.add_argument('--model', default='512_vggbn', type=str, help='model name')
+parser.add_argument('-woalign', '--wo_alignconv', action="store_true", default=False, help=' ')
 parser.add_argument('-wobn', '--without_bn', action="store_true", default=False, help=' ')
 args = parser.parse_args()
 
@@ -181,6 +181,7 @@ def im_detect(net, im, target_size):
     im_orig = im.astype(np.float32, copy=True)
     im = cv2.resize(im_orig, (target_size, target_size), interpolation=cv2.INTER_LINEAR)
     x = (im - MEANS).astype(np.float32)
+    x = x[:, :, (2, 1, 0)]  # to rgb
     x = x.transpose(2, 0, 1)
     x = torch.from_numpy(x).unsqueeze(0)
     x = x.to(device)
@@ -203,6 +204,7 @@ def im_detect_ratio(net, im, target_size1, target_size2):
         target_size1, target_size2 = target_size2, target_size1
     im = cv2.resize(im_orig, None, None, fx=float(target_size2)/float(w), fy=float(target_size1)/float(h), interpolation=cv2.INTER_LINEAR)
     x = (im - MEANS).astype(np.float32)
+    x = x[:, :, (2, 1, 0)]  # to rgb
     x = x.transpose(2, 0, 1)
     x = torch.from_numpy(x).unsqueeze(0)
     x = x.to(device)
@@ -354,7 +356,8 @@ def multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, de
         f = open(det_file,'rb')
         all_boxes = pickle.load(f)
         print('Evaluating detections')
-        dataset.evaluate_detections(all_boxes, save_folder)
+        mAP = dataset.evaluate_detections(all_boxes, save_folder, set_type)
+        AP_stats['ap50'].append(mAP)
         return
 
     # timers
@@ -424,8 +427,6 @@ def multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, de
                 cls_dets = det[inds, :-1].astype(np.float32)
                 if 'coco' in dataset.name:
                     cls_dets = soft_bbox_vote(cls_dets)
-                elif 'sar' in dataset.name:
-                    cls_dets = soft_bbox_vote(cls_dets)
                 else:
                     cls_dets = bbox_vote(cls_dets)
                 all_boxes[j][i] = cls_dets
@@ -437,13 +438,8 @@ def multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, de
 
     print('\nFPS: {} {} \n'.format(1 / (_t['im_detect'].average_time), 1 / _t['im_detect'].average_time))
     print('Evaluating detections')
-    stats = dataset.evaluate_detections(all_boxes, save_folder)
-    AP_stats['ap'].append(stats[0])
-    AP_stats['ap50'].append(stats[1])
-    AP_stats['ap75'].append(stats[2])
-    AP_stats['ap_small'].append(stats[3])
-    AP_stats['ap_medium'].append(stats[4])
-    AP_stats['ap_large'].append(stats[5])
+    mAP = dataset.evaluate_detections(all_boxes, save_folder, set_type)
+    AP_stats['ap50'].append(mAP)
 
 
 def single_scale_test_net(target_size, save_folder, net, num_classes, dataset, detect, AP_stats=None):
@@ -456,7 +452,8 @@ def single_scale_test_net(target_size, save_folder, net, num_classes, dataset, d
         f = open(det_file,'rb')
         all_boxes = pickle.load(f)
         print('Evaluating detections')
-        dataset.evaluate_detections(all_boxes, save_folder)
+        mAP = dataset.evaluate_detections(all_boxes, save_folder, set_type)
+        AP_stats['ap50'].append(mAP)
         return
 
     # timers
@@ -485,13 +482,8 @@ def single_scale_test_net(target_size, save_folder, net, num_classes, dataset, d
 
     print('\nFPS: {} {} \n'.format(1 / (_t['im_detect'].average_time), 1 / _t['im_detect'].average_time))
     print('Evaluating detections')
-    stats = dataset.evaluate_detections(all_boxes, save_folder)
-    AP_stats['ap'].append(stats[0])
-    AP_stats['ap50'].append(stats[1])
-    AP_stats['ap75'].append(stats[2])
-    AP_stats['ap_small'].append(stats[3])
-    AP_stats['ap_medium'].append(stats[4])
-    AP_stats['ap_large'].append(stats[5])
+    mAP = dataset.evaluate_detections(all_boxes, save_folder, set_type)
+    AP_stats['ap50'].append(mAP)
 
 
 if __name__ == '__main__':
@@ -505,7 +497,9 @@ if __name__ == '__main__':
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
     
+    # args.retest = True
     prefix = args.prefix
+    # prefix = 'weights/voc_4e3_512vggbn'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
     if not os.path.exists(save_folder):
         os.mkdir(save_folder)
@@ -534,13 +528,15 @@ if __name__ == '__main__':
         backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=-1)
     elif model == '512_vggbn':
         from models.refinedet_bn import build_refinedet
+        if args.wo_alignconv:
+            from models.refinedet_bn_wo_AlignConv import build_refinedet
         args.input_size = str(512)
         backbone_dict = dict(bn=True)
         if args.without_bn:
             backbone_dict = dict(bn=False)
     
     # target_size = 1024
-    cfg = coco_refinedet[args.input_size]
+    cfg = voc_refinedet[args.input_size]
     target_size = cfg['min_dim']
     num_classes = cfg['num_classes']
     objectness_threshold = 0.01
@@ -552,18 +548,10 @@ if __name__ == '__main__':
     args.vis_thres = 0.3
     # args.multi_scale_test = True
 
-    annopath = os.path.join(args.voc_root, 'VOC2007', 'Annotations', '%s.xml')
-    imgpath = os.path.join(args.voc_root, 'VOC2007', 'JPEGImages', '%s.jpg')
-    imgsetpath = os.path.join(args.voc_root, 'VOC2007', 'ImageSets',
-                            'Main', '{:s}.txt')
-    YEAR = '2007'
-    devkit_path = args.voc_root + 'VOC' + YEAR
-    dataset_mean = (104, 117, 123)
     set_type = 'test'
 
     # load data
-    dataset = COCODetection(COCOroot, ['val2017'], None, dataset_name='coco2017')
-    dataset = VOCDetection(args.voc_root, [('2007', set_type)], BaseTransform(int(args.input_size), dataset_mean), VOCAnnotationTransform())
+    dataset = VOCDetection(args.voc_root, [('2007', set_type)], dataset_name='VOC0712')
     # load net
     torch.set_grad_enabled(False)
     load_to_cpu = not args.cuda
@@ -578,8 +566,9 @@ if __name__ == '__main__':
     ToBeTested = []
     ToBeTested = [prefix + f'/RefineDet{args.input_size}_VOC_epoches_{epoch}.pth' for epoch in range(start_epoch, 240, step)]
     ToBeTested.append(prefix + f'/RefineDet{args.input_size}_VOC_final.pth') 
+    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_VOC_epoches_10.pth') 
 
-    ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
+    ap_stats = {"ap50": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
@@ -598,12 +587,6 @@ if __name__ == '__main__':
     # print the best model.
     max_idx = np.argmax(np.asarray(ap_stats['ap50']))
     print('Best ap50: {:.4f} at epoch {}'.format(ap_stats['ap50'][max_idx], ap_stats['epoch'][max_idx]))
-    print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
-        format(ap_stats['ap'][max_idx], ap_stats['ap50'][max_idx], ap_stats['ap75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
-    max_idx = np.argmax(np.asarray(ap_stats['ap']))
-    print('Best ap  : {:.4f} at epoch {}'.format(ap_stats['ap'][max_idx], ap_stats['epoch'][max_idx]))
-    print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
-        format(ap_stats['ap'][max_idx], ap_stats['ap50'][max_idx], ap_stats['ap75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
     res_file = os.path.join(save_folder, 'ap_stats.json')
     print('Writing ap stats json to {}'.format(res_file))
     with open(res_file, 'w') as fid:
@@ -611,8 +594,8 @@ if __name__ == '__main__':
     
     # plot curves
     fig_name = 'ap.png'
-    metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
+    metrics = ['ap50']
+    legend  = ['ap50']
     plot_map(save_folder, ap_stats, metrics, legend, fig_name)
     txt_log = prefix + '/log.txt'
     plot_loss(save_folder, txt_log)

@@ -49,8 +49,7 @@ parser.add_argument('--keep_top_k', default=750, type=int, help='keep_top_k')
 parser.add_argument('-mstest', '--multi_scale_test', default=False, type=str2bool, help='multi scale test')
 parser.add_argument('--model', default='512_vggbn', type=str, help='model name')
 parser.add_argument('-woalign', '--wo_alignconv', action="store_true", default=False, help=' ')
-parser.add_argument('-worefine', '--wo_refined_anchor', action="store_true", default=False, help=' ')
-parser.add_argument('-wofuse', '--wo_fused_feature', action="store_true", default=False, help=' ')
+parser.add_argument('-wobn', '--without_bn', action="store_true", default=False, help=' ')
 args = parser.parse_args()
 
 
@@ -178,6 +177,7 @@ def im_detect(net, im, target_size):
     im_orig = im.astype(np.float32, copy=True)
     im = cv2.resize(im_orig, (target_size, target_size), interpolation=cv2.INTER_LINEAR)
     x = (im - MEANS).astype(np.float32)
+    x = x[:, :, (2, 1, 0)]  # to rgb
     x = x.transpose(2, 0, 1)
     x = torch.from_numpy(x).unsqueeze(0)
     x = x.to(device)
@@ -200,6 +200,7 @@ def im_detect_ratio(net, im, target_size1, target_size2):
         target_size1, target_size2 = target_size2, target_size1
     im = cv2.resize(im_orig, None, None, fx=float(target_size2)/float(w), fy=float(target_size1)/float(h), interpolation=cv2.INTER_LINEAR)
     x = (im - MEANS).astype(np.float32)
+    x = x[:, :, (2, 1, 0)]  # to rgb
     x = x.transpose(2, 0, 1)
     x = torch.from_numpy(x).unsqueeze(0)
     x = x.to(device)
@@ -351,7 +352,13 @@ def multi_scale_test_net(target_size, save_folder, net, num_classes, dataset, de
         f = open(det_file,'rb')
         all_boxes = pickle.load(f)
         print('Evaluating detections')
-        dataset.evaluate_detections(all_boxes, save_folder)
+        stats = dataset.evaluate_detections(all_boxes, save_folder)
+        AP_stats['ap'].append(stats[0])
+        AP_stats['ap50'].append(stats[1])
+        AP_stats['ap75'].append(stats[2])
+        AP_stats['ap_small'].append(stats[3])
+        AP_stats['ap_medium'].append(stats[4])
+        AP_stats['ap_large'].append(stats[5])
         return
 
     # timers
@@ -453,7 +460,13 @@ def single_scale_test_net(target_size, save_folder, net, num_classes, dataset, d
         f = open(det_file,'rb')
         all_boxes = pickle.load(f)
         print('Evaluating detections')
-        dataset.evaluate_detections(all_boxes, save_folder)
+        stats = dataset.evaluate_detections(all_boxes, save_folder)
+        AP_stats['ap'].append(stats[0])
+        AP_stats['ap50'].append(stats[1])
+        AP_stats['ap75'].append(stats[2])
+        AP_stats['ap_small'].append(stats[3])
+        AP_stats['ap_medium'].append(stats[4])
+        AP_stats['ap_large'].append(stats[5])
         return
 
     # timers
@@ -531,9 +544,13 @@ if __name__ == '__main__':
         backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=-1)
     elif model == '512_vggbn':
         from models.refinedet_bn import build_refinedet
+        if args.wo_alignconv:
+            from models.refinedet_bn_wo_AlignConv import build_refinedet
         args.input_size = str(512)
         backbone_dict = dict(bn=True)
-    
+        if args.without_bn:
+            backbone_dict = dict(bn=False)
+
     # target_size = 1024
     cfg = coco_refinedet[args.input_size]
     target_size = cfg['min_dim']
@@ -566,7 +583,6 @@ if __name__ == '__main__':
     ToBeTested = [prefix + f'/RefineDet{args.input_size}_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     ToBeTested.append(prefix + f'/RefineDet{args.input_size}_COCO_final.pth') 
     # ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
-    # ToBeTested *= 5
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
