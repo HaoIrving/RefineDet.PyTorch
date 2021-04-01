@@ -63,6 +63,9 @@ parser.add_argument('--ngpu', default=4, type=int, help='gpus')
 parser.add_argument('--pretrained', action="store_true", default=False, 
                     help='Use pretrained backbone')
 parser.add_argument('--model', default='512_vggbn', type=str, help='model name')
+parser.add_argument('-woalign', '--wo_alignconv', action="store_true", default=False, help=' ')
+parser.add_argument('-worefine', '--wo_refined_anchor', action="store_true", default=False, help=' ')
+parser.add_argument('-wofuse', '--wo_fused_feature', action="store_true", default=False, help=' ')
 args = parser.parse_args()
 
 
@@ -82,6 +85,9 @@ sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
 negpos_ratio = 3
 initial_lr = args.lr
+wo_fused_feature = args.wo_fused_feature
+wo_refined_anchor = args.wo_refined_anchor
+wo_alignconv = args.wo_alignconv
 model = args.model
 pretrained = args.pretrained if args.pretrained else None
 frozen_stages=-1
@@ -117,6 +123,13 @@ elif model == '1024_ResNeXt_152':
     backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=frozen_stages)
 elif model == '512_vggbn':
     from models.refinedet_bn import build_refinedet
+    if wo_alignconv:
+        from models.refinedet_bn_wo_AlignConv import build_refinedet
+    if wo_refined_anchor:
+        from models.refinedet_bn_wo_AlignConv_RefinedAnchor import build_refinedet
+    if wo_fused_feature:
+        from models.refinedet_bn_wo_AlignConv_RefinedAnchor_FusedFeature import build_refinedet
+        wo_refined_anchor = True
     args.input_size = str(512)
     backbone_dict = dict(bn=True)
     if pretrained:
@@ -179,9 +192,13 @@ def train():
 
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
-    arm_criterion = RefineDetMultiBoxLoss(                 2, 0.5, True, 0, True, negpos_ratio, 0.5,
+    arm_criterion = RefineDetMultiBoxLoss(                     2, 0.5, True, 0, True, negpos_ratio, 0.5,
                                 False, args.cuda)
-    odm_criterion = RefineDetMultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, negpos_ratio, 0.5,
+    if wo_refined_anchor:
+        odm_criterion = MultiBoxLoss(         cfg['num_classes'], 0.5, True, 0, True, negpos_ratio, 0.5,
+                                False, args.cuda)
+    else:
+        odm_criterion = RefineDetMultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, negpos_ratio, 0.5,
                                 False, args.cuda, use_ARM=True)
     priorbox = PriorBox(cfg)
     with torch.no_grad():
@@ -258,11 +275,18 @@ def train():
         # backprop
         optimizer.zero_grad()
 
-        arm_loss_l, arm_loss_c = arm_criterion(out, priors, targets)
-        odm_loss_l, odm_loss_c = odm_criterion(out, priors, targets)
-        arm_loss = arm_loss_l + arm_loss_c
-        odm_loss = odm_loss_l + odm_loss_c
-        loss = arm_loss + odm_loss
+        if wo_refined_anchor:
+            arm_loss_l, arm_loss_c = torch.zeros(1), torch.zeros(1)
+            odm_loss_l, odm_loss_c = odm_criterion(out, priors, targets)
+            arm_loss = arm_loss_l + arm_loss_c
+            odm_loss = odm_loss_l + odm_loss_c
+            loss = arm_loss + odm_loss
+        else:
+            arm_loss_l, arm_loss_c = arm_criterion(out, priors, targets)
+            odm_loss_l, odm_loss_c = odm_criterion(out, priors, targets)
+            arm_loss = arm_loss_l + arm_loss_c
+            odm_loss = odm_loss_l + odm_loss_c
+            loss = arm_loss + odm_loss
         
         loss.backward()
         optimizer.step()

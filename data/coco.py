@@ -20,12 +20,8 @@ import uuid
 
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
+from .config import HOME
 
-
-# gets home dir cross platform
-# HOME = os.path.expanduser("~")
-# HOME = os.path.expanduser("~/projects/ssd.pytorch")
-HOME = os.getcwd()
 COCOroot = os.path.join(HOME,"data/coco")
 
 class COCODetection(data.Dataset):
