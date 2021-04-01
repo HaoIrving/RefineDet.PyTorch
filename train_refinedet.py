@@ -235,7 +235,7 @@ def train():
                 odm_conf_loss = 0
             # create batch iterator
             batch_iterator = iter(data_loader)
-            if (epoch % 10 == 0 and epoch > 0) or (epoch % 5 ==0 and epoch > 200):
+            if (epoch % 10 == 0 and epoch > 0) or (epoch % 5 ==0 and epoch > (args.max_epoch * 2 // 3 )):
                 torch.save(net.state_dict(), args.save_folder+'RefineDet'+ args.input_size +'_'+args.dataset + '_epoches_'+
                            repr(epoch) + '.pth')
             epoch += 1

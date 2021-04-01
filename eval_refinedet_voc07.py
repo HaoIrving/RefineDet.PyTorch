@@ -53,9 +53,7 @@ parser.add_argument('--nms_threshold', default=0.3, type=float, help='nms_thresh
 parser.add_argument('--keep_top_k', default=750, type=int, help='keep_top_k')
 parser.add_argument('-mstest', '--multi_scale_test', default=False, type=str2bool, help='multi scale test')
 parser.add_argument('--model', default='512_vggbn', type=str, help='model name')
-parser.add_argument('-woalign', '--wo_alignconv', action="store_true", default=False, help=' ')
-parser.add_argument('-worefine', '--wo_refined_anchor', action="store_true", default=False, help=' ')
-parser.add_argument('-wofuse', '--wo_fused_feature', action="store_true", default=False, help=' ')
+parser.add_argument('-wobn', '--without_bn', action="store_true", default=False, help=' ')
 args = parser.parse_args()
 
 
@@ -538,6 +536,8 @@ if __name__ == '__main__':
         from models.refinedet_bn import build_refinedet
         args.input_size = str(512)
         backbone_dict = dict(bn=True)
+        if args.without_bn:
+            backbone_dict = dict(bn=False)
     
     # target_size = 1024
     cfg = coco_refinedet[args.input_size]
@@ -574,11 +574,11 @@ if __name__ == '__main__':
 
     # test multi models, to filter out the best model.
     # start_epoch = 10; step = 10
-    start_epoch = 200; step = 5
+    start_epoch = 160; step = 5
     ToBeTested = []
-    ToBeTested = [prefix + f'/RefineDet{args.input_size}_VOC_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested = [prefix + f'/RefineDet{args.input_size}_VOC_epoches_{epoch}.pth' for epoch in range(start_epoch, 240, step)]
     ToBeTested.append(prefix + f'/RefineDet{args.input_size}_VOC_final.pth') 
-    
+
     ap_stats = {"ap": [], "ap50": [], "ap75": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
