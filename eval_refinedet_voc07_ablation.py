@@ -12,7 +12,7 @@ from torch.autograd import Variable
 from data import VOC_ROOT, MEANS, VOCDetection, voc_refinedet
 import torch.utils.data as data
 
-from layers import Detect_RefineDet
+from layers import Detect_RefineDet, Detect
 from utils.nms_wrapper import nms, soft_nms
 from layers import PriorBox
 from plot_curve import plot_map, plot_loss
@@ -188,11 +188,17 @@ def im_detect(net, im, target_size):
     x = torch.from_numpy(x).unsqueeze(0)
     x = x.to(device)
 
-    arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x)
+    if args.wo_refined_anchor:
+        adm_loc, adm_conf, feat_sizes = net(x)
+    else:
+        arm_loc, arm_conf, adm_loc, adm_conf, feat_sizes = net(x)
     priorbox = PriorBox(net.cfg, feat_sizes, (target_size, target_size), phase='test')
     priors = priorbox.forward()
     priors = priors.to(device)
-    det = detect.forward(arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
+    if args.wo_refined_anchor:
+        det = detect.forward(adm_loc, adm_conf, priors, scale)
+    else:
+        det = detect.forward(arm_loc, arm_conf, adm_loc, adm_conf, priors, scale)
     return det
 
 
@@ -511,6 +517,12 @@ if __name__ == '__main__':
     # args.show_image = True
 
     model = args.model
+    # args.wo_fused_feature = True
+    wo_fused_feature = args.wo_fused_feature
+    # args.wo_refined_anchor = True
+    wo_refined_anchor = args.wo_refined_anchor
+    # args.wo_alignconv = True
+    wo_alignconv = args.wo_alignconv
 
     if model == '512_ResNet_50':
         from models.refinedet_res import build_refinedet
@@ -530,8 +542,13 @@ if __name__ == '__main__':
         backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=-1)
     elif model == '512_vggbn':
         from models.refinedet_bn import build_refinedet
-        if args.wo_alignconv:
+        if wo_alignconv:
             from models.refinedet_bn_wo_AlignConv import build_refinedet
+        if wo_refined_anchor:
+            from models.refinedet_bn_wo_AlignConv_RefinedAnchor import build_refinedet
+        if wo_fused_feature:
+            from models.refinedet_bn_wo_AlignConv_RefinedAnchor_FusedFeature import build_refinedet
+            args.wo_refined_anchor = True
         args.input_size = str(512)
         backbone_dict = dict(bn=True)
         if args.without_bn:
@@ -559,7 +576,10 @@ if __name__ == '__main__':
     load_to_cpu = not args.cuda
     cudnn.benchmark = True
     device = torch.device('cuda' if args.cuda else 'cpu')
-    detect = Detect_RefineDet(num_classes, int(args.input_size), 0, objectness_threshold, confidence_threshold=args.confidence_threshold, nms_threshold=args.nms_threshold, top_k=args.top_k, keep_top_k=args.keep_top_k)
+    if args.wo_refined_anchor:
+        detect = Detect(          num_classes, int(args.input_size), 0,                       confidence_threshold=args.confidence_threshold, nms_threshold=args.nms_threshold, top_k=args.top_k, keep_top_k=args.keep_top_k)
+    else:
+        detect = Detect_RefineDet(num_classes, int(args.input_size), 0, objectness_threshold, confidence_threshold=args.confidence_threshold, nms_threshold=args.nms_threshold, top_k=args.top_k, keep_top_k=args.keep_top_k)
     net = build_refinedet('test', int(args.input_size), num_classes, backbone_dict) 
 
     # test multi models, to filter out the best model.
