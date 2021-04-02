@@ -53,6 +53,8 @@ parser.add_argument('--keep_top_k', default=750, type=int, help='keep_top_k')
 parser.add_argument('-mstest', '--multi_scale_test', default=False, type=str2bool, help='multi scale test')
 parser.add_argument('--model', default='512_vggbn', type=str, help='model name')
 parser.add_argument('-woalign', '--wo_alignconv', action="store_true", default=False, help=' ')
+parser.add_argument('-worefine', '--wo_refined_anchor', action="store_true", default=False, help=' ')
+parser.add_argument('-wofuse', '--wo_fused_feature', action="store_true", default=False, help=' ')
 parser.add_argument('-wobn', '--without_bn', action="store_true", default=False, help=' ')
 args = parser.parse_args()
 
