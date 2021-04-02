@@ -1,6 +1,6 @@
 A higher performance [PyTorch](http://pytorch.org/) implementation of [RefineDet++: Single-Shot Refinement Neural Network for Object Detection](http://www.cbsr.ia.ac.cn/users/sfzhang/files/TCSVT_RefineDet++.pdf ).
 
-The Alignment Convolution is implemented with Deformable Convolution and referred to the baseline of [RepPoints](https://arxiv.org/pdf/1904.11490.pdf). According to [Dr. Shifeng Zhang](https://github.com/sfzhang15)'s hint, Alignment Convolutions for three anchors are implemented by three branches. 
+The Alignment Convolution is implemented with Deformable Convolution and referred to the baseline of [RepPoints](https://arxiv.org/pdf/1904.11490.pdf). According to [Prof. Shifeng Zhang](https://github.com/sfzhang15)'s hint, Alignment Convolutions for three anchors are implemented by three branches. The details of codes might be different with the original ones.
 
 With accurately calculated offset rather than the learned, Alignment Convolution is a good solution for the feature misalignment problem among 1.5 stage object detection methods
 
@@ -10,7 +10,7 @@ With accurately calculated offset rather than the learned, Alignment Convolution
 - <a href='#installation'>Installation</a>
 - <a href='#datasets'>Datasets</a>
 - <a href='#training-refinedet'>Train</a>
-- <a href='#evaluation'>Evaluate</a>
+- <a href='#evaluate'>Evaluate</a>
 - <a href='#todo'>Future Work</a>
 - <a href='#references'>Reference</a>
 
@@ -30,9 +30,11 @@ With accurately calculated offset rather than the learned, Alignment Convolution
 
 * 512 and 1024 input size
 
-* Original RefineDet model.
-
 * Ablation for model architecture
+
+* PR curve for coco format dataset
+
+* Original RefineDet model.
 
 ## Performance
 
@@ -110,7 +112,7 @@ To evaluate RefineDet512++ with vgg backbone.
 ```
 CUDA_VISIBLE_DEVICES=3 python eval_refinedet_voc07.py --prefix weights/voc_4e3_512vgg  --model 512_vggbn  -wobn
 ```
-## Training and Evaluate RefineDet
+### Training and Evaluate RefineDet
 add `-woalign` in the command.
 
 ## TODO
