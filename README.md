@@ -1,5 +1,8 @@
 A higher performance [PyTorch](http://pytorch.org/) implementation of [RefineDet++: Single-Shot Refinement Neural Network for Object Detection](http://www.cbsr.ia.ac.cn/users/sfzhang/files/TCSVT_RefineDet++.pdf ).
-The Align Convolution is implemented with Deformable Convolution and referred to the baseline of [RepPoints](https://arxiv.org/pdf/1904.11490.pdf). According to [Dr. Shifeng Zhang](https://github.com/sfzhang15)'s hint, Align Convolutions for three anchors are implemented by three branches. 
+
+The Alignment Convolution is implemented with Deformable Convolution and referred to the baseline of [RepPoints](https://arxiv.org/pdf/1904.11490.pdf). According to [Dr. Shifeng Zhang](https://github.com/sfzhang15)'s hint, Alignment Convolutions for three anchors are implemented by three branches. 
+
+With accurately calculated offset rather than the learned, Alignment Convolution is a good solution for the feature misalignment problem among 1.5 stage object detection methods
 
 ### Table of Contents
 - <a href='#Majorfeatures'>Major features</a>
@@ -17,12 +20,19 @@ The Align Convolution is implemented with Deformable Convolution and referred to
 &nbsp;
 
 ## Major features
-* Original RefineDet model.
-* Align Convolution module (with accurately calculated offset rather than the learned, which is a good solution for the feature misalignment problem among 1.5 stage object detection methods).
+* Alignment Convolution 
+
 * Multi-scale test
+
 * VGG backbone with bn layers
-* 512 and 1024 input size
+
 * ResNet and ResNeXt backbone
+
+* 512 and 1024 input size
+
+* Original RefineDet model.
+
+* Ablation for model architecture
 
 ## Performance
 
@@ -50,7 +60,7 @@ ms: multi scale test
 ./make.sh
 pip install visdom
 ```
-This code use [MMDetection](https://mmdetection.readthedocs.io/) as our environment, since we need the Deformable Convolution implementation of it. [SOLO](https://github.com/WXinlong/SOLO.git) is also acceptable (based on older version of MMDetection), other version is obscure.
+This code use [MMDetection](https://mmdetection.readthedocs.io/) as the basic environment, since we need the Deformable Convolution implementation of it, look into it for the installation method. [SOLO](https://github.com/WXinlong/SOLO.git) is also acceptable (based on an older version of MMDetection), other version is obscure.
 
 ## Datasets
 ### VOC Dataset
