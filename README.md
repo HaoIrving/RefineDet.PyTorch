@@ -28,7 +28,7 @@ With accurately calculated offset rather than the learned, Alignment Convolution
 
 * ResNet and ResNeXt backbone
 
-* 512 and 1024 input size
+* 320, 512 and 1024 input size
 
 * Ablation for model architecture
 
@@ -44,16 +44,16 @@ With accurately calculated offset rather than the learned, Alignment Convolution
 
 | Arch | Paper | Our PyTorch Version |
 |:-:|:-:|:-:|
-| RefineDet512++ | 82.5% | TODO |
+| RefineDet512++ | 82.5% | 81.86% |
+| RefineDet512++ ms | 84.2% | 84.00% |
 
-ms: multi scale test
+ms: multi scale test, the results are obtained by training with pre-trained vgg.
 
 #### [SSDD](https://github.com/HaoIrving/SSDD_coco.git) (remote ship detection dataset of Radar images)
 
 ##### COCO AP 
 
-| Arch | Our PyTorch Ver
-.                                                   sion |
+| Arch | Our PyTorch Version |
 |:-:|:-:|
 | RefineDet512++ | 62.94% | 
 
