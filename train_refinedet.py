@@ -74,6 +74,7 @@ parser.add_argument('-mo', '--maxout', action="store_true", default=False, help=
 parser.add_argument('-dcn', '--dcn_head', action="store_true", default=False, help=' ')
 parser.add_argument('-sl', '--shallow_head', action="store_true", default=False, help=' ')
 parser.add_argument('-at2', '--at2', action="store_true", default=False, help=' ')
+parser.add_argument('-sig', '--sigmoid', action="store_true", default=False, help=' ')
 args = parser.parse_args()
 
 
@@ -179,6 +180,9 @@ elif model == '640_vggbn':
             from sardet.refinedet_bn_at2_d_mh import build_refinedet
         if args.shallow_head:
             from sardet.refinedet_bn_at2_d_mh_shallow import build_refinedet
+    if args.sigmoid:
+        print('refinedet_bn_at1_mh_sigmoid')
+        from sardet.refinedet_bn_at1_mh_sigmoid import build_refinedet
     args.input_size = str(640)
     backbone_dict = dict(bn=True)
     if pretrained:
