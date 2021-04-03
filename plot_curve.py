@@ -101,9 +101,10 @@ def plot_pr_curve(save_folder_list, image_set, model_name, iou):
     # plt.xlim(0, 1.0)
     # xtick = [0.6 + round(0.05 * i , 2) for i in range(9)]
     # xtick = [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
-    xtick = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
-    xtick = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
-    xtick = [0.7, 0.75, 0.8, 0.85, 0.9]
+    # xtick = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
+    # xtick = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+    # xtick = [0.7, 0.75, 0.8, 0.85, 0.9]
+    xtick = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     ytick = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     plt.xticks(xtick, [str(i) for i in xtick])
     plt.yticks(ytick, [str(i) for i in ytick])
