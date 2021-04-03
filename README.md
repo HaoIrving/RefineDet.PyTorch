@@ -1,6 +1,6 @@
 A higher performance [PyTorch](http://pytorch.org/) implementation of [RefineDet++: Single-Shot Refinement Neural Network for Object Detection](http://www.cbsr.ia.ac.cn/users/sfzhang/files/TCSVT_RefineDet++.pdf ).
 
-The Alignment Convolution is implemented with Deformable Convolution and referred to the baseline of [RepPoints](https://arxiv.org/pdf/1904.11490.pdf). According to [Prof. Shifeng Zhang](https://github.com/sfzhang15)'s hint, Alignment Convolutions for three anchors are implemented by three branches. The details of codes might be different with the original ones.
+The Alignment Convolution is implemented with Deformable Convolution and referred to the baseline of [RepPoints](https://arxiv.org/pdf/1904.11490.pdf). Alignment Convolutions for three anchors are implemented by three branches, the details of codes might be different with the original ones.
 
 With accurately calculated offset rather than the learned, Alignment Convolution is a good solution for the feature misalignment problem among 1.5 stage object detection methods
 
@@ -52,9 +52,9 @@ ms: multi scale test
 
 ##### COCO AP 
 
-| Arch | Our PyTorch Version |
+| Arch | Our PyTorch Ver
+.                                                   sion |
 |:-:|:-:|
-| RefineDet512++ ms | 66.21% |
 | RefineDet512++ | 62.94% | 
 
 ## Installation
@@ -73,18 +73,17 @@ PASCAL VOC: Visual Object Classes
 # specify a directory for dataset to be downloaded into, else default is ~/data/
 sh data/scripts/VOC2007.sh # <directory>
 ```
-### COCO2017
-recommend to [MMDetection](https://github.com/open-mmlab/mmdetection) for the downloading method.
-
 ##### Download VOC2012 trainval
 ```Shell
 # specify a directory for dataset to be downloaded into, else default is ~/data/
 sh data/scripts/VOC2012.sh # <directory>
 ```
+### COCO2017
+recommend to [MMDetection](https://github.com/open-mmlab/mmdetection) for the downloading method.
 
 ## Training RefineDet++
 - First download the fc-reduced [VGG-16](https://arxiv.org/abs/1409.1556) PyTorch base network weights at:              https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
-- By default, this code assume you have downloaded the file in the `RefineDet.PyTorch/weights` dir:
+- By default, this code assume you have downloaded the file in the `./weights` dir:
 
 ```Shell
 mkdir weights
@@ -116,10 +115,8 @@ CUDA_VISIBLE_DEVICES=3 python eval_refinedet_voc07.py --prefix weights/voc_4e3_5
 add `-woalign` in the command.
 
 ## TODO
-This code have accumulated the following to-do list, which we hope to complete in the near future
-- Still to come:
-  * [ ] Support for ResNet and ResNeXt backbone (implemented fully, but the training is hard to converge for slightly large learning rate, sting working on this.).
-  * [ ] Report performance on COCO2017 dataset.
+* [ ] Support for ResNet and ResNeXt backbone (implemented fully, but the training is hard to converge for slightly large learning rate, sting working on this.).
+* [ ] Report performance on COCO2017 dataset.
 
 ## References
 - Multi-scale test is modified from [Original RefineDet Implementation (CAFFE)](https://github.com/sfzhang15/RefineDet)

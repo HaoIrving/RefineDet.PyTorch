@@ -499,7 +499,7 @@ if __name__ == '__main__':
     
     # args.retest = True
     prefix = args.prefix
-    # prefix = 'weights/voc_4e3_512vggbn'
+    prefix = 'weights/voc_4e3_512vgg'
     save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
     if not os.path.exists(save_folder):
         os.mkdir(save_folder)
@@ -507,7 +507,8 @@ if __name__ == '__main__':
     sys.stdout = Logger(os.path.join(save_folder, 'eval.txt'))
 
     # args.show_image = True
-
+    args.without_bn = True
+    
     model = args.model
 
     if model == '512_ResNet_50':
@@ -564,9 +565,9 @@ if __name__ == '__main__':
     # start_epoch = 10; step = 10
     start_epoch = 160; step = 5
     ToBeTested = []
-    ToBeTested = [prefix + f'/RefineDet{args.input_size}_VOC_epoches_{epoch}.pth' for epoch in range(start_epoch, 240, step)]
-    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_VOC_final.pth') 
-    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_VOC_epoches_10.pth') 
+    # ToBeTested = [prefix + f'/RefineDet{args.input_size}_VOC_epoches_{epoch}.pth' for epoch in range(start_epoch, 240, step)]
+    # ToBeTested.append(prefix + f'/RefineDet{args.input_size}_VOC_final.pth') 
+    ToBeTested.append(prefix + f'/RefineDet{args.input_size}_VOC_epoches_185.pth') 
 
     ap_stats = {"ap50": [], "epoch": []}
     for index, model_path in enumerate(ToBeTested):

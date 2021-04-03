@@ -96,7 +96,10 @@ class Detect_RefineDet(Function):
             except:
                 det = det_c
 
-        return det
+        try:
+            return det
+        except:
+            return np.zeros((1, 6), dtype=np.float32)
 
     def forward_torch_nms(self, arm_loc_data, arm_conf_data, odm_loc_data, odm_conf_data, prior_data):
         """
