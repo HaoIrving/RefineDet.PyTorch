@@ -33,7 +33,7 @@ def str2bool(v):
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Evaluation')
 parser.add_argument('--trained_model',
-                    default='weights/ssd300_mAP_77.43_v2.pth', type=str,
+                    default='RefineDet512_COCO_epoches_280.pth', type=str,
                     help='Trained state_dict file path to open')
 parser.add_argument('--save_folder', default='eval/', type=str,
                     help='File path to save results')
@@ -52,6 +52,9 @@ parser.add_argument('--input_size', default='512', choices=['320', '512'],
 parser.add_argument('--retest', default=False, type=bool,
                     help='test cache results')
 parser.add_argument('--show_image', action="store_true", default=False, help='show detection results')
+parser.add_argument('--save_detected', action="store_true", default=False, help='save detection results')
+parser.add_argument('--inshore', action="store_true", default=False, help='inshore detection results')
+parser.add_argument('--offshore', action="store_true", default=False, help='offshore detection results')
 parser.add_argument('--vis_thres', default=0.5, type=float, help='visualization_threshold')
 parser.add_argument('--prefix', default='weights/lr_5e4', type=str, help='File path to save results')
 
@@ -196,7 +199,8 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
                 # text = "ship"
                 # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0))
             _t['im_detect'].tic()
-            boxes, scores = net(x, i, img_gt)
+            # boxes, scores = net(x, i, img_gt)
+            boxes, scores = net(x)
         else:
             _t['im_detect'].tic()
             boxes, scores = net(x)
@@ -246,12 +250,14 @@ def test_net(save_folder, net, device, num_classes, dataset, transform, top_k, m
                 cy = b[1] + 12
                 # text = "{:.2f}".format(b[4])
                 # cv2.putText(img_gt, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
-            # cv2.imshow('res', img_gt)
-            # cv2.waitKey(0)
-            save_gt_dir = os.path.join(save_folder, 'gt_img')
-            if not os.path.exists(save_gt_dir):
-                os.mkdir(save_gt_dir)
-            cv2.imwrite(save_gt_dir + f'/{i}.png',img_gt, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            if args.save_detected:
+                save_gt_dir = os.path.join(save_folder, 'gt_img')
+                if not os.path.exists(save_gt_dir):
+                    os.mkdir(save_gt_dir)
+                cv2.imwrite(save_gt_dir + f'/{i}.png',img_gt, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            else:
+                cv2.imshow('res', img_gt)
+                cv2.waitKey(0)
 
     # with open(det_file, 'wb') as f:
     #     pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
@@ -278,16 +284,14 @@ if __name__ == '__main__':
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
     
-    # args.trained_model = 'weights/lr_1e3/RefineDet512_COCO_final.pth'
-    # args.trained_model = 'weights/lr_5e4/RefineDet512_COCO_final.pth'
     # args.cuda = False
     # args.retest = True
     args.show_image = True
-    args.vis_thres = 0.9
+    args.vis_thres = 0.3
     prefix = args.prefix
-    prefix = 'weights/solo_2e3'
-    prefix = 'weights/solo_cs_2e3'
-    prefix = 'weights/solo_cs_fcos_2e3'
+    # prefix = 'weights/solo_2e3'
+    # prefix = 'weights/solo_cs_2e3'
+    # prefix = 'weights/solo_cs_fcos_2e3'
     # prefix = 'weights/tmp'
     # prefix = 'weights/solo_g8_2e3'
     # prefix = 'weights/solo_b32_2e3'
@@ -308,9 +312,12 @@ if __name__ == '__main__':
 
     # load data
     rgb_means = (98.13131, 98.13131, 98.13131)
-    dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
+    if args.inshore:
+        dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    elif args.offshore:
+        dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
+    else:
+        dataset = COCODetection(COCOroot, [('sarship', 'test')], None)
 
     # load net
     detect = Detect_RefineDet(num_classes, int(args.input_size), 0, top_k, confidence_threshold, nms_threshold, objectness_thre, keep_top_k)
@@ -324,10 +331,8 @@ if __name__ == '__main__':
     start_epoch = 10; step = 10
     start_epoch = 200; step = 5
     ToBeTested = []
-    # ToBeTested = [prefix + f'/RefineDet512_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    # ToBeTested.append(prefix + '/RefineDet512_COCO_final.pth') 
-    ToBeTested.append(prefix + '/RefineDet512_COCO_epoches_280.pth') 
-    # ToBeTested *= 5
+    ToBeTested.append(prefix + f'/{args.trained_model}') 
+    
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         net = load_model(net, args.trained_model, load_to_cpu)
@@ -343,139 +348,32 @@ if __name__ == '__main__':
                 BaseTransform(net.size, rgb_means, (2, 0, 1)), top_k, 
                 keep_top_k, confidence_threshold=confidence_threshold, nms_threshold=nms_threshold, AP_stats=ap_stats)
 
-    print(ap_stats)
-    res_file = os.path.join(save_folder, 'ap_stats.json')
+    print('Finished.')
+    # print(ap_stats)
+    # res_file = os.path.join(save_folder, 'ap_stats.json')
 
-    max_idx = np.argmax(np.asarray(ap_stats['ap50']))
-    print('Best ap50: {:.4f} at epoch {}'.format(ap_stats['ap50'][max_idx], ap_stats['epoch'][max_idx]))
-    print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
-        format(ap_stats['ap'][max_idx], ap_stats['ap50'][max_idx], ap_stats['ap75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
-    max_idx = np.argmax(np.asarray(ap_stats['ap']))
-    print('Best ap  : {:.4f} at epoch {}'.format(ap_stats['ap'][max_idx], ap_stats['epoch'][max_idx]))
-    print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
-        format(ap_stats['ap'][max_idx], ap_stats['ap50'][max_idx], ap_stats['ap75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
+    # max_idx = np.argmax(np.asarray(ap_stats['ap50']))
+    # print('Best ap50: {:.4f} at epoch {}'.format(ap_stats['ap50'][max_idx], ap_stats['epoch'][max_idx]))
+    # print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
+    #     format(ap_stats['ap'][max_idx], ap_stats['ap50'][max_idx], ap_stats['ap75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
+    # max_idx = np.argmax(np.asarray(ap_stats['ap']))
+    # print('Best ap  : {:.4f} at epoch {}'.format(ap_stats['ap'][max_idx], ap_stats['epoch'][max_idx]))
+    # print('ap: {:.4f}, ap50: {:.4f}, ap75: {:.4f}, ap_s: {:.4f}, ap_m: {:.4f}, ap_l: {:.4f}'.\
+    #     format(ap_stats['ap'][max_idx], ap_stats['ap50'][max_idx], ap_stats['ap75'][max_idx], ap_stats['ap_small'][max_idx], ap_stats['ap_medium'][max_idx], ap_stats['ap_large'][max_idx]))
 
-    import json
-    print('Writing ap stats json to {}'.format(res_file))
-    with open(res_file, 'w') as fid:
-        json.dump(ap_stats, fid)
-    with open(res_file) as f:
-        ap_stats = json.load(f)
+    # import json
+    # print('Writing ap stats json to {}'.format(res_file))
+    # with open(res_file, 'w') as fid:
+    #     json.dump(ap_stats, fid)
+    # with open(res_file) as f:
+    #     ap_stats = json.load(f)
     
-    from plot_curve import plot_map, plot_loss
-    fig_name = 'ap.png'
-    fig_name = 'ap_last10.png'
-    metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
-    plot_map(save_folder, ap_stats, metrics, legend, fig_name)
+    # from plot_curve import plot_map, plot_loss
+    # fig_name = 'ap.png'
+    # fig_name = 'ap_last10.png'
+    # metrics = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
+    # legend  = ['ap', 'ap75', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
+    # plot_map(save_folder, ap_stats, metrics, legend, fig_name)
 
-    txt_log = prefix + '/log.txt'
-    plot_loss(save_folder, txt_log)
-"""
-refinedet
-lr_3e3
-Best ap50: 0.9814 at epoch 240
-ap: 0.6055, ap50: 0.9814, ap75: 0.6981, ap_s: 0.5580, ap_m: 0.6792, ap_l: 0.6230
-Best ap  : 0.6094 at epoch 285
-ap: 0.6094, ap50: 0.9797, ap75: 0.7029, ap_s: 0.5587, ap_m: 0.6797, ap_l: 0.6458
-lr 4e3 bs16
-Best ap50: 0.9826 at epoch 245
-ap: 0.6111, ap50: 0.9826, ap75: 0.6637, ap_s: 0.5572, ap_m: 0.6933, ap_l: 0.6133
-Best ap  : 0.6257 at epoch 290
-ap: 0.6257, ap50: 0.9751, ap75: 0.7296, ap_s: 0.5739, ap_m: 0.7000, ap_l: 0.6462
-
-lr_2e3
-Best ap50: 0.9802 at epoch 240
-ap: 0.6022, ap50: 0.9802, ap75: 0.6750, ap_s: 0.5550, ap_m: 0.6715, ap_l: 0.6515
-Best ap  : 0.6091 at epoch 290
-ap: 0.6091, ap50: 0.9783, ap75: 0.6921, ap_s: 0.5646, ap_m: 0.6713, ap_l: 0.6569
-inshore 
-Best ap50: 0.9400 at epoch 270
-ap: 0.5124, ap50: 0.9400, ap75: 0.5157, ap_s: 0.4715, ap_m: 0.5679, ap_l: 0.5575
-Best ap  : 0.5171 at epoch 250
-ap: 0.5171, ap50: 0.9365, ap75: 0.5157, ap_s: 0.4693, ap_m: 0.5835, ap_l: 0.5242
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.191
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.516
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.584
-offshore 
-Best ap50: 0.9893 at epoch 225
-ap: 0.6393, ap50: 0.9893, ap75: 0.7521, ap_s: 0.5869, ap_m: 0.7125, ap_l: 0.7697
-Best ap  : 0.6500 at epoch 275
-ap: 0.6500, ap50: 0.9888, ap75: 0.7740, ap_s: 0.6026, ap_m: 0.7166, ap_l: 0.7605
-
-1.0==cps solo 2e3 bs16 g12(cps, complementary sampling), solo has less grid number than fcos
-Best ap50: 0.9826 at epoch 265
-ap: 0.6140, ap50: 0.9826, ap75: 0.7032, ap_s: 0.5641, ap_m: 0.6851, ap_l: 0.6542
-Best ap  : 0.6212 at epoch 295
-ap: 0.6212, ap50: 0.9809, ap75: 0.7185, ap_s: 0.5688, ap_m: 0.6948, ap_l: 0.6764
-inshore 
-Best ap50: 0.9449 at epoch 280
-ap: 0.5335, ap50: 0.9449, ap75: 0.5323, ap_s: 0.4896, ap_m: 0.5979, ap_l: 0.5640
-Best ap  : 0.5391 at epoch 300
-ap: 0.5391, ap50: 0.9413, ap75: 0.5515, ap_s: 0.4916, ap_m: 0.6108, ap_l: 0.5388
-offshore 
-Best ap50: 0.9895 at epoch 200
-ap: 0.5956, ap50: 0.9895, ap75: 0.6853, ap_s: 0.5501, ap_m: 0.6572, ap_l: 0.7790
-Best ap  : 0.6562 at epoch 280
-ap: 0.6562, ap50: 0.9893, ap75: 0.7934, ap_s: 0.6000, ap_m: 0.7357, ap_l: 0.8126
-
-1.0==cps fcos
-Best ap50: 0.9798 at epoch 300
-ap: 0.6238, ap50: 0.9798, ap75: 0.7139, ap_s: 0.5805, ap_m: 0.6876, ap_l: 0.6612
-Best ap : 0.6246 at epoch 295
-ap: 0.6246, ap50: 0.9796, ap75: 0.7154, ap_s: 0.5821, ap_m: 0.6862, ap_l: 0.6693
-inshore 
-Best ap50: 0.9345 at epoch 235
-ap: 0.5218, ap50: 0.9345, ap75: 0.5302, ap_s: 0.4627, ap_m: 0.6103, ap_l: 0.5061
-Best ap : 0.5418 at epoch 295
-ap: 0.5418, ap50: 0.9334, ap75: 0.5716, ap_s: 0.4998, ap_m: 0.6064, ap_l: 0.5539
-offshore
-Best ap50: 0.9897 at epoch 210
-ap: 0.6415, ap50: 0.9897, ap75: 0.7580, ap_s: 0.5853, ap_m: 0.7127, ap_l: 0.8235
-Best ap : 0.6594 at epoch 240
-ap: 0.6594, ap50: 0.9896, ap75: 0.7994, ap_s: 0.6058, ap_m: 0.7275, ap_l: 0.7844
-
-in ap:   cps > cs, fcos > solo
-in ap50: cps > cs, fcos = solo
-best solution: cps + fcos grid number
-
-2.0==cs solo(consistent sampling)
-Best ap50: 0.9723 at epoch 250
-ap: 0.6037, ap50: 0.9723, ap75: 0.6872, ap_s: 0.5528, ap_m: 0.6759, ap_l: 0.6628
-Best ap  : 0.6109 at epoch 295
-ap: 0.6109, ap50: 0.9707, ap75: 0.7024, ap_s: 0.5656, ap_m: 0.6742, ap_l: 0.6737
-inshore 
-Best ap50: 0.9217 at epoch 285
-ap: 0.5187, ap50: 0.9217, ap75: 0.5607, ap_s: 0.4865, ap_m: 0.5697, ap_l: 0.5492
-Best ap  : 0.5193 at epoch 275
-ap: 0.5193, ap50: 0.9193, ap75: 0.5444, ap_s: 0.4824, ap_m: 0.5792, ap_l: 0.5443
-offshore 
-Best ap50: 0.9894 at epoch 210
-ap: 0.6308, ap50: 0.9894, ap75: 0.7157, ap_s: 0.5792, ap_m: 0.6993, ap_l: 0.7628
-Best ap  : 0.6491 at epoch 295
-ap: 0.6491, ap50: 0.9890, ap75: 0.7612, ap_s: 0.5980, ap_m: 0.7160, ap_l: 0.8113
-
-2.0==cs fcos
-Best ap50: 0.9822 at epoch 245
-ap: 0.6127, ap50: 0.9822, ap75: 0.7062, ap_s: 0.5723, ap_m: 0.6759, ap_l: 0.6397
-Best ap  : 0.6204 at epoch 280
-ap: 0.6204, ap50: 0.9809, ap75: 0.7213, ap_s: 0.5717, ap_m: 0.6898, ap_l: 0.6503
-
-Best ap50: 0.9790 at epoch 240
-ap: 0.6124, ap50: 0.9790, ap75: 0.7034, ap_s: 0.5725, ap_m: 0.6739, ap_l: 0.6302
-Best ap  : 0.6135 at epoch 290
-ap: 0.6135, ap50: 0.9734, ap75: 0.7075, ap_s: 0.5666, ap_m: 0.6798, ap_l: 0.6465
-inshore 
-Best ap50: 0.9363 at epoch 220
-ap: 0.5110, ap50: 0.9363, ap75: 0.5118, ap_s: 0.4567, ap_m: 0.5925, ap_l: 0.4804
-Best ap  : 0.5284 at epoch 250
-ap: 0.5284, ap50: 0.9327, ap75: 0.5372, ap_s: 0.4880, ap_m: 0.5949, ap_l: 0.4907
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.187
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.533
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.591
-offshore
-Best ap50: 0.9896 at epoch 255
-ap: 0.6485, ap50: 0.9896, ap75: 0.7613, ap_s: 0.5956, ap_m: 0.7226, ap_l: 0.7752
-Best ap  : 0.6524 at epoch 290
-ap: 0.6524, ap50: 0.9893, ap75: 0.7766, ap_s: 0.5994, ap_m: 0.7228, ap_l: 0.7984
-"""
+    # txt_log = prefix + '/log.txt'
+    # plot_loss(save_folder, txt_log)
