@@ -635,8 +635,8 @@ if __name__ == '__main__':
     # args.retest = True
 
     # load data
-    dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sar')
-    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sar')
+    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net
