@@ -93,18 +93,22 @@ def plot_pr_curve(save_folder_list, image_set, model_name, iou):
 
         x = np.arange(0.0, 1.01, 0.01)
         # plot PR curve
-        plt.plot(x, pr_array1, label=model_name[i])
+        plt.plot(x, pr_array1, label=model_name[i]+f' IoU={iou}')
 
     # plt.title(f"iou={iou}")
     print(iou)
     plt.xlabel("Recall")
-    plt.ylabel("Precison")
+    plt.ylabel("Precision")   
+    plt.title("PR Curve")
+    # plt.xlabel("召回率", fontproperties="SimSun")
+    # plt.ylabel("精确率", fontproperties="SimSun")
     # plt.xlim(0, 1.0)
     # xtick = [0.6 + round(0.05 * i , 2) for i in range(9)]
     # xtick = [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
-    xtick = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
-    xtick = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
-    xtick = [0.7, 0.75, 0.8, 0.85, 0.9]
+    # xtick = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
+    # xtick = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+    # xtick = [0.7, 0.75, 0.8, 0.85, 0.9]
+    xtick = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     ytick = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     plt.xticks(xtick, [str(i) for i in xtick])
     plt.yticks(ytick, [str(i) for i in ytick])
@@ -113,7 +117,12 @@ def plot_pr_curve(save_folder_list, image_set, model_name, iou):
     plt.grid(True)
     # plt.legend(loc="lower left")
     plt.legend(loc="best")
-    plt.show()
+
+    out = os.path.join(save_folder, f'{iou}_fedet.png')
+    print(f'save curve to: {out}')
+    plt.savefig(out)
+    # plt.show()
+    plt.cla()
 
 
 if __name__ == '__main__':
@@ -135,20 +144,20 @@ if __name__ == '__main__':
     # plot_map(save_folder, ap_stats, metrics, legend)
 
 
-    save_folder_list = ['solo_cs_fcos_2e3', 'lr_2e3']
-    model_name = ['Ours', 'Baseline']
+    save_folder_list = ['solo_cs_fcos_2e3', 'best_at1_mh_4e3_1_ce_640vggbn']
+    model_name = ['SANet', 'FEDet']
     image_set = 'test'
-    image_set = 'test_inshore'
+    # image_set = 'test_inshore'
     # image_set = 'test_offshore'
     # plot_pr_curve(save_folder_list, image_set, model_name, 0.5)
     # plot_pr_curve(save_folder_list, image_set, model_name, 0.55)
-    # plot_pr_curve(save_folder_list, image_set, model_name, 0.6)
-    plot_pr_curve(save_folder_list, image_set, model_name, 0.65)
-    # plot_pr_curve(save_folder_list, image_set, model_name, 0.7)
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.6)
+    # plot_pr_curve(save_folder_list, image_set, model_name, 0.65)
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.7)
     # plot_pr_curve(save_folder_list, image_set, model_name, 0.75)
-    # plot_pr_curve(save_folder_list, image_set, model_name, 0.8)
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.8)
     # plot_pr_curve(save_folder_list, image_set, model_name, 0.85)
-    # plot_pr_curve(save_folder_list, image_set, model_name, 0.9)
+    plot_pr_curve(save_folder_list, image_set, model_name, 0.9)
     # plot_pr_curve(save_folder_list, image_set, model_name, 0.95)
 """
 "iou=0.5"

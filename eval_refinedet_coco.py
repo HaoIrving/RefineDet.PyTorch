@@ -504,8 +504,8 @@ def single_scale_test_net(target_size, save_folder, net, num_classes, dataset, d
                 if args.show_image:
                     vis_detection(im, target, cls_dets, save_folder, target_size, i)
 
-    # with open(det_file, 'wb') as f:
-    #     pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
+    with open(det_file, 'wb') as f:
+        pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
 
     print('\nFPS: {} {} \n'.format(1 / (_t['im_detect'].average_time), 1 / _t['im_detect'].average_time))
     print('Evaluating detections')
@@ -552,8 +552,8 @@ if __name__ == '__main__':
     from utils.logger import Logger
     sys.stdout = Logger(os.path.join(save_folder, 'eval.txt'))
     
-    # args.show_image = True
-    args.vis_attention = True
+    args.show_image = True
+    # args.vis_attention = True
     
     maxout = args.maxout
     model = args.model
@@ -630,10 +630,11 @@ if __name__ == '__main__':
     args.keep_top_k = 500
     args.vis_thres = 0.3
     # args.multi_scale_test = True
+    # args.retest = True
 
     # load data
-    # dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sar')
-    dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
+    dataset = COCODetection(COCOroot, [('sarship', 'test')], None, dataset_name='sar')
+    # dataset = COCODetection(COCOroot, [('sarship', 'test_inshore')], None)
     # dataset = COCODetection(COCOroot, [('sarship', 'test_offshore')], None)
 
     # load net

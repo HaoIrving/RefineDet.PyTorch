@@ -282,11 +282,11 @@ class COCODetection(data.Dataset):
         coco_eval.evaluate()
         coco_eval.accumulate()
         self._print_detection_eval_metrics(coco_eval)
+        eval_file = os.path.join(output_dir, self.image_set[0][1] + '_' + 'detection_results.pkl')
+        with open(eval_file, 'wb') as fid:
+            pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
+        print('Wrote COCO eval results to: {}'.format(eval_file))
         return coco_eval.stats
-        # eval_file = os.path.join(output_dir, 'detection_results.pkl')
-        # with open(eval_file, 'wb') as fid:
-        #     pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
-        # print('Wrote COCO eval results to: {}'.format(eval_file))
 
     def _coco_results_one_category(self, boxes, cat_id):
         results = []
