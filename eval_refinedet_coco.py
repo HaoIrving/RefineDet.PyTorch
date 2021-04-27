@@ -164,10 +164,13 @@ def vis_detection(im, target, cls_dets, save_folder, target_size, i):
     h, w, _ = im.shape
     im_gt = cv2.resize(im, (target_size, target_size), interpolation=cv2.INTER_LINEAR).astype(np.uint8)
     im_gt = put_gtbox(im_gt, target, h, w, target_size)
-    im_gt = put_box(im_gt, cls_dets, h, w, target_size)
+    # im_gt = put_box(im_gt, cls_dets, h, w, target_size)
+
     # cv2.imshow('res', im_gt)
     # cv2.waitKey(0)
-    save_gt_dir = os.path.join(save_folder, 'gt_im')
+    
+    # save_gt_dir = os.path.join(save_folder, 'gt_im')
+    save_gt_dir = os.path.join(save_folder, 'gt_img')
     if not os.path.exists(save_gt_dir):
         os.mkdir(save_gt_dir)
     cv2.imwrite(save_gt_dir + f'/{i}.png',im_gt, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
