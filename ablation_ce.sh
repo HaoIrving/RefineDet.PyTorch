@@ -42,7 +42,14 @@
 # python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_mh_4e3_1_ce_640vggbn/ --ngpu 4 --batch_size 16 --model 640_vggbn -atce 
 # CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at1_mh_4e3_1_ce_640vggbn --model 640_vggbn 
 
+############ compare with SANet #########
+python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_mh_4e3_1_ce_512vggbn/ --ngpu 4 --batch_size 16 --model 512_vggbn -atce 
+CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at1_mh_4e3_1_ce_512vggbn --model 512_vggbn 
+
+python train_refinedet_ablation.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_mh_4e3_1_ce_512vggbn_wo_align/ --ngpu 4 --batch_size 16 --model 512_vggbn -woalign -atce 
+CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco_ablation.py --prefix weights/at1_mh_4e3_1_ce_512vggbn_wo_align --model 512_vggbn -woalign
+
 ############ at1 sigmoid ################
 
-python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_mh_sig_4e3_1_ce_640vggbn/ --ngpu 4 --batch_size 16 --model 640_vggbn -atce -sig
-CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at1_mh_sig_4e3_1_ce_640vggbn --model 640_vggbn -sig
+# python train_refinedet.py --num_workers 12 --lr 4e-3 --save_folder weights/at1_mh_sig_4e3_1_ce_640vggbn/ --ngpu 4 --batch_size 16 --model 640_vggbn -atce -sig
+# CUDA_VISIBLE_DEVICES=2 python eval_refinedet_coco.py --prefix weights/at1_mh_sig_4e3_1_ce_640vggbn --model 640_vggbn -sig

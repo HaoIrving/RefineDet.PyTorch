@@ -598,8 +598,20 @@ if __name__ == '__main__':
     # model = '1024_ResNet_101'
     # model = '1024_ResNeXt_152'
     if model == '512_vggbn':
-        from sardet.refinedet_bn_at1_mh import build_refinedet
-        # from sardet.refinedet_bn_at1_sh import build_refinedet
+        if maxout:
+            from sardet.refinedet_bn_at1_mh_mxo import build_refinedet
+        else:
+            from sardet.refinedet_bn_at1_mh import build_refinedet
+        if wo_alignconv:
+            from sardet.refinedet_bn_at1_mh_wo_AlignConv import build_refinedet
+        if wo_refined_anchor:
+            from sardet.refinedet_bn_at1_mh_wo_AlignConv_RefinedAnchor import build_refinedet
+        if wo_fused_feature:
+            from sardet.refinedet_bn_at1_mh_wo_AlignConv_RefinedAnchor_FusedFeature import build_refinedet
+            args.wo_refined_anchor = True
+        if wo_attention:
+            from sardet.refinedet_bn_at1_mh_wo_AlignConv_RefinedAnchor_FusedFeature_Attention import build_refinedet
+            args.wo_refined_anchor = True
         args.input_size = str(512)
         backbone_dict = dict(bn=True)
     elif model == '5126_vggbn':
