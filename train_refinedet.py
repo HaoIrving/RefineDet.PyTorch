@@ -141,7 +141,9 @@ elif model == '1024_ResNeXt_152':
         frozen_stages = fs
     backbone_dict = dict(type='ResNeXt',depth=152, frozen_stages=frozen_stages)
 elif model == '512_vggbn':
-    from sardet.refinedet_bn_at1_mh import build_refinedet
+    # from sardet.refinedet_bn_at1_mh import build_refinedet
+    from sardet.refinedet_bn_at1_sh import build_refinedet
+    print('refinedet_bn_at1_sh')
     args.input_size = str(512)
     backbone_dict = dict(bn=True)
     if pretrained:

@@ -601,9 +601,9 @@ if __name__ == '__main__':
         if maxout:
             from sardet.refinedet_bn_at1_mh_mxo import build_refinedet
         else:
-            from sardet.refinedet_bn_at1_mh import build_refinedet
+            from sardet.refinedet_bn_at1_sh import build_refinedet
         if wo_alignconv:
-            from sardet.refinedet_bn_at1_mh_wo_AlignConv import build_refinedet
+            from sardet.refinedet_bn_at1_sh_wo_AlignConv import build_refinedet
         if wo_refined_anchor:
             from sardet.refinedet_bn_at1_mh_wo_AlignConv_RefinedAnchor import build_refinedet
         if wo_fused_feature:
